@@ -19,5 +19,6 @@ public:
 
 private:
     Ui::LazyDogTools *ui;
+    void minToolWidgetTest();
 };
 #endif // LAZYDOGTOOLS_H
