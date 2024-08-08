@@ -13,6 +13,7 @@ SOURCES += \
     LazyDogTools.cpp
 
 HEADERS += \
+    CustomUI.h \
     LazyDogTools.h \
     Tool.h
 
@@ -23,3 +24,9 @@ FORMS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+DISTFILES += \
+    ../【old】LazyDogTools/LD_64.ico
+
+RESOURCES += \
+    images.qrc

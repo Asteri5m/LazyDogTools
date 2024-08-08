@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/ico">
+        <file alias="LD.ico">images/ico/LD_64.ico</file>
+    </qresource>
+</RCC>
