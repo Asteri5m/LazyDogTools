@@ -11,6 +11,7 @@
 #include <QPainterPath>
 #include <QStackedWidget>
 #include <QPushButton>
+#include <stdexcept>
 
 // 主程序窗口的工具列表子元素窗口
 class MinToolWidget : public QWidget {
@@ -169,7 +170,7 @@ protected:
 };
 
 // 工具窗口模板，可以根据该模板快生成一个具有左侧菜单栏的“TabWidget”
-template<typename Derived>
+// template<typename Derived>
 class ToolWidgetModel : public QWidget {
 public:
     ToolWidgetModel(QWidget *parent = nullptr) : QWidget(parent) {
@@ -195,7 +196,7 @@ public:
         setLayout(mainLayout);
     }
 
-    void addTab(QWidget* page, const QIcon &icon=nullptr, const QString &name=nullptr) {
+    void addTab(QWidget* page, const QIcon &icon=QIcon(), const QString &name=nullptr) {
         // 添加按钮
         LeftMenuButton *button = new LeftMenuButton(icon, name);
         button->setStyleSheet("border: none;"); // 清除父类的样式

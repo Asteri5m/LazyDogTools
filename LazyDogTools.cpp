@@ -11,7 +11,9 @@ LazyDogTools::LazyDogTools(QWidget *parent)
 {
     ui->setupUi(this);
 
-    this->minToolWidgetTest();
+    minToolWidgetTest();
+
+    toolWidgetModelTest();
 
 }
 
@@ -73,4 +75,37 @@ void LazyDogTools::minToolWidgetTest()
     layout->setContentsMargins(0, 0, 0, 0); // 去除容器布局的边距
 
     ui->widget->setLayout(layout);
+}
+
+void LazyDogTools::toolWidgetModelTest()
+{
+    QDialog* settings = new QDialog();
+    settings->setFixedSize(630, 425);
+
+    ToolWidgetModel* toolModel = new ToolWidgetModel();
+
+    QWidget *page1 = new QWidget(this);
+    QWidget *page2 = new QWidget(this);
+    QWidget *page3 = new QWidget(this);
+
+    toolModel->addTab(page1, QIcon(":/ico/LD.ico"), "基础");
+    toolModel->addTab(page2, QIcon(":/ico/LD.ico"), "应用");
+    toolModel->addTab(page3, QIcon(":/ico/LD.ico"), "热键");
+
+    QVBoxLayout *layout1 = new QVBoxLayout(page1);
+    QVBoxLayout *layout2 = new QVBoxLayout(page2);
+    QVBoxLayout *layout3 = new QVBoxLayout(page3);
+
+    layout1->addWidget(new QLabel("基础页面内容", this));
+    layout2->addWidget(new QLabel("应用页面内容", this));
+    layout3->addWidget(new QLabel("热键页面内容", this));
+
+    toolModel->finalizeSetup();  // 检查并显示第一个页面
+
+    QVBoxLayout *layout = new QVBoxLayout(settings);
+    layout->addWidget(toolModel);
+    layout->setContentsMargins(0, 0, 0, 0);
+
+    settings->setLayout(layout);
+    settings->show();
 }
