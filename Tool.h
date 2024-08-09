@@ -24,15 +24,15 @@ public:
     explicit Tool(QWidget *parent = nullptr);
 
     // 获取静态数据接口
-    static QString     getIcon()        { return mIcon; }
-    static QString     getName()        { return mName; }
-    static QString     getDescription() { return mDescription; }
-    static ShortList   getShortcut()    { return mShortcut; }
-    static TrayList    getTrayn()       { return mTray; }
-    static bool        getActive()      { return mActive; }
+    static QString     GetIcon()        { return mIcon; }
+    static QString     GetName()        { return mName; }
+    static QString     GetDescription() { return mDescription; }
+    static ShortList   GetShortcut()    { return mShortcut; }
+    static TrayList    GetTrayn()       { return mTray; }
+    static bool        GetActive()      { return mActive; }
 
     // 修改启用状态
-    static void setActive(bool state)   { mActive = state; }
+    static void SetActive(bool state)   { mActive = state; }
 
     // 用于初始化参数
     static void initialize(
