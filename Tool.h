@@ -39,8 +39,8 @@ public:
         QString   icon,
         QString   name,
         QString   description,
-        ShortList shortcut,
-        TrayList  tray ) {
+        ShortList* shortcut,
+        TrayList*  tray ) {
 
         mIcon = icon;
         mName = name;
@@ -54,12 +54,12 @@ signals:
 
 
 protected:
-    static QString   mIcon;          // 图标
-    static QString   mName;          // 应用名
-    static QString   mDescription;   // 应用描述
-    static ShortList mShortcut;      // 快捷键列表
-    static TrayList  mTray;          // 托盘菜单项
-    static bool      mActive;        // 工具启用状态
+    static QString    mIcon;          // 图标
+    static QString    mName;          // 应用名
+    static QString    mDescription;   // 应用描述
+    static ShortList* mShortcut;      // 快捷键列表
+    static TrayList*  mTray;          // 托盘菜单项
+    static bool       mActive;        // 工具启用状态
 };
 
 // 静态成员变量的定义
@@ -73,12 +73,15 @@ template <typename T>
 QString Tool<T>::mDescription = "";
 
 template <typename T>
-ShortList Tool<T>::mShortcut = nullptr;
+ShortList* Tool<T>::mShortcut = nullptr;
 
 template <typename T>
-TrayList Tool<T>::mTray = nullptr;
+TrayList* Tool<T>::mTray = nullptr;
 
 template <typename T>
 bool Tool<T>::mActive = true;
+
+template <typename T>
+Tool<T>::Tool(QWidget *parent) : QWidget(parent) {}
 
 #endif // TOOL_H
