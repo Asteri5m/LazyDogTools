@@ -9,12 +9,21 @@ CONFIG += c++17
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    AudioHelper/AudioHelper.cpp \
+    AudioHelper/AudioHelperWedgit.cpp \
+    Settings.cpp \
+    SettingsWidget.cpp \
+    Tool.cpp \
     main.cpp \
     LazyDogTools.cpp
 
 HEADERS += \
-    CustomUI.h \
+    AudioHelper/AudioHelper.h \
+    AudioHelper/AudioHelperWedgit.h \
+    CustomWidget.h \
     LazyDogTools.h \
+    Settings.h \
+    SettingsWidget.h \
     Tool.h
 
 FORMS += \
@@ -25,8 +34,6 @@ qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
-DISTFILES += \
-    ../【old】LazyDogTools/LD_64.ico
 
 RESOURCES += \
     images.qrc

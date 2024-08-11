@@ -1,9 +1,8 @@
 #include "LazyDogTools.h"
 #include "ui_lazydogtools.h"
-#include "CustomUI.h"
-
 #include <QScrollArea>
-
+#include "Settings.h"
+#include "AudioHelper/AudioHelper.h"
 
 LazyDogTools::LazyDogTools(QWidget *parent)
     : QDialog(parent)
@@ -11,10 +10,11 @@ LazyDogTools::LazyDogTools(QWidget *parent)
 {
     ui->setupUi(this);
 
-    minToolWidgetTest();
+    mToolList.append(new Settings());
+    mToolList.append(new AudioHelper());
 
-    toolWidgetModelTest();
-
+    initData();
+    initUI();
 }
 
 LazyDogTools::~LazyDogTools()
@@ -22,52 +22,58 @@ LazyDogTools::~LazyDogTools()
     delete ui;
 }
 
-void LazyDogTools::minToolWidgetTest()
+/**
+ * 初始化程序的数据结构，解析各应用的数据
+*/
+void LazyDogTools::initData()
 {
-    struct ListItem {
-        int     id;
-        QString iconPath;
-        QString name;
-        QString description;
-    };
-
-    QVector<ListItem> items = {
-       {0,":/ico/LD.ico", "设置1", "对工具进行全局设置"},
-       {1,":/ico/LD.ico", "翻译助手2", "有道词典助手是一个词典助手\n他可以帮助你高效的学习，复习英语单词"},
-       {2,":/ico/LD.ico", "音频助手3", "音频助手音频助手音频助手\n音频助手音频助手音频助手"},
-       {3,":/ico/LD.ico", "设置4", "对工具进行全局设置"},
-       {4,":/ico/LD.ico", "翻译助手5", "有道词典助手是一个词典助手\n他可以帮助你高效的学习，复习英语单词英语单词英语单词"},
-       {5,":/ico/LD.ico", "音频助手6", "音频助手音频助手音频助手\n音频助手音频助手音频助手"},
-       {6,":/ico/LD.ico", "设置7", "对工具进行全局设置"},
-       {7,":/ico/LD.ico", "翻译助手8", "有道词典助手是一个词典助手\n他可以帮助你高效的学习，复习英语单词"},
-       {8,":/ico/LD.ico", "音频助手9", "音频助手音频助手音频助手\n音频助手音频助手音频助手"},
-       {9,":/ico/LD.ico", "设置10", "对工具进行全局设置"},
-       {10,":/ico/LD.ico", "翻译助手11", "有道词典助手是一个词典助手\n他可以帮助你高效的学习，复习英语单词"},
-       {11,":/ico/LD.ico", "音频助手12", "音频助手音频助手音频助手\n音频助手音频助手音频助手"},
-    };
-
-
-    // 创建容器控件
-    QWidget *containerWidget = new QWidget(this);
-    // containerWidget->setContentsMargins(0,0,0,0);
-    QVBoxLayout *containerLayout = new QVBoxLayout(containerWidget);
-    // containerLayout->setContentsMargins(0, 0, 0, 0); // 去除容器布局的边距
-
-    for (const ListItem &item : items) {
-        MinToolWidget *widget = new MinToolWidget(item.id, item.iconPath, item.name, item.description);
-        containerLayout->addWidget(widget);
+    short id = 0;
+    for(auto tool:mToolList)
+    {
+        tool->initialize();
+        if (tool->getActive())
+        {
+            tool->initUI();
+            // tool->show();
+            mMinToolList.append(MinToolListItem({
+                id,
+                tool->getIcon(),
+                tool->getName(),
+                tool->getDescription(),
+                tool
+            }));
+            id++; // id 自增
+        }
     }
+}
+
+/**
+ * 初始化UI
+*/
+void LazyDogTools::initUI()
+{
+    // 创建容器控件
+    mWidget = new QWidget(this);
+    mLayout = new QVBoxLayout(mWidget);
+
+    for (const auto &minTool : mMinToolList)
+    {
+        MinToolWidget *widget = new MinToolWidget(minTool.id, minTool.icon, minTool.name, minTool.description);
+        Tool* tool = minTool.tool;
+        mLayout->addWidget(widget);
+        connect(widget, SIGNAL(widgetDoubleClicked()), tool, SLOT(show()));
+    }
+    // 添加一个垂直间隔，以便于在Tool较少时撑起空间
+    mLayout->addSpacerItem(new QSpacerItem(100, 100, QSizePolicy::Minimum, QSizePolicy::Expanding));
 
     // 创建 QScrollArea 实例
     QScrollArea *scrollArea = new QScrollArea(this);
     scrollArea->setWidgetResizable(true);
-    scrollArea->setWidget(containerWidget);
-    // scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scrollArea->setWidget(mWidget);
+
     // 隐藏滚动条
     scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-
-    // scrollArea->setContentsMargins(0, 0, 0, 0);
 
     //布局设置
     QVBoxLayout *layout = new QVBoxLayout(ui->widget);
@@ -77,35 +83,31 @@ void LazyDogTools::minToolWidgetTest()
     ui->widget->setLayout(layout);
 }
 
-void LazyDogTools::toolWidgetModelTest()
+void LazyDogTools::updateUI()
 {
-    QDialog* settings = new QDialog();
-    settings->setFixedSize(630, 425);
+    // 清空原来的内容
+    QLayoutItem* item;
+    while ((item = mLayout->takeAt(0)) != nullptr)
+    {
+        mLayout->removeItem(item);
+        if (item->widget())
+            delete item->widget();
+        else
+            delete item;
+    }
 
-    ToolWidgetModel* toolModel = new ToolWidgetModel();
+    // 绘制新内容
+    for (const auto &minTool : mMinToolList)
+    {
+        MinToolWidget *widget = new MinToolWidget(minTool.id, minTool.icon, minTool.name, minTool.description);
+        mLayout->addWidget(widget);
+    }
+    // 添加一个垂直间隔，以便于在Tool较少时撑起空间
+    mLayout->addSpacerItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding));
+}
 
-    QWidget *page1 = new QWidget(this);
-    QWidget *page2 = new QWidget(this);
-    QWidget *page3 = new QWidget(this);
-
-    toolModel->addTab(page1, QIcon(":/ico/LD.ico"), "基础");
-    toolModel->addTab(page2, QIcon(":/ico/LD.ico"), "应用");
-    toolModel->addTab(page3, QIcon(":/ico/LD.ico"), "热键");
-
-    QVBoxLayout *layout1 = new QVBoxLayout(page1);
-    QVBoxLayout *layout2 = new QVBoxLayout(page2);
-    QVBoxLayout *layout3 = new QVBoxLayout(page3);
-
-    layout1->addWidget(new QLabel("基础页面内容", this));
-    layout2->addWidget(new QLabel("应用页面内容", this));
-    layout3->addWidget(new QLabel("热键页面内容", this));
-
-    toolModel->finalizeSetup();  // 检查并显示第一个页面
-
-    QVBoxLayout *layout = new QVBoxLayout(settings);
-    layout->addWidget(toolModel);
-    layout->setContentsMargins(0, 0, 0, 0);
-
-    settings->setLayout(layout);
-    settings->show();
+void LazyDogTools::updateData()
+{
+    mMinToolList.clear();
+    initData();
 }
