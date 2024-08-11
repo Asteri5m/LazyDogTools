@@ -1,5 +1,5 @@
-#ifndef CUSTOMUI_H
-#define CUSTOMUI_H
+#ifndef CUSTOMWIDGET_H
+#define CUSTOMWIDGET_H
 
 #include <QWidget>
 #include <QVBoxLayout>
@@ -14,12 +14,14 @@
 #include <stdexcept>
 
 // 主程序窗口的工具列表子元素窗口
-class MinToolWidget : public QWidget {
+class MinToolWidget : public QWidget
+{
     Q_OBJECT
 
 public:
     MinToolWidget(const int id, const QString &iconPath, const QString &name, const QString &description, QWidget *parent = nullptr)
-        : QWidget(parent) {
+        : QWidget(parent)
+    {
         QHBoxLayout *mainLayout = new QHBoxLayout(this);
 
         // 根据id获取位置
@@ -60,35 +62,51 @@ public:
         setLayout(mainLayout);
     }
 
+signals:
+    void widgetDoubleClicked(); // 自定义信号: 双击
+
 protected:
-    void enterEvent(QEnterEvent *event) override {
+    void mouseDoubleClickEvent(QMouseEvent *event) override
+    {
+        emit widgetDoubleClicked(); // 发射自定义信号
+        // 调用基类的实现以保持默认行为
+        QWidget::mouseDoubleClickEvent(event);
+    }
+
+    void enterEvent(QEnterEvent *event) override
+    {
         Q_UNUSED(event);
         mHovering = true;
         update(); // 触发重绘
     }
 
-    void leaveEvent(QEvent *event) override {
+    void leaveEvent(QEvent *event) override
+    {
         Q_UNUSED(event);
         mHovering = false;
         update(); // 触发重绘
     }
 
-    void mousePressEvent(QMouseEvent *event) override {
+    void mousePressEvent(QMouseEvent *event) override
+    {
         mIsPressed = true;
         update(); // 触发重绘
         QWidget::mousePressEvent(event);
     }
 
-    void mouseReleaseEvent(QMouseEvent *event) override {
+    void mouseReleaseEvent(QMouseEvent *event) override
+    {
         mIsPressed = false;
         update(); // 触发重绘
         QWidget::mouseReleaseEvent(event);
     }
 
-    void paintEvent(QPaintEvent *event) override {
+    void paintEvent(QPaintEvent *event) override
+    {
         QWidget::paintEvent(event);
 
-        if (mHovering && !mIsPressed) {
+        if (mHovering && !mIsPressed)
+        {
             QPainter painter(this);
             painter.setRenderHint(QPainter::Antialiasing); // 开启抗锯齿
             painter.setBrush(QColor(0, 0, 0, 50)); // 半透明黑色
@@ -108,7 +126,8 @@ private:
 };
 
 // ToolWidgetModel的菜单栏按钮
-class LeftMenuButton : public QPushButton {
+class LeftMenuButton : public QPushButton
+{
 
 public:
     explicit LeftMenuButton(const QIcon &icon, const QString &name, QWidget *parent = nullptr)
@@ -171,7 +190,8 @@ protected:
 
 // 工具窗口模板，可以根据该模板快生成一个具有左侧菜单栏的“TabWidget”
 // template<typename Derived>
-class ToolWidgetModel : public QWidget {
+class ToolWidgetModel : public QWidget
+{
 public:
     ToolWidgetModel(QWidget *parent = nullptr) : QWidget(parent) {
         QHBoxLayout *mainLayout = new QHBoxLayout(this);
@@ -233,4 +253,4 @@ private:
     }
 };
 
-#endif // CUSTOMUI_H
+#endif // CUSTOMWIDGET_H

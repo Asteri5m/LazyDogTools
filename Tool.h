@@ -1,8 +1,9 @@
 #ifndef TOOL_H
 #define TOOL_H
 
-#include <QWidget>
+#include <QObject>
 #include <QShortcut>
+#include "CustomWidget.h"
 
 struct ShortCut {
     QString    Name;            // 快捷键名，会在设置中展示
@@ -15,73 +16,47 @@ typedef QList<ShortCut>      ShortList;
 // 菜单栏条目，菜单名:关联函数
 typedef QMap<QString, void*> TrayList;
 
+class Tool : public QObject {
+    Q_OBJECT
 
-// 基类模板
-template <typename T>
-class Tool : public QWidget
-{
 public:
-    explicit Tool(QWidget *parent = nullptr);
+    explicit Tool(QObject *parent = nullptr);
 
-    // 获取静态数据接口
-    static QString     GetIcon()        { return mIcon; }
-    static QString     GetName()        { return mName; }
-    static QString     GetDescription() { return mDescription; }
-    static ShortList   GetShortcut()    { return mShortcut; }
-    static TrayList    GetTrayn()       { return mTray; }
-    static bool        GetActive()      { return mActive; }
+    // 获取数据接口
+    QString     getIcon();
+    QString     getName();
+    QString     getDescription();
+    ShortList*  getShortcut();
+    TrayList*   getTrayn();
+    bool        getActive();
 
-    // 修改启用状态
-    static void SetActive(bool state)   { mActive = state; }
+    // 修改数据接口
+    void setIcon(QString icon);
+    void setName(QString name);
+    void setDescription(QString desc);
+    void setShortcut(ShortList* shortcut);
+    void setTray(TrayList*  tray);
+    void setActive(bool state);
 
-    // 用于初始化参数
-    static void initialize(
-        QString   icon,
-        QString   name,
-        QString   description,
-        ShortList* shortcut,
-        TrayList*  tray ) {
+    virtual void initUI();
+    virtual void deleteUI();
+    virtual void initialize();
 
-        mIcon = icon;
-        mName = name;
-        mDescription = description;
-        mShortcut = shortcut;
-        mTray = tray;
-    }
+public slots:
+    virtual void show();
+    virtual void hide();
 
-
-signals:
-
+private:
+    QString    mIcon;          // 图标
+    QString    mName;          // 应用名
+    QString    mDescription;   // 应用描述
+    ShortList* mShortcut;      // 快捷键列表
+    TrayList*  mTray;          // 托盘菜单项
+    bool       mActive ;       // 工具启用状态
 
 protected:
-    static QString    mIcon;          // 图标
-    static QString    mName;          // 应用名
-    static QString    mDescription;   // 应用描述
-    static ShortList* mShortcut;      // 快捷键列表
-    static TrayList*  mTray;          // 托盘菜单项
-    static bool       mActive;        // 工具启用状态
+    ToolWidgetModel* mToolWidget;
+
 };
-
-// 静态成员变量的定义
-template <typename T>
-QString Tool<T>::mIcon = "";
-
-template <typename T>
-QString Tool<T>::mName = "";
-
-template <typename T>
-QString Tool<T>::mDescription = "";
-
-template <typename T>
-ShortList* Tool<T>::mShortcut = nullptr;
-
-template <typename T>
-TrayList* Tool<T>::mTray = nullptr;
-
-template <typename T>
-bool Tool<T>::mActive = true;
-
-template <typename T>
-Tool<T>::Tool(QWidget *parent) : QWidget(parent) {}
 
 #endif // TOOL_H
