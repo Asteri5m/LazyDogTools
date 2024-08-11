@@ -9,6 +9,8 @@ void AudioHelper::initUI()
         return;
 
     mToolWidget = new AudioHelperWedgit();
+    mToolWidget->setWindowTitle(getName());
+    mToolWidget->setWindowIcon(QIcon(getIcon()));
 }
 
 void AudioHelper::initialize()

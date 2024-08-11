@@ -1,6 +1,6 @@
+#include <QScrollArea>
 #include "LazyDogTools.h"
 #include "ui_lazydogtools.h"
-#include <QScrollArea>
 #include "Settings.h"
 #include "AudioHelper/AudioHelper.h"
 
@@ -10,11 +10,19 @@ LazyDogTools::LazyDogTools(QWidget *parent)
 {
     ui->setupUi(this);
 
+    setWindowIcon(QIcon(":/ico/LD.ico"));
+
     mToolList.append(new Settings());
     mToolList.append(new AudioHelper());
+    AudioHelper *test = new AudioHelper();
+    mToolList.append(test);
 
     initData();
     initUI();
+
+    test->setActive(false);
+    updateData();
+    updateUI();
 }
 
 LazyDogTools::~LazyDogTools()
@@ -34,7 +42,6 @@ void LazyDogTools::initData()
         if (tool->getActive())
         {
             tool->initUI();
-            // tool->show();
             mMinToolList.append(MinToolListItem({
                 id,
                 tool->getIcon(),
@@ -100,7 +107,9 @@ void LazyDogTools::updateUI()
     for (const auto &minTool : mMinToolList)
     {
         MinToolWidget *widget = new MinToolWidget(minTool.id, minTool.icon, minTool.name, minTool.description);
+        Tool* tool = minTool.tool;
         mLayout->addWidget(widget);
+        connect(widget, SIGNAL(widgetDoubleClicked()), tool, SLOT(show()));
     }
     // 添加一个垂直间隔，以便于在Tool较少时撑起空间
     mLayout->addSpacerItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding));
@@ -109,5 +118,20 @@ void LazyDogTools::updateUI()
 void LazyDogTools::updateData()
 {
     mMinToolList.clear();
-    initData();
+    short id = 0;
+    for(auto tool:mToolList)
+    {
+        if (tool->getActive())
+        {
+            tool->initUI();
+            mMinToolList.append(MinToolListItem({
+                id,
+                tool->getIcon(),
+                tool->getName(),
+                tool->getDescription(),
+                tool
+            }));
+            id++; // id 自增
+        }
+    }
 }

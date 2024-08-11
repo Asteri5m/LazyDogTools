@@ -9,6 +9,8 @@ void Settings::initUI()
         return;
 
     mToolWidget = new SettingsWidget();
+    mToolWidget->setWindowTitle(getName());
+    mToolWidget->setWindowIcon(QIcon(getIcon()));
 }
 
 
