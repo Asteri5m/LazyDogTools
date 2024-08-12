@@ -14,6 +14,8 @@ SOURCES += \
     Settings.cpp \
     SettingsWidget.cpp \
     Tool.cpp \
+    TransHelper/TransHelper.cpp \
+    TransHelper/TransHelperManager.cpp \
     main.cpp \
     LazyDogTools.cpp
 
@@ -24,7 +26,9 @@ HEADERS += \
     LazyDogTools.h \
     Settings.h \
     SettingsWidget.h \
-    Tool.h
+    Tool.h \
+    TransHelper/TransHelper.h \
+    TransHelper/TransHelperManager.h
 
 FORMS += \
     lazydogtools.ui

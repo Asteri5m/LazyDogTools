@@ -3,6 +3,7 @@
 #include "ui_lazydogtools.h"
 #include "Settings.h"
 #include "AudioHelper/AudioHelper.h"
+#include "TransHelper/TransHelperManager.h"
 
 LazyDogTools::LazyDogTools(QWidget *parent)
     : QDialog(parent)
@@ -14,8 +15,7 @@ LazyDogTools::LazyDogTools(QWidget *parent)
 
     mToolList.append(new Settings());
     mToolList.append(new AudioHelper());
-    AudioHelper *test = new AudioHelper();
-    mToolList.append(test);
+    mToolList.append(new TransHelperManager());
 
     initData();
     initUI();
