@@ -3,6 +3,7 @@
 #include <QScrollArea>
 #include "Settings.h"
 #include "AudioHelper/AudioHelper.h"
+#include "TransHelper/TransHelperManager.h"
 
 LazyDogTools::LazyDogTools(QWidget *parent)
     : QDialog(parent)
@@ -12,6 +13,7 @@ LazyDogTools::LazyDogTools(QWidget *parent)
 
     mToolList.append(new Settings());
     mToolList.append(new AudioHelper());
+    mToolList.append(new TransHelperManager());
 
     initData();
     initUI();
