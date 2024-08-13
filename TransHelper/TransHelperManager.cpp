@@ -1,4 +1,5 @@
 #include "TransHelperManager.h"
+#include "TransHelper.h"
 
 
 void TransHelperManager::initUI()
@@ -7,7 +8,9 @@ void TransHelperManager::initUI()
     if (mToolWidget != nullptr)
         return;
 
-    mToolWidget = new QWidget();
+    mToolWidget = new TransHelper();
+    mToolWidget->setWindowTitle(getName());
+    mToolWidget->setWindowIcon(QIcon(getIcon()));
 }
 
 void TransHelperManager::initialize()
@@ -20,14 +23,14 @@ void TransHelperManager::initialize()
     setActive(true);
 }
 
-void TransHelperManager::show()
-{
-    // 避免对空指针进行操作
-    if (mToolWidget == nullptr)
-        return;
+// void TransHelperManager::show()
+// {
+//     // 避免对空指针进行操作
+//     if (mToolWidget == nullptr)
+//         return;
 
-    if (mToolWidget->isHidden())
-        mToolWidget->show();
-    else
-        mToolWidget->activateWindow();
-}
+//     if (mToolWidget->isHidden())
+//         mToolWidget->show();
+//     else
+//         mToolWidget->activateWindow();
+// }

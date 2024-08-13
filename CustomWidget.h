@@ -193,7 +193,10 @@ protected:
 class ToolWidgetModel : public QWidget
 {
 public:
-    ToolWidgetModel(QWidget *parent = nullptr) : QWidget(parent) {
+    ToolWidgetModel(QWidget *parent = nullptr) : QWidget(parent) {}
+
+    void setDefaultStyle(bool menuRight = false)
+    {
         QHBoxLayout *mainLayout = new QHBoxLayout(this);
         mainLayout->setContentsMargins(0, 0, 0, 0);
 
@@ -211,12 +214,21 @@ public:
 
         mStackedWidget = new QStackedWidget(this);
 
-        mainLayout->addWidget(mMenuWidget);
-        mainLayout->addWidget(mStackedWidget);
+        if (menuRight)
+        {
+            mainLayout->addWidget(mStackedWidget);
+            mainLayout->addWidget(mMenuWidget);
+        }
+        else
+        {
+            mainLayout->addWidget(mMenuWidget);
+            mainLayout->addWidget(mStackedWidget);
+        }
         setLayout(mainLayout);
     }
 
-    void addTab(QWidget* page, const QIcon &icon=QIcon(), const QString &name=nullptr) {
+    void addTab(QWidget* page, const QIcon &icon=QIcon(), const QString &name=nullptr)
+    {
         // 添加按钮
         LeftMenuButton *button = new LeftMenuButton(icon, name);
         button->setStyleSheet("border: none;"); // 清除父类的样式
@@ -234,8 +246,10 @@ public:
         });
     }
 
-    void finalizeSetup() {
-        if (!mButtons.isEmpty()) {
+    void finalizeSetup()
+    {
+        if (!mButtons.isEmpty())
+        {
             mButtons.first()->click();  // 显示第一个页面
         }
     }
@@ -246,8 +260,10 @@ private:
     QStackedWidget *mStackedWidget;
     QVector<LeftMenuButton*> mButtons;
 
-    void resetButtonStates() {
-        for (auto button : mButtons) {
+    void resetButtonStates()
+    {
+        for (auto button : mButtons)
+        {
             button->setChecked(false);
         }
     }

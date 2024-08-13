@@ -10,12 +10,10 @@ class TransHelperManager : public Tool
 public:
     void initUI() override;
     void initialize() override;
-    void show() override;
+    // void show() override;
 
 signals:
 
-protected:
-    QWidget* mToolWidget;
 };
 
 #endif // TRANSHELPERMANAGER_H

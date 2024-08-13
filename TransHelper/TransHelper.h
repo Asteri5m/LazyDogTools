@@ -2,8 +2,9 @@
 #define TRANSHELPER_H
 
 #include <QWidget>
+#include "CustomWidget.h"
 
-class TransHelper : public QWidget
+class TransHelper : public ToolWidgetModel
 {
     Q_OBJECT
 public:

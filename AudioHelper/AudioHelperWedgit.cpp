@@ -3,9 +3,11 @@
 AudioHelperWedgit::AudioHelperWedgit(QWidget *parent)
     : ToolWidgetModel{parent}
 {
-    resize(630, 425);
+    resize(800, 480);
+    setMinimumSize(800, 480);
 
-
+    // 使用模版样式
+    setDefaultStyle();
 
     page1 = new QWidget(this);
     page2 = new QWidget(this);

@@ -19,10 +19,6 @@ LazyDogTools::LazyDogTools(QWidget *parent)
 
     initData();
     initUI();
-
-    test->setActive(false);
-    updateData();
-    updateUI();
 }
 
 LazyDogTools::~LazyDogTools()

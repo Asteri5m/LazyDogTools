@@ -4,6 +4,11 @@ SettingsWidget::SettingsWidget(QWidget *parent)
     : ToolWidgetModel{parent}
 {
     setFixedSize(630, 425);
+    // 取消其他按钮，只保留关闭按钮
+    setWindowFlags(Qt::Window | Qt::WindowCloseButtonHint | Qt::CustomizeWindowHint);
+
+    // 使用默认模板样式
+    setDefaultStyle();
 
     page1 = new QWidget(this);
     page2 = new QWidget(this);
