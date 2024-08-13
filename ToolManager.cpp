@@ -1,72 +1,72 @@
-#include "Tool.h"
+#include "ToolManager.h"
 
 
-Tool::Tool(QObject *parent)
+ToolManager::ToolManager(QObject *parent)
 {
     initialize();
 }
 
-QString Tool::getIcon()
+QString ToolManager::getIcon()
 {
     return mIcon;
 }
 
-QString Tool::getName()
+QString ToolManager::getName()
 {
     return mName;
 }
 
-QString Tool::getDescription()
+QString ToolManager::getDescription()
 {
     return mDescription;
 }
 
-ShortList *Tool::getShortcut()
+ShortList *ToolManager::getShortcut()
 {
     return mShortcut;
 }
 
-TrayList *Tool::getTrayn()
+TrayList *ToolManager::getTrayn()
 {
     return mTray;
 }
 
-bool Tool::getActive()
+bool ToolManager::getActive()
 {
     return mActive;
 }
 
-void Tool::setIcon(QString icon)
+void ToolManager::setIcon(QString icon)
 {
     mIcon = icon;
 }
 
-void Tool::setName(QString name)
+void ToolManager::setName(QString name)
 {
     mName = name;
 }
 
-void Tool::setDescription(QString desc)
+void ToolManager::setDescription(QString desc)
 {
     mDescription = desc;
 }
 
-void Tool::setShortcut(ShortList *shortcut)
+void ToolManager::setShortcut(ShortList *shortcut)
 {
     mShortcut = shortcut;
 }
 
-void Tool::setTray(TrayList *tray)
+void ToolManager::setTray(TrayList *tray)
 {
     mTray = tray;
 }
 
-void Tool::setActive(bool state)
+void ToolManager::setActive(bool state)
 {
     mActive = state;
 }
 
-void Tool::initUI()
+void ToolManager::initUI()
 {
     // 避免多次创建
     if (mToolWidget != nullptr)
@@ -75,19 +75,21 @@ void Tool::initUI()
     mToolWidget = new ToolWidgetModel();
 }
 
-void Tool::show()
+void ToolManager::show()
 {
     // 避免对空指针进行操作
     if (mToolWidget == nullptr)
         return;
 
     if (mToolWidget->isHidden())
-        mToolWidget->show();
+        mToolWidget->showFirstPage();
+    else if (mToolWidget->isMinimized())
+        mToolWidget->showNormal();
     else
         mToolWidget->activateWindow();
 }
 
-void Tool::hide()
+void ToolManager::hide()
 {
     // 避免对空指针进行操作
     if (mToolWidget == nullptr)
@@ -95,7 +97,7 @@ void Tool::hide()
     mToolWidget->hide();
 }
 
-void Tool::deleteUI()
+void ToolManager::deleteUI()
 {
     // 避免多次释放
     if (mToolWidget == nullptr)
@@ -105,7 +107,7 @@ void Tool::deleteUI()
     mToolWidget = nullptr;
 }
 
-void Tool::initialize()
+void ToolManager::initialize()
 {
     setName("示例");
     setIcon(":/ico/LD.ico");

@@ -2,9 +2,9 @@
 #define TRANSHELPERMANAGER_H
 
 #include <QObject>
-#include "Tool.h"
+#include "ToolManager.h"
 
-class TransHelperManager : public Tool
+class TransHelperManager : public ToolManager
 {
     Q_OBJECT
 public:

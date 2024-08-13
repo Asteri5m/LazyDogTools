@@ -10,10 +10,10 @@ CONFIG += c++17
 
 SOURCES += \
     AudioHelper/AudioHelper.cpp \
-    AudioHelper/AudioHelperWedgit.cpp \
+    AudioHelper/AudioHelperManager.cpp \
     Settings.cpp \
     SettingsWidget.cpp \
-    Tool.cpp \
+    ToolManager.cpp \
     TransHelper/TransHelper.cpp \
     TransHelper/TransHelperManager.cpp \
     main.cpp \
@@ -21,12 +21,12 @@ SOURCES += \
 
 HEADERS += \
     AudioHelper/AudioHelper.h \
-    AudioHelper/AudioHelperWedgit.h \
+    AudioHelper/AudioHelperManager.h \
     CustomWidget.h \
     LazyDogTools.h \
     Settings.h \
     SettingsWidget.h \
-    Tool.h \
+    ToolManager.h \
     TransHelper/TransHelper.h \
     TransHelper/TransHelperManager.h
 

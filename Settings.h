@@ -1,10 +1,10 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
-#include "Tool.h"
+#include "ToolManager.h"
 #include "SettingsWidget.h"
 
-class Settings : public Tool
+class Settings : public ToolManager
 {
     Q_OBJECT
 public:

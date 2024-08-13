@@ -1,21 +1,19 @@
 #ifndef AUDIOHELPER_H
 #define AUDIOHELPER_H
 
-#include "Tool.h"
 #include "CustomWidget.h"
 
-class AudioHelper : public Tool
-{
+class AudioHelper : public ToolWidgetModel {
     Q_OBJECT
 public:
-
-    void initUI() override;
-    void initialize() override;
-
+    explicit AudioHelper(QWidget *parent = nullptr);
 
 signals:
 
 private:
+    QWidget *page1;
+    QWidget *page2;
+    QWidget *page3;
 };
 
 #endif // AUDIOHELPER_H

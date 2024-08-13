@@ -128,21 +128,25 @@ private:
 // ToolWidgetModel的菜单栏按钮
 class LeftMenuButton : public QPushButton
 {
-
+    Q_OBJECT
 public:
     explicit LeftMenuButton(const QIcon &icon, const QString &name, QWidget *parent = nullptr)
         : QPushButton(parent) {
         QSize* buttonSize = new QSize(56, 56);
         QSize* iconSize   = new QSize(24, 24);
 
-        if (name.isNull() && icon.isNull()) {
+        if (name.isNull() && icon.isNull())
+        {
             throw std::logic_error("名字和图标至少需要一个");
         }
 
         // 根据内容适配大小
-        if (icon.isNull()) {
+        if (icon.isNull())
+        {
             buttonSize->setHeight(28);
-        } else if (name.isNull()) {
+        }
+        else if (name.isNull())
+        {
             iconSize->setHeight(32);
             iconSize->setWidth(32);
         }
@@ -150,41 +154,68 @@ public:
         // 设置按钮大小
         this->setFixedSize(*buttonSize);
 
-        // 去除选中效果
-        this->setStyleSheet("QPushButton { border: none; }");
-
         // 创建一个垂直布局，图标在上，文本在下
         QVBoxLayout *layout = new QVBoxLayout(this);
         layout->setAlignment(Qt::AlignCenter);
         layout->setContentsMargins(0, 0, 0, 0);
 
-        if (!icon.isNull()) {
+        if (!icon.isNull())
+        {
             QLabel *iconLabel = new QLabel(this);
             iconLabel->setPixmap(icon.pixmap(*iconSize));
             iconLabel->setAlignment(Qt::AlignCenter);
             layout->addWidget(iconLabel);
         }
 
-        if (!name.isNull()) {
+        if (!name.isNull())
+        {
             QLabel *textLabel = new QLabel(name, this);
             textLabel->setAlignment(Qt::AlignCenter);
             layout->addWidget(textLabel);
         }
+
+    }
+
+    void setChecked(bool checked)
+    {
+        isChecked = checked;
+        if (isChecked)
+        {
+            setStyleSheet("background-color: #d0d0d0;"
+                          "border-radius: 3px;"
+                          "border: none;");
+        }
+        else
+        {
+            setStyleSheet("background-color: none;"
+                          "border: none;");
+        }
     }
 
 protected:
-    void enterEvent(QEnterEvent *event) override {
+    void enterEvent(QEnterEvent *event) override
+    {
         Q_UNUSED(event);
-        setStyleSheet("background-color: #f0f0f0;"
-                      "border-radius: 3px;"
-                      "border: none");
+        if (!isChecked)
+        {
+            setStyleSheet("background-color: #f0f0f0;"
+                          "border-radius: 3px;"
+                          "border: none;");
+        }
     }
 
-    void leaveEvent(QEvent *event) override {
+    void leaveEvent(QEvent *event) override
+    {
         Q_UNUSED(event);
-        setStyleSheet("background-color: none");
-        setStyleSheet("border: none");
+        if (!isChecked)
+        {
+            setStyleSheet("background-color: none;"
+                          "border: none;");
+        }
     }
+
+private:
+    bool isChecked = false;
 
 };
 
@@ -202,8 +233,6 @@ public:
 
         mMenuWidget = new QWidget(this);
         mMenuWidget->setFixedWidth(64);
-        mMenuWidget->setStyleSheet("border-right: 1px solid gray;"
-                                   "background-color: white;");   // 设置边框线为1像素宽，灰色
 
         // 设置菜单的基本样式
         mMenuLayout = new QVBoxLayout(mMenuWidget);
@@ -216,11 +245,15 @@ public:
 
         if (menuRight)
         {
+            mMenuWidget->setStyleSheet("border-left: 1px solid gray;"
+                                       "background-color: white;");   // 设置边框线为1像素宽，灰色
             mainLayout->addWidget(mStackedWidget);
             mainLayout->addWidget(mMenuWidget);
         }
         else
         {
+            mMenuWidget->setStyleSheet("border-right: 1px solid gray;"
+                                       "background-color: white;");   // 设置边框线为1像素宽，灰色
             mainLayout->addWidget(mMenuWidget);
             mainLayout->addWidget(mStackedWidget);
         }
@@ -252,6 +285,13 @@ public:
         {
             mButtons.first()->click();  // 显示第一个页面
         }
+    }
+
+    void showFirstPage()
+    {
+        if (!mButtons.isEmpty())
+            mButtons.first()->click();
+        show();
     }
 
 private:

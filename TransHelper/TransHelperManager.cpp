@@ -22,15 +22,3 @@ void TransHelperManager::initialize()
     setShortcut(nullptr);
     setActive(true);
 }
-
-// void TransHelperManager::show()
-// {
-//     // 避免对空指针进行操作
-//     if (mToolWidget == nullptr)
-//         return;
-
-//     if (mToolWidget->isHidden())
-//         mToolWidget->show();
-//     else
-//         mToolWidget->activateWindow();
-// }

@@ -2,7 +2,7 @@
 #include "LazyDogTools.h"
 #include "ui_lazydogtools.h"
 #include "Settings.h"
-#include "AudioHelper/AudioHelper.h"
+#include "AudioHelper/AudioHelperManager.h"
 #include "TransHelper/TransHelperManager.h"
 
 LazyDogTools::LazyDogTools(QWidget *parent)
@@ -14,7 +14,7 @@ LazyDogTools::LazyDogTools(QWidget *parent)
     setWindowIcon(QIcon(":/ico/LD.ico"));
 
     mToolList.append(new Settings());
-    mToolList.append(new AudioHelper());
+    mToolList.append(new AudioHelperManager());
     mToolList.append(new TransHelperManager());
 
     initData();
@@ -62,7 +62,7 @@ void LazyDogTools::initUI()
     for (const auto &minTool : mMinToolList)
     {
         MinToolWidget *widget = new MinToolWidget(minTool.id, minTool.icon, minTool.name, minTool.description);
-        Tool* tool = minTool.tool;
+        ToolManager* tool = minTool.tool;
         mLayout->addWidget(widget);
         connect(widget, SIGNAL(widgetDoubleClicked()), tool, SLOT(show()));
     }
@@ -103,7 +103,7 @@ void LazyDogTools::updateUI()
     for (const auto &minTool : mMinToolList)
     {
         MinToolWidget *widget = new MinToolWidget(minTool.id, minTool.icon, minTool.name, minTool.description);
-        Tool* tool = minTool.tool;
+        ToolManager* tool = minTool.tool;
         mLayout->addWidget(widget);
         connect(widget, SIGNAL(widgetDoubleClicked()), tool, SLOT(show()));
     }

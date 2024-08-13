@@ -1,5 +1,5 @@
-#ifndef TOOL_H
-#define TOOL_H
+#ifndef TOOLMANAGER_H
+#define TOOLMANAGER_H
 
 #include <QObject>
 #include <QShortcut>
@@ -16,11 +16,11 @@ typedef QList<ShortCut>      ShortList;
 // 菜单栏条目，菜单名:关联函数
 typedef QMap<QString, void*> TrayList;
 
-class Tool : public QObject {
+class ToolManager : public QObject {
     Q_OBJECT
 
 public:
-    explicit Tool(QObject *parent = nullptr);
+    explicit ToolManager(QObject *parent = nullptr);
 
     // 获取数据接口
     QString     getIcon();
@@ -59,4 +59,4 @@ protected:
 
 };
 
-#endif // TOOL_H
+#endif // TOOLMANAGER_H

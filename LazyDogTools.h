@@ -4,7 +4,7 @@
 #include <QDialog>
 #include <QMetaObject>
 #include <QMetaMethod>
-#include "Tool.h"
+#include "ToolManager.h"
 #include "Settings.h"
 
 // 主页工具列表的基本元素
@@ -13,14 +13,14 @@ struct MinToolListItem {
     QString icon;
     QString name;
     QString description;
-    Tool*   tool; //作为联系项
+    ToolManager*   tool; //作为联系项
 
     // MinToolListItem(short id, const QString &icon, const QString &name, const QString &description, const QMetaObject* object)
     //     : id(id), icon(icon), name(name), description(description), type_id(std::type_index) {}
 };
 
 // 工具表
-typedef QVector<Tool*> ToolList;
+typedef QVector<ToolManager*> ToolList;
 // 窗口列表
 typedef QVector<MinToolListItem> MinToolList;
 

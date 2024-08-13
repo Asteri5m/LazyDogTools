@@ -1,20 +1,25 @@
 #include "AudioHelper.h"
-#include "AudioHelperWedgit.h"
 
-
-void AudioHelper::initUI()
+AudioHelper::AudioHelper(QWidget *parent)
+    : ToolWidgetModel{parent}
 {
-    // 避免多次创建
-    if (mToolWidget != nullptr)
-        return;
+    resize(800, 480);
+    setMinimumSize(800, 480);
 
-    mToolWidget = new AudioHelperWedgit();
-    mToolWidget->setWindowTitle(getName());
-    mToolWidget->setWindowIcon(QIcon(getIcon()));
-}
+    // 使用模版样式, 如果不使用直接添加Tab，程序会崩溃
+    setDefaultStyle(true);
 
-void AudioHelper::initialize()
-{
-    setName("音频助手");
-    setDescription("一个简单的助手");
+    page1 = new QWidget(this);
+    page2 = new QWidget(this);
+
+    addTab(page1, QIcon(":/ico/LD.ico"), "任务");
+    addTab(page2, QIcon(":/ico/LD.ico"), "偏好");
+
+    QVBoxLayout *layout1 = new QVBoxLayout(page1);
+    QVBoxLayout *layout2 = new QVBoxLayout(page2);
+
+    layout1->addWidget(new QLabel("任务页面内容", this));
+    layout2->addWidget(new QLabel("偏好页面内容", this));
+
+    finalizeSetup();  // 检查并显示第一个页面
 }
