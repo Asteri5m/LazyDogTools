@@ -5,7 +5,7 @@
 #include <QMetaObject>
 #include <QMetaMethod>
 #include "ToolManager.h"
-#include "Settings.h"
+#include "SettingsManager.h"
 
 // 主页工具列表的基本元素
 struct MinToolListItem {

@@ -3,7 +3,8 @@
 
 ToolManager::ToolManager(QObject *parent)
 {
-    initialize();
+    Q_UNUSED(parent);
+    init();
 }
 
 QString ToolManager::getIcon()
@@ -95,6 +96,11 @@ void ToolManager::hide()
     if (mToolWidget == nullptr)
         return;
     mToolWidget->hide();
+}
+
+void ToolManager::init()
+{
+    initialize();
 }
 
 void ToolManager::deleteUI()

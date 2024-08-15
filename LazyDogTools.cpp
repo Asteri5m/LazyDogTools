@@ -1,7 +1,7 @@
 #include <QScrollArea>
 #include "LazyDogTools.h"
 #include "ui_lazydogtools.h"
-#include "Settings.h"
+#include "SettingsManager.h"
 #include "AudioHelper/AudioHelperManager.h"
 #include "TransHelper/TransHelperManager.h"
 
@@ -13,7 +13,7 @@ LazyDogTools::LazyDogTools(QWidget *parent)
 
     setWindowIcon(QIcon(":/ico/LD.ico"));
 
-    mToolList.append(new Settings());
+    mToolList.append(new SettingsManager());
     mToolList.append(new AudioHelperManager());
     mToolList.append(new TransHelperManager());
 

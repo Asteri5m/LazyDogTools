@@ -1,22 +1,22 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
-#include "ToolManager.h"
-#include "SettingsWidget.h"
+#include "CustomWidget.h"
 
-class Settings : public ToolManager
-{
+class Settings : public ToolWidgetModel {
     Q_OBJECT
 public:
-    // 重载
-    void initUI() override;
-    void initialize() override;
+    explicit Settings(QWidget *parent = nullptr);
 
 signals:
 
-protected:
+private:
+    QWidget *page1;
+    QWidget *page2;
+    QWidget *page3;
 
-
+private slots:
+    void apply();
 };
 
 #endif // SETTINGS_H

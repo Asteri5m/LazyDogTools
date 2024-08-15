@@ -52,7 +52,9 @@ private:
     QString    mDescription;   // 应用描述
     ShortList* mShortcut;      // 快捷键列表
     TrayList*  mTray;          // 托盘菜单项
-    bool       mActive ;       // 工具启用状态
+    bool       mActive;        // 工具启用状态
+
+    void init();
 
 protected:
     ToolWidgetModel* mToolWidget;

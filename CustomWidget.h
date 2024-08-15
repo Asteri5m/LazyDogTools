@@ -11,6 +11,7 @@
 #include <QPainterPath>
 #include <QStackedWidget>
 #include <QPushButton>
+#include <QStyleOption>
 #include <stdexcept>
 
 // 主程序窗口的工具列表子元素窗口
@@ -132,8 +133,9 @@ class LeftMenuButton : public QPushButton
 public:
     explicit LeftMenuButton(const QIcon &icon, const QString &name, QWidget *parent = nullptr)
         : QPushButton(parent) {
-        QSize* buttonSize = new QSize(56, 56);
-        QSize* iconSize   = new QSize(24, 24);
+        // 使用栈分配
+        QSize buttonSize(56, 56);
+        QSize iconSize(24, 24);
 
         if (name.isNull() && icon.isNull())
         {
@@ -143,16 +145,16 @@ public:
         // 根据内容适配大小
         if (icon.isNull())
         {
-            buttonSize->setHeight(28);
+            buttonSize.setHeight(28);
         }
         else if (name.isNull())
         {
-            iconSize->setHeight(32);
-            iconSize->setWidth(32);
+            iconSize.setHeight(32);
+            iconSize.setWidth(32);
         }
 
         // 设置按钮大小
-        this->setFixedSize(*buttonSize);
+        this->setFixedSize(buttonSize);
 
         // 创建一个垂直布局，图标在上，文本在下
         QVBoxLayout *layout = new QVBoxLayout(this);
@@ -162,7 +164,7 @@ public:
         if (!icon.isNull())
         {
             QLabel *iconLabel = new QLabel(this);
-            iconLabel->setPixmap(icon.pixmap(*iconSize));
+            iconLabel->setPixmap(icon.pixmap(iconSize));
             iconLabel->setAlignment(Qt::AlignCenter);
             layout->addWidget(iconLabel);
         }
@@ -182,7 +184,7 @@ public:
         if (isChecked)
         {
             setStyleSheet("background-color: #d0d0d0;"
-                          "border-radius: 3px;"
+                          "border-radius: 6px;"
                           "border: none;");
         }
         else
@@ -199,7 +201,7 @@ protected:
         if (!isChecked)
         {
             setStyleSheet("background-color: #f0f0f0;"
-                          "border-radius: 3px;"
+                          "border-radius: 6px;"
                           "border: none;");
         }
     }
@@ -220,7 +222,6 @@ private:
 };
 
 // 工具窗口模板，可以根据该模板快生成一个具有左侧菜单栏的“TabWidget”
-// template<typename Derived>
 class ToolWidgetModel : public QWidget
 {
 public:
@@ -228,10 +229,12 @@ public:
 
     void setDefaultStyle(bool menuRight = false)
     {
-        QHBoxLayout *mainLayout = new QHBoxLayout(this);
-        mainLayout->setContentsMargins(0, 0, 0, 0);
+        mOverLayout = new QHBoxLayout(this);
+        mMainLayout = new QGridLayout();
+        mOverLayout->setContentsMargins(0, 0, 0, 0);
+        mMainLayout->setContentsMargins(0, 0, 0, 0);
 
-        mMenuWidget = new QWidget(this);
+        mMenuWidget = new QWidget();
         mMenuWidget->setFixedWidth(64);
 
         // 设置菜单的基本样式
@@ -241,23 +244,23 @@ public:
         mMenuLayout->setAlignment(Qt::AlignCenter);
         mMenuLayout->setSpacing(15);
 
-        mStackedWidget = new QStackedWidget(this);
+        mStackedWidget = new QStackedWidget();
+        mMainLayout->addWidget(mStackedWidget);
 
         if (menuRight)
         {
             mMenuWidget->setStyleSheet("border-left: 1px solid gray;"
                                        "background-color: white;");   // 设置边框线为1像素宽，灰色
-            mainLayout->addWidget(mStackedWidget);
-            mainLayout->addWidget(mMenuWidget);
+            mOverLayout->addLayout(mMainLayout);
+            mOverLayout->addWidget(mMenuWidget);
         }
         else
         {
             mMenuWidget->setStyleSheet("border-right: 1px solid gray;"
                                        "background-color: white;");   // 设置边框线为1像素宽，灰色
-            mainLayout->addWidget(mMenuWidget);
-            mainLayout->addWidget(mStackedWidget);
+            mOverLayout->addWidget(mMenuWidget);
+            mOverLayout->addLayout(mMainLayout);
         }
-        setLayout(mainLayout);
     }
 
     void addTab(QWidget* page, const QIcon &icon=QIcon(), const QString &name=nullptr)
@@ -272,7 +275,7 @@ public:
         mStackedWidget->addWidget(page);
 
         // 创建关联关系
-        connect(button, &LeftMenuButton::clicked, [=]() {
+        connect(button, &LeftMenuButton::clicked, this, [=]() {
             resetButtonStates();
             mStackedWidget->setCurrentWidget(page);
             button->setChecked(true);
@@ -294,6 +297,10 @@ public:
         show();
     }
 
+protected:
+    QHBoxLayout *mOverLayout;   // 全局布局，可以在此基础上实现高级自定义
+    QGridLayout *mMainLayout;   // 主要布局区域，可以在此基础上实现高级自定义
+
 private:
     QWidget        *mMenuWidget;
     QVBoxLayout    *mMenuLayout;
@@ -309,4 +316,69 @@ private:
     }
 };
 
+
+// Mac样式的按钮
+class MacStyleButton : public QPushButton
+{
+    Q_OBJECT
+
+public:
+    explicit MacStyleButton(const QString &text, QWidget *parent = nullptr)
+        : QPushButton(text, parent)
+    {
+        // 设置默认样式
+        setFixedHeight(24);
+        setMinimumWidth(90);
+        setStyleSheet("background-color: #E0E0E0; border-radius: 6px; color: black;");
+        setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    }
+
+protected:
+    void paintEvent(QPaintEvent *event) override {
+        Q_UNUSED(event);
+        QStyleOptionButton option;
+        option.initFrom(this);
+
+        QPainter painter(this);
+        painter.setRenderHint(QPainter::Antialiasing);
+
+        // 绘制背景
+        if (isDown())
+        {
+            painter.setBrush(mPressedColor);
+        }
+        else if (isChecked())
+        {
+            painter.setBrush(mCheckedColor);
+        }
+        else
+        {
+            painter.setBrush(mNormalColor);
+        }
+        painter.setPen(Qt::NoPen);
+        painter.drawRoundedRect(rect(), 6, 6);
+
+        // 绘制文本
+        painter.setPen(QColor("black"));
+        painter.drawText(rect(), Qt::AlignCenter, text());
+    }
+
+    void enterEvent(QEnterEvent *event) override
+    {
+        setStyleSheet("background-color: #D0D0D0; border-radius: 6px; color: black;");
+        QPushButton::enterEvent(event);
+    }
+
+    void leaveEvent(QEvent *event) override
+    {
+        setStyleSheet("background-color: #E0E0E0; border-radius: 6px; color: black;");
+        QPushButton::leaveEvent(event);
+    }
+
+private:
+    // 颜色定义
+    QColor mPressedColor{192, 192, 192};  // #C0C0C0
+    QColor mCheckedColor{160, 160, 160};  // #A0A0A0
+    QColor mNormalColor {224, 224, 224};  // #E0E0E0
+};
 #endif // CUSTOMWIDGET_H

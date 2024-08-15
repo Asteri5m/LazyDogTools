@@ -12,7 +12,7 @@ SOURCES += \
     AudioHelper/AudioHelper.cpp \
     AudioHelper/AudioHelperManager.cpp \
     Settings.cpp \
-    SettingsWidget.cpp \
+    SettingsManager.cpp \
     ToolManager.cpp \
     TransHelper/TransHelper.cpp \
     TransHelper/TransHelperManager.cpp \
@@ -25,7 +25,7 @@ HEADERS += \
     CustomWidget.h \
     LazyDogTools.h \
     Settings.h \
-    SettingsWidget.h \
+    SettingsManager.h \
     ToolManager.h \
     TransHelper/TransHelper.h \
     TransHelper/TransHelperManager.h
