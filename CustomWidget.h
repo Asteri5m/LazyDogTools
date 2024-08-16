@@ -12,6 +12,7 @@
 #include <QStackedWidget>
 #include <QPushButton>
 #include <QStyleOption>
+#include <QPropertyAnimation>
 #include <stdexcept>
 
 // 主程序窗口的工具列表子元素窗口
@@ -329,7 +330,7 @@ public:
         // 设置默认样式
         setFixedHeight(24);
         setMinimumWidth(90);
-        setStyleSheet("background-color: #E0E0E0; border-radius: 6px; color: black;");
+        setStyleSheet("border: 1px solid #007AFF; border-radius: 6px; color: black;");
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     }
 
@@ -377,8 +378,120 @@ protected:
 
 private:
     // 颜色定义
-    QColor mPressedColor{192, 192, 192};  // #C0C0C0
+    QColor mPressedColor{0,   122, 255};  // #007AFF
     QColor mCheckedColor{160, 160, 160};  // #A0A0A0
-    QColor mNormalColor {224, 224, 224};  // #E0E0E0
+    QColor mNormalColor {255, 255, 255};  // #E0E0E0
+};
+
+
+// Mac样式开关
+class MacSwitchButton : public QWidget
+{
+    Q_OBJECT
+    Q_PROPERTY(qreal offset READ offset WRITE setOffset NOTIFY offsetChanged)
+    Q_PROPERTY(bool checked READ isChecked WRITE setChecked NOTIFY checkedChanged)
+
+public:
+    explicit MacSwitchButton(QWidget *parent = nullptr)
+        : QWidget(parent), mOffset(0), mRadius(10), mIsAnimating(false), mChecked(false)
+    {
+        setFixedSize(40, 20);
+        mAnimation = new QPropertyAnimation(this, "offset", this);
+        mAnimation->setDuration(200);
+        mAnimation->setEasingCurve(QEasingCurve::InOutCubic);
+
+        connect(mAnimation, &QPropertyAnimation::finished, this, [=](){
+            mIsAnimating = false;
+            emit checkedChanged(mChecked);
+        });
+    }
+
+    qreal offset() const { return mOffset; }
+    void setOffset(qreal offset)
+    {
+        mOffset = offset;
+        emit offsetChanged();
+        update();
+    }
+
+    bool isChecked() const { return mChecked; }
+    void setChecked(bool checked)
+    {
+        if (mChecked == checked) return;
+        mChecked = checked;
+        mOffset = checked ? 1.0 : 0.0;
+        update();
+    }
+
+signals:
+    void checkedChanged(bool checked);
+    void offsetChanged();
+
+protected:
+    void paintEvent(QPaintEvent *event) override
+    {
+        Q_UNUSED(event);
+
+        QPainter painter(this);
+        painter.setRenderHint(QPainter::Antialiasing);
+
+        QColor bgColor = QColor(mChecked ? "#007AFF" : "#E5E5EA");
+        QColor thumbColor = QColor(255, 255, 255);
+
+        // 绘制背景
+        painter.setBrush(bgColor);
+        painter.setPen(Qt::NoPen);
+        painter.drawRoundedRect(mButtonRect, mRadius, mRadius);
+
+        // 绘制滑块，调整滑块大小，使其略小于背景
+        qreal thumbWidth = height() * 0.9;  // 滑块宽度为背景高度的90%
+        qreal thumbHeight = height() * 0.9; // 滑块高度为背景高度的90%
+        qreal thumbX = mOffset * (width() - height()) + (height() - thumbWidth) / 2;
+        qreal thumbY = (height() - thumbHeight) / 2;
+        QRectF thumbRect(thumbX, thumbY, thumbWidth, thumbHeight);
+        painter.setBrush(thumbColor);
+        painter.drawEllipse(thumbRect);
+    }
+
+    void mousePressEvent(QMouseEvent *event) override
+    {
+        if (event->button() == Qt::LeftButton && !mIsAnimating) {
+            toggleChecked();
+        }
+    }
+
+    void resizeEvent(QResizeEvent *event) override
+    {
+        int height = this->height();
+        int width = this->width();
+
+        // 确保圆角的半径和高度相匹配
+        mRadius = height / 2;
+
+        // 更新开关按钮的位置与大小
+        mButtonRect = QRect(0, 0, width, height);
+
+        QWidget::resizeEvent(event);
+    }
+
+private:
+    void toggleChecked()
+    {
+        if (mIsAnimating) return; // 如果动画正在进行，直接返回
+        mIsAnimating = true;
+
+        mChecked = !mChecked;
+        mAnimation->setStartValue(mChecked ? 0 : 1);
+        mAnimation->setEndValue(mChecked ? 1 : 0);
+        mAnimation->start();
+    }
+
+private:
+    qreal mOffset;
+    int mRadius;
+    QRect mButtonRect;
+    QPropertyAnimation *mAnimation;
+    bool mIsAnimating;
+    bool mChecked;
 };
 #endif // CUSTOMWIDGET_H
