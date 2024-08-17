@@ -11,9 +11,13 @@ public:
 signals:
 
 private:
-    QWidget *page1;
-    QWidget *page2;
-    QWidget *page3;
+    QWidget *mBasePage;
+    QWidget *mAppPage;
+    QWidget *mShortcutsPage;
+
+    void initBasePage();
+    void initAppPage();
+    void initShortcutsPage();
 
 private slots:
     void apply();

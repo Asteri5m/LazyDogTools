@@ -1,3 +1,6 @@
+#include <QCheckBox>
+#include <QRadioButton>
+#include <QButtonGroup>
 #include "Settings.h"
 
 Settings::Settings(QWidget *parent)
@@ -10,41 +13,122 @@ Settings::Settings(QWidget *parent)
     // 使用默认模板样式
     setDefaultStyle();
 
-    page1 = new QWidget(this);
-    page2 = new QWidget(this);
-    page3 = new QWidget(this);
+    mBasePage = new QWidget(this);
+    mAppPage = new QWidget(this);
+    mShortcutsPage = new QWidget(this);
 
-    addTab(page1, QIcon(":/ico/LD.ico"), "基础");
-    addTab(page2, QIcon(":/ico/LD.ico"), "应用");
-    addTab(page3, QIcon(":/ico/LD.ico"), "热键");
+    initBasePage();
 
-    QVBoxLayout *layout1 = new QVBoxLayout(page1);
-    QVBoxLayout *layout2 = new QVBoxLayout(page2);
-    QVBoxLayout *layout3 = new QVBoxLayout(page3);
+    addTab(mBasePage, QIcon(":/ico/LD.ico"), "基础");
+    addTab(mAppPage, QIcon(":/ico/LD.ico"), "应用");
+    addTab(mShortcutsPage, QIcon(":/ico/LD.ico"), "热键");
 
-    layout1->addWidget(new QLabel("基础页面内容", this));
+    // QVBoxLayout *layout1 = new QVBoxLayout(mBasePage);
+    QVBoxLayout *layout2 = new QVBoxLayout(mAppPage);
+    QVBoxLayout *layout3 = new QVBoxLayout(mShortcutsPage);
+
+    // layout1->addWidget(new QLabel("基础页面内容", this));
     layout2->addWidget(new QLabel("应用页面内容", this));
     layout3->addWidget(new QLabel("热键页面内容", this));
 
-    // 创建按钮
-    QPushButton *applyButton = new MacStyleButton("应用");
-    QPushButton *cancelButton = new MacStyleButton("取消");
-
-    // 创建水平布局，并将按钮添加进去
-    QHBoxLayout *buttonLayout = new QHBoxLayout();
-    buttonLayout->setContentsMargins(0, 0, 10, 10);
-    buttonLayout->addStretch(1); // 添加水平填充
-    buttonLayout->addWidget(applyButton);
-    buttonLayout->addWidget(cancelButton);
-
-    // 将 QStackedWidget 下面的一行用 buttonLayout 占据
-    mMainLayout->addLayout(buttonLayout, mMainLayout->rowCount(), 0, 1, -1);
-
-    // 将 Button 的 clicked() 信号连接到槽
-    connect(applyButton,  &QPushButton::clicked, this, &Settings::apply);
-    connect(cancelButton, &QPushButton::clicked, this, &QWidget::close);
+    layout2->setContentsMargins(0, 0, 0, 0);
+    mAppPage->setContentsMargins(10, 10, 10, 10);
+    mAppPage->setStyleSheet("background-color: #FFFFFF;");
 
     finalizeSetup();  // 检查并显示第一个页面
+}
+
+
+// 初始化“基础”页面
+void Settings::initBasePage()
+{
+    // 使用滑动区域，内容过多时可以滑动
+    QVBoxLayout *layout = new QVBoxLayout(mBasePage);
+    SmoothScrollArea *scrollArea = new SmoothScrollArea();
+    QWidget *containerWidget = new QWidget(scrollArea);
+    QVBoxLayout *mainLayout = new QVBoxLayout(containerWidget);
+    layout->addWidget(scrollArea);
+    scrollArea->setWidgetResizable(true); // 使内容区域可以自动调整大小
+    scrollArea->setWidget(containerWidget);
+
+    layout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setContentsMargins(20, 10, 10, 10);
+
+    // 创建启动区域
+    NoBorderGroupBox *startupGroupBox = new NoBorderGroupBox("启动");
+    QGridLayout *startupLayout = new QGridLayout(startupGroupBox);
+
+    QCheckBox *startCheckBox      = new QCheckBox("开机自启动");
+    QCheckBox *adminStartCheckBox = new QCheckBox("管理员模式启动");
+    QCheckBox *startHideCheckBox  = new QCheckBox("启动后自动隐藏");
+
+    startupLayout->addWidget(startCheckBox,      0, 0);
+    startupLayout->addWidget(adminStartCheckBox, 0, 1);
+    startupLayout->addWidget(startHideCheckBox,  1, 0);
+
+
+    // 创建更新区域
+    NoBorderGroupBox *updateGroupBox = new NoBorderGroupBox("更新");
+    QGridLayout *updateLayout = new QGridLayout(updateGroupBox);
+
+    QCheckBox      *updateCheckBox = new QCheckBox("自动更新");
+    MacStyleButton *checkNewButton = new MacStyleButton("检查更新");
+
+    updateLayout->addWidget(updateCheckBox, 0, 0);
+    updateLayout->addWidget(checkNewButton, 0, 1);
+    updateLayout->setColumnStretch(2, 1);   // 添加填充
+
+
+    // 创建最小化设置区域
+    NoBorderGroupBox *minimizeGroupBox = new NoBorderGroupBox("最小化设置");
+    QGridLayout *minimizeLayout = new QGridLayout(minimizeGroupBox);
+    minimizeLayout->addWidget(new QLabel("程序最小化显示在："), 0, 0);
+
+    // 最小化选项
+    MacStyleComboBox *minimizeComBox = new MacStyleComboBox();
+    minimizeComBox->addItem("托盘");
+    minimizeComBox->addItem("任务栏");
+    minimizeLayout->addWidget(minimizeComBox, 0, 1);
+    minimizeLayout->setColumnStretch(0, 1);
+    minimizeLayout->setColumnStretch(1, 1);
+    minimizeLayout->setColumnStretch(2, 2);
+
+
+    // 创建关闭设置区域
+    NoBorderGroupBox *closeGroupBox = new NoBorderGroupBox("关闭设置");
+    QGridLayout *closeLayout = new QGridLayout(closeGroupBox);
+    closeLayout->addWidget(new QLabel("当点击关闭按钮后："), 0, 0);
+
+    MacStyleComboBox *closeComBox = new MacStyleComboBox();
+    closeComBox->addItem("最小化托盘");
+    closeComBox->addItem("退出");
+    closeLayout->addWidget(closeComBox, 0, 1);
+    closeLayout->setColumnStretch(0, 1);
+    closeLayout->setColumnStretch(1, 1);
+    closeLayout->setColumnStretch(2, 2);
+
+
+    // 创建日志区域
+    NoBorderGroupBox *logGroupBox = new NoBorderGroupBox("日志");
+    QGridLayout *logLayout = new QGridLayout(logGroupBox);
+
+    QCheckBox      *debugCheckBox   = new QCheckBox("debug日志");
+    MacStyleButton *exportLogButton = new MacStyleButton("导出日志");
+
+    logLayout->addWidget(debugCheckBox,   0, 0);
+    logLayout->addWidget(exportLogButton, 0, 1);
+    logLayout->setColumnStretch(2, 1); // 设置第 3 列的弹簧
+
+
+    // 添加各个区域到mainLayout
+    mainLayout->addWidget(startupGroupBox);
+    mainLayout->addWidget(updateGroupBox);
+    mainLayout->addWidget(minimizeGroupBox);
+    mainLayout->addWidget(closeGroupBox);
+    mainLayout->addWidget(logGroupBox);
+
+    // 添加一个弹簧，用于撑起空白区域
+    mainLayout->addStretch();
 }
 
 void Settings::apply()

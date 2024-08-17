@@ -232,6 +232,7 @@ public:
     {
         mOverLayout = new QHBoxLayout(this);
         mMainLayout = new QGridLayout();
+        mOverLayout->setSpacing(0); // 设置布局中控件之间的间距为0
         mOverLayout->setContentsMargins(0, 0, 0, 0);
         mMainLayout->setContentsMargins(0, 0, 0, 0);
 
@@ -317,7 +318,6 @@ private:
     }
 };
 
-
 // Mac样式的按钮
 class MacStyleButton : public QPushButton
 {
@@ -330,8 +330,23 @@ public:
         // 设置默认样式
         setFixedHeight(24);
         setMinimumWidth(90);
-        setStyleSheet("border: 1px solid #007AFF; border-radius: 6px; color: black;");
+        // setStyleSheet("background-color: #E0E0E0; border: 1px solid #007AFF; border-radius: 6px; color: black;");
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    }
+
+    // 按钮的两种基本颜色，白色、蓝色
+    void setNormalColorBlue(bool isBlue)
+    {
+        if (isBlue)
+        {
+            mNormalColor = QColor(0, 122, 255);
+            mFontColor   = QColor("white");
+        }
+        else
+        {
+            mNormalColor = QColor(255, 255, 255);
+            mFontColor   = QColor("black");
+        }
     }
 
 protected:
@@ -346,43 +361,27 @@ protected:
         // 绘制背景
         if (isDown())
         {
-            painter.setBrush(mPressedColor);
-        }
-        else if (isChecked())
-        {
             painter.setBrush(mCheckedColor);
         }
         else
         {
             painter.setBrush(mNormalColor);
         }
-        painter.setPen(Qt::NoPen);
+        painter.setPen(QColor(200, 200, 200)); // 边框颜色
         painter.drawRoundedRect(rect(), 6, 6);
 
         // 绘制文本
-        painter.setPen(QColor("black"));
+        painter.setPen(mFontColor);
         painter.drawText(rect(), Qt::AlignCenter, text());
-    }
-
-    void enterEvent(QEnterEvent *event) override
-    {
-        setStyleSheet("background-color: #D0D0D0; border-radius: 6px; color: black;");
-        QPushButton::enterEvent(event);
-    }
-
-    void leaveEvent(QEvent *event) override
-    {
-        setStyleSheet("background-color: #E0E0E0; border-radius: 6px; color: black;");
-        QPushButton::leaveEvent(event);
     }
 
 private:
     // 颜色定义
-    QColor mPressedColor{0,   122, 255};  // #007AFF
-    QColor mCheckedColor{160, 160, 160};  // #A0A0A0
+    QColor mCheckedColor{15,  106, 235};  // #0f6aeb
     QColor mNormalColor {255, 255, 255};  // #E0E0E0
+    // 字体颜色
+    QColor mFontColor{"black"};
 };
-
 
 // Mac样式开关
 class MacSwitchButton : public QWidget
@@ -494,4 +493,250 @@ private:
     bool mIsAnimating;
     bool mChecked;
 };
+
+#include <QGroupBox>
+// 自定义GroupBox
+class NoBorderGroupBox : public QGroupBox
+{
+    Q_OBJECT
+
+public:
+    explicit NoBorderGroupBox(const QString &title, QWidget *parent = nullptr)
+        : QGroupBox(title, parent)
+    {
+
+    }
+
+protected:
+    // 确保没有绘制边框
+    void paintEvent(QPaintEvent *event) override
+    {
+        Q_UNUSED(event);
+
+        QPainter painter(this);
+        QStyleOptionGroupBox opt;
+        initStyleOption(&opt);
+
+        // 绘制没有边框的标题
+        QFont titleFont;
+        titleFont.setBold(true);
+        titleFont.setPointSize(10);
+        painter.setFont(titleFont);
+        painter.drawText(QRect(0, 0, width(), 30), Qt::AlignLeft | Qt::AlignVCenter, this->title());
+
+        // 绘制内容区域
+        painter.setPen(Qt::NoPen);
+        painter.drawRect(0, 30, width(), height() - 30);
+    }
+};
+
+#include <QScrollArea>
+#include <QTimer>
+class SmoothScrollArea : public QScrollArea
+{
+    Q_OBJECT
+    Q_PROPERTY(int scrollOffset READ scrollOffset WRITE setScrollOffset)
+
+public:
+    SmoothScrollArea(QWidget *parent = nullptr)
+        : QScrollArea(parent), mScrollOffset(0), mVelocity(0)
+    {
+        setFrameStyle(QFrame::NoFrame);
+        setAttribute(Qt::WA_TranslucentBackground);
+        setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+        setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+
+        // 这样设置后，进度条背景会很怪，暂时用默认的吧
+        // setStyleSheet(R"(
+        //     QScrollArea {
+        //         background: transparent;
+        //     }
+        //     QScrollBar:vertical, QScrollBar:horizontal {
+        //         background: transparent;
+        //         border: none;
+        //         width: 8px;
+        //     }
+        //     QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+        //         background: rgba(0, 0, 0, 25%);
+        //         border-radius: 4px;
+        //     }
+        //     QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {
+        //         background: rgba(0, 0, 0, 50%);
+        //     }
+        //     QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
+        //     QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+        //         background: transparent;
+        //     }
+        // )");
+
+        mScrollAnimation = new QPropertyAnimation(this, "scrollOffset");
+        mScrollAnimation->setEasingCurve(QEasingCurve::OutQuad);
+        mScrollAnimation->setDuration(800);
+
+        mInertiaTimer = new QTimer(this);
+        connect(mInertiaTimer, &QTimer::timeout, this, &SmoothScrollArea::onInertiaScroll);
+    }
+
+    int scrollOffset() const
+    {
+        return mScrollOffset;
+    }
+
+    void setScrollOffset(int offset)
+    {
+        int delta = offset - mScrollOffset;
+        verticalScrollBar()->setValue(verticalScrollBar()->value() + delta);
+        mScrollOffset = offset;
+    }
+
+protected:
+    void wheelEvent(QWheelEvent *event) override
+    {
+        mVelocity += event->angleDelta().y();
+        mScrollAnimation->stop();
+
+        if (!mInertiaTimer->isActive())
+        {
+            mInertiaTimer->start(16); // 大约 60 FPS
+        }
+        event->accept();
+    }
+
+    void paintEvent(QPaintEvent *event) override
+    {
+        QPainter painter(viewport());
+
+        QRegion region = event->region();
+        if (painter.isActive())
+        {
+            // 只绘制更新区域
+            painter.setClipRegion(region);
+            QColor bgColor = palette().color(QPalette::Window);
+            painter.fillRect(region.boundingRect(), bgColor);
+            // 绘制滚动区域内容
+        }
+    }
+
+private slots:
+    void onInertiaScroll()
+    {
+        mVelocity *= 0.9; // 惯性因子
+
+        if (qAbs(mVelocity) < 1)
+        {
+            mVelocity = 0;
+            mInertiaTimer->stop();
+            return;
+        }
+
+        int newOffset = mScrollOffset - mVelocity / 10;
+        mScrollAnimation->stop();
+        setScrollOffset(newOffset);
+    }
+
+private:
+    int mScrollOffset;
+    int mVelocity;
+    QPropertyAnimation *mScrollAnimation;
+    QTimer *mInertiaTimer;
+};
+
+
+#include <QComboBox>
+#include <QStyleOptionComboBox>
+#include <QSvgRenderer>
+#include <QStylePainter>
+// Mac样式下拉框
+class MacStyleComboBox : public QComboBox
+{
+    Q_OBJECT
+
+public:
+    MacStyleComboBox(QWidget *parent = nullptr)
+        : QComboBox(parent)
+    {
+        setStyleSheet(
+            "MacStyleComboBox {"
+            "   border: 1px solid #CCCCCC;"
+            "   border-radius: 6px;"
+            "   padding: 3px;"
+            "   background-color: white;"
+            "   selection-background-color: #007AFF;"
+            "   selection-color: white;"
+            "   color: black;"  // 设置文字颜色为黑色
+            "}"
+            "QComboBox QAbstractItemView {"
+            "   background-color: rgba(255, 255, 255, 0.8);"
+            "   border-radius: 6px;"
+            "   border: 1px solid #CCCCCC;;"
+            "   selection-background-color: #fff;"
+            "   selection-color: white;"
+            "}"
+            "QComboBox::item {"
+            "   padding: 5px;"
+            "}"
+            );
+    }
+
+protected:
+    void paintEvent(QPaintEvent *event) override
+    {
+        Q_UNUSED(event);
+
+        QPainter painter(this);
+        painter.setRenderHint(QPainter::Antialiasing);
+
+        QRect rect = this->rect();
+        rect.setHeight(24);
+
+        // 背景颜色设定
+        painter.setBrush(QColor(255, 255, 255));
+        painter.setPen(QColor(200, 200, 200));  // 边框颜色
+        painter.drawRoundedRect(rect, 6, 6);  // 绘制按钮背景
+
+        // 绘制文字
+        painter.setPen(QColor(0, 0, 0));
+        painter.drawText(rect.adjusted(10, 0, -30, 0), Qt::AlignVCenter, currentText());
+
+        // 箭头的大小和位置设置
+        int arrowSize = rect.height() * 0.7;
+        int arrowX = rect.width() - arrowSize - 5;
+        int arrowY = (rect.height() - arrowSize) / 2;
+        QRect arrowRect(arrowX, arrowY, arrowSize, arrowSize);
+
+        // 背景颜色加深
+        QColor arrowBackgroundColor = isPressed ? QColor(15, 106, 235) : QColor(0, 122, 255);  // 按下时变深
+        painter.setBrush(arrowBackgroundColor);
+        painter.setPen(Qt::NoPen);
+        painter.drawRoundedRect(arrowRect, 6, 6);
+
+        QSvgRenderer renderer(QString(":/ico/arrow_white.svg"));
+        painter.setPen(Qt::NoPen);
+        renderer.render(&painter, arrowRect);
+
+    }
+
+    void mousePressEvent(QMouseEvent *event) override
+    {
+        // 自定义操作：改变按钮的颜色等
+        if (event->button() == Qt::LeftButton)
+        {
+            isPressed = true;; // 假设这是您用于改变按钮颜色的函数
+            update(); // 重新绘制按钮以反映颜色变化
+        }
+    }
+
+    void mouseReleaseEvent(QMouseEvent *event) override
+    {
+        isPressed = false;
+        update();  // 更新UI
+        // 调用基类的 mousePressEvent 以确保正常的下拉操作
+        QComboBox::mousePressEvent(event);
+    }
+
+
+private:
+    bool isPressed = false;  // 记录按钮是否按下
+};
+
 #endif // CUSTOMWIDGET_H

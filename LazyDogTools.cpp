@@ -66,8 +66,8 @@ void LazyDogTools::initUI()
         mLayout->addWidget(widget);
         connect(widget, SIGNAL(widgetDoubleClicked()), tool, SLOT(show()));
     }
-    // 添加一个垂直间隔，以便于在Tool较少时撑起空间
-    mLayout->addSpacerItem(new QSpacerItem(100, 100, QSizePolicy::Minimum, QSizePolicy::Expanding));
+    // 添加一个填充，以便于在Tool较少时撑起空间
+    mLayout->addStretch();
 
     // 创建 QScrollArea 实例
     QScrollArea *scrollArea = new QScrollArea(this);
