@@ -652,9 +652,10 @@ class MacStyleComboBox : public QComboBox
     Q_OBJECT
 
 public:
-    MacStyleComboBox(QWidget *parent = nullptr)
+    MacStyleComboBox(QString name = "", QWidget *parent = nullptr)
         : QComboBox(parent)
     {
+        mName = name;
         setStyleSheet(
             "MacStyleComboBox {"
             "   border: 1px solid #CCCCCC;"
@@ -677,6 +678,10 @@ public:
             "}"
             );
     }
+
+    // 设置与获取组件名，便于识别
+    void setName(QString name){ mName = name; }
+    QString getName()         { return mName; }
 
 protected:
     void paintEvent(QPaintEvent *event) override
@@ -705,7 +710,7 @@ protected:
         QRect arrowRect(arrowX, arrowY, arrowSize, arrowSize);
 
         // 背景颜色加深
-        QColor arrowBackgroundColor = isPressed ? QColor(15, 106, 235) : QColor(0, 122, 255);  // 按下时变深
+        QColor arrowBackgroundColor = mIsPressed ? QColor(15, 106, 235) : QColor(0, 122, 255);  // 按下时变深
         painter.setBrush(arrowBackgroundColor);
         painter.setPen(Qt::NoPen);
         painter.drawRoundedRect(arrowRect, 6, 6);
@@ -721,22 +726,29 @@ protected:
         // 自定义操作：改变按钮的颜色等
         if (event->button() == Qt::LeftButton)
         {
-            isPressed = true;; // 假设这是您用于改变按钮颜色的函数
+            mIsPressed = true;; // 假设这是您用于改变按钮颜色的函数
             update(); // 重新绘制按钮以反映颜色变化
         }
     }
 
     void mouseReleaseEvent(QMouseEvent *event) override
     {
-        isPressed = false;
+        mIsPressed = false;
         update();  // 更新UI
         // 调用基类的 mousePressEvent 以确保正常的下拉操作
         QComboBox::mousePressEvent(event);
     }
 
+    void wheelEvent(QWheelEvent *event) override
+    {
+        // 忽略滚轮事件，防止滚轮改变当前选项
+        event->ignore();
+    }
+
 
 private:
-    bool isPressed = false;  // 记录按钮是否按下
+    bool mIsPressed = false;  // 记录按钮是否按下
+    QString mName;
 };
 
 #endif // CUSTOMWIDGET_H
