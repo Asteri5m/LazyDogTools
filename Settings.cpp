@@ -38,6 +38,12 @@ Settings::Settings(QWidget *parent)
     finalizeSetup();  // 检查并显示第一个页面
 }
 
+// 设置ToolManager列表，通过设置可以修改ToolManager的部分属性，例如是否启用
+void Settings::setToolManagerList(ToolManagerList *toolManagerList)
+{
+    mToolManagerList = toolManagerList;
+}
+
 
 // 初始化“基础”页面
 void Settings::initBasePage()
@@ -85,7 +91,7 @@ void Settings::initBasePage()
     minimizeLayout->addWidget(new QLabel("程序最小化显示在："), 0, 0);
 
     // 最小化选项
-    MacStyleComboBox *minimizeComBox = new MacStyleComboBox();
+    MacStyleComboBox *minimizeComBox = new MacStyleComboBox("最小化设置");
     minimizeComBox->addItem("托盘");
     minimizeComBox->addItem("任务栏");
     minimizeLayout->addWidget(minimizeComBox, 0, 1);
@@ -99,7 +105,7 @@ void Settings::initBasePage()
     QGridLayout *closeLayout = new QGridLayout(closeGroupBox);
     closeLayout->addWidget(new QLabel("当点击关闭按钮后："), 0, 0);
 
-    MacStyleComboBox *closeComBox = new MacStyleComboBox();
+    MacStyleComboBox *closeComBox = new MacStyleComboBox("关闭设置");
     closeComBox->addItem("最小化托盘");
     closeComBox->addItem("退出");
     closeLayout->addWidget(closeComBox, 0, 1);
@@ -129,10 +135,64 @@ void Settings::initBasePage()
 
     // 添加一个弹簧，用于撑起空白区域
     mainLayout->addStretch();
+
+    // 连接槽 - 按钮
+    connect(checkNewButton,  SIGNAL(clicked()), this, SLOT(buttonClicked()));
+    connect(exportLogButton, SIGNAL(clicked()), this, SLOT(buttonClicked()));
+
+    // 连接槽 - 选择框
+    connect(startCheckBox,      SIGNAL(clicked(bool)), this, SLOT(checkBoxChecked(bool)));
+    connect(adminStartCheckBox, SIGNAL(clicked(bool)), this, SLOT(checkBoxChecked(bool)));
+    connect(startHideCheckBox,  SIGNAL(clicked(bool)), this, SLOT(checkBoxChecked(bool)));
+    connect(updateCheckBox,     SIGNAL(clicked(bool)), this, SLOT(checkBoxChecked(bool)));
+    connect(debugCheckBox,      SIGNAL(clicked(bool)), this, SLOT(checkBoxChecked(bool)));
+
+    // 连接槽 - 下拉框
+    connect(minimizeComBox, SIGNAL(currentTextChanged(QString)), this, SLOT(comboBoxChanged(QString)));
+    connect(closeComBox,    SIGNAL(currentTextChanged(QString)), this, SLOT(comboBoxChanged(QString)));
 }
 
-void Settings::apply()
+// 初始化“应用”页面
+void Settings::initAppPage()
 {
-    qDebug() << "应用设置";
-    close();
+
 }
+
+// 初始化“快捷键”页面
+void Settings::initShortcutsPage()
+{
+
+}
+
+
+// 对所有的按钮点击事件进行处理
+void Settings::buttonClicked()
+{
+    QPushButton *button = qobject_cast<QPushButton *>(sender());
+    qDebug() << "点击按钮：" << button->text();
+
+}
+
+// 对所有的下拉列表的事件进行处理
+void Settings::comboBoxChanged(const QString currentText)
+{
+    MacStyleComboBox *comboBox = qobject_cast<MacStyleComboBox *>(sender());
+    qDebug() << comboBox->getName() << "切换选项：" << comboBox->currentIndex() << currentText;
+
+    // test : 测试能否完成应用的开关功能
+    auto toolManager = mToolManagerList->at(1);
+    toolManager->setActive(comboBox->currentIndex());
+    toolManager->deleteUI();
+    emit appActiveChanged();
+    // test end
+}
+
+// 对所有的选项框事件进行处理
+void Settings::checkBoxChecked(bool checked)
+{
+    QCheckBox *checkBox = qobject_cast<QCheckBox *>(sender());
+    qDebug() << checkBox->text() << "选中：" << checked;
+
+}
+
+

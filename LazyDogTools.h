@@ -19,8 +19,6 @@ struct MinToolListItem {
     //     : id(id), icon(icon), name(name), description(description), type_id(std::type_index) {}
 };
 
-// 工具表
-typedef QVector<ToolManager*> ToolList;
 // 窗口列表
 typedef QVector<MinToolListItem> MinToolList;
 
@@ -37,17 +35,20 @@ public:
     LazyDogTools(QWidget *parent = nullptr);
     ~LazyDogTools();
 
+public slots:
+    void updateUI();
+
+
 private:
     Ui::LazyDogTools *ui;
 
-    ToolList    mToolList;
-    MinToolList mMinToolList;
-    QVBoxLayout *mLayout;
-    QWidget     *mWidget;
+    ToolManagerList mToolManagerList;
+    MinToolList     mMinToolList;
+    QVBoxLayout     *mLayout;
+    QWidget         *mWidget;
 
     void initUI();
     void initData();
-    void updateUI();
     void updateData();
     void minToolWidgetTest();
     void toolWidgetModelTest();

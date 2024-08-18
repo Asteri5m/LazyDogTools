@@ -61,4 +61,8 @@ protected:
 
 };
 
+
+// 工具表
+typedef QVector<ToolManager*> ToolManagerList;
+
 #endif // TOOLMANAGER_H

@@ -12,7 +12,7 @@ public:
     void initUI() override;
     void initialize() override;
 
-signals:
+    Settings* getTool();
 
 protected:
 

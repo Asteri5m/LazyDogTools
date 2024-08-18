@@ -13,11 +13,20 @@ LazyDogTools::LazyDogTools(QWidget *parent)
 
     setWindowIcon(QIcon(":/ico/LD.ico"));
 
-    mToolList.append(new SettingsManager());
-    mToolList.append(new AudioHelperManager());
-    mToolList.append(new TransHelperManager());
+    // "设置"属于LazyDogTools的一部分，而不是应用"模块"
+    SettingsManager* settingsManager = new SettingsManager();
+    settingsManager->initialize();  // 手动初始化
+    settingsManager->initUI();
+    Settings* settings = settingsManager->getTool();
+    settings->setToolManagerList(&mToolManagerList); // 将应用管理器的列表传递给“设置”
 
-    initData();
+    // 设置中可以关闭不需要的工具，那么就需要更新主界面
+    connect(settings, SIGNAL(appActiveChanged()), this, SLOT(updateUI()));
+
+    mToolManagerList.append(settingsManager);
+    mToolManagerList.append(new AudioHelperManager());
+    mToolManagerList.append(new TransHelperManager());
+
     initUI();
 }
 
@@ -32,18 +41,18 @@ LazyDogTools::~LazyDogTools()
 void LazyDogTools::initData()
 {
     short id = 0;
-    for(auto tool:mToolList)
+    for(auto toolManager:mToolManagerList)
     {
-        tool->initialize();
-        if (tool->getActive())
+        toolManager->initialize();
+        if (toolManager->getActive())
         {
-            tool->initUI();
+            toolManager->initUI();
             mMinToolList.append(MinToolListItem({
                 id,
-                tool->getIcon(),
-                tool->getName(),
-                tool->getDescription(),
-                tool
+                toolManager->getIcon(),
+                toolManager->getName(),
+                toolManager->getDescription(),
+                toolManager
             }));
             id++; // id 自增
         }
@@ -55,6 +64,8 @@ void LazyDogTools::initData()
 */
 void LazyDogTools::initUI()
 {
+    initData(); //初始化数据
+
     // 创建容器控件
     mWidget = new QWidget(this);
     mLayout = new QVBoxLayout(mWidget);
@@ -99,6 +110,9 @@ void LazyDogTools::updateUI()
             delete item;
     }
 
+    // 更新数据
+    updateData();
+
     // 绘制新内容
     for (const auto &minTool : mMinToolList)
     {
@@ -115,17 +129,17 @@ void LazyDogTools::updateData()
 {
     mMinToolList.clear();
     short id = 0;
-    for(auto tool:mToolList)
+    for(auto toolManager:mToolManagerList)
     {
-        if (tool->getActive())
+        if (toolManager->getActive())
         {
-            tool->initUI();
+            toolManager->initUI();
             mMinToolList.append(MinToolListItem({
                 id,
-                tool->getIcon(),
-                tool->getName(),
-                tool->getDescription(),
-                tool
+                toolManager->getIcon(),
+                toolManager->getName(),
+                toolManager->getDescription(),
+                toolManager
             }));
             id++; // id 自增
         }
