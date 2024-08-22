@@ -751,4 +751,88 @@ private:
     QString mName;
 };
 
+
+#include <QCheckBox>
+// Mac样式的复选框
+class MacStyleCheckBox : public QCheckBox
+{
+    Q_OBJECT
+    Q_PROPERTY(qreal checkBoxAnimationValue READ checkBoxAnimationValue WRITE setCheckBoxAnimationValue)
+
+public:
+    MacStyleCheckBox(const QString &text, QWidget *parent = nullptr)
+        : QCheckBox(text, parent), m_checkBoxAnimationValue(0.0)
+    {
+        setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        animation = new QPropertyAnimation(this, "checkBoxAnimationValue", this);
+        animation->setDuration(200); // 动画持续时间
+        connect(this, &QCheckBox::toggled, this, &MacStyleCheckBox::onToggled);
+    }
+
+    qreal checkBoxAnimationValue() const { return m_checkBoxAnimationValue; }
+    void setCheckBoxAnimationValue(qreal value)
+    {
+        m_checkBoxAnimationValue = value;
+        update(); // 更新UI
+    }
+
+protected:
+    void paintEvent(QPaintEvent *event) override
+    {
+        Q_UNUSED(event);
+
+        QPainter painter(this);
+        painter.setRenderHint(QPainter::Antialiasing);
+
+        // 绘制复选框
+        QRect checkboxRect(0, 0, 16, 16);  // 复选框的大小
+        checkboxRect.moveTop((height() - checkboxRect.height()) / 2);  // 垂直居中
+        checkboxRect.moveLeft(rect().left() + 1);
+
+
+        QColor uncheckedColor = QColor(255, 255, 255);
+        QColor checkedColor = QColor(0, 122, 255);
+        QColor borderColor = QColor(94, 94, 94);
+
+        // 根据选中状态设置边框颜色
+        painter.setPen(isChecked() ? checkedColor : borderColor);
+        painter.setBrush(uncheckedColor);
+
+        // 动画效果
+        if (isChecked()) {
+            qreal alpha = m_checkBoxAnimationValue;
+            QColor animatedColor = checkedColor;
+            animatedColor.setAlphaF(alpha);
+            painter.setBrush(animatedColor);
+        }
+
+        painter.drawRoundedRect(checkboxRect, 5, 5);
+
+        // 绘制勾选标记
+        if (isChecked()) {
+            QSvgRenderer renderer(QString(":/ico/check_white.svg"));
+            QRect checkMarkRect = checkboxRect.adjusted(0, 0, 0, 0);
+            renderer.render(&painter, checkMarkRect);
+        }
+
+        // 绘制文本
+        QRect textRect = rect().adjusted(checkboxRect.height() + 5, 0, -3, 0);  // 文本区域在复选框右侧
+        painter.setPen(QColor(0, 0, 0));  // 设置文本颜色
+        painter.drawText(textRect, Qt::AlignVCenter | Qt::AlignLeft , text());  // 绘制文本
+    }
+
+private slots:
+    void onToggled(bool checked)
+    {
+        animation->stop();
+        animation->setStartValue(checked ? 0.0 : 1.0);
+        animation->setEndValue(checked ? 1.0 : 0.0);
+        animation->start();
+    }
+
+private:
+    QPropertyAnimation *animation;
+    qreal m_checkBoxAnimationValue;
+};
+
 #endif // CUSTOMWIDGET_H

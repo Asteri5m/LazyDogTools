@@ -64,9 +64,9 @@ void Settings::initBasePage()
     NoBorderGroupBox *startupGroupBox = new NoBorderGroupBox("启动");
     QGridLayout *startupLayout = new QGridLayout(startupGroupBox);
 
-    QCheckBox *startCheckBox      = new QCheckBox("开机自启动");
-    QCheckBox *adminStartCheckBox = new QCheckBox("管理员模式启动");
-    QCheckBox *startHideCheckBox  = new QCheckBox("启动后自动隐藏");
+    MacStyleCheckBox *startCheckBox      = new MacStyleCheckBox("开机自启动");
+    MacStyleCheckBox *adminStartCheckBox = new MacStyleCheckBox("管理员模式启动");
+    MacStyleCheckBox *startHideCheckBox  = new MacStyleCheckBox("启动后自动隐藏");
 
     startupLayout->addWidget(startCheckBox,      0, 0);
     startupLayout->addWidget(adminStartCheckBox, 0, 1);
@@ -77,8 +77,8 @@ void Settings::initBasePage()
     NoBorderGroupBox *updateGroupBox = new NoBorderGroupBox("更新");
     QGridLayout *updateLayout = new QGridLayout(updateGroupBox);
 
-    QCheckBox      *updateCheckBox = new QCheckBox("自动更新");
-    MacStyleButton *checkNewButton = new MacStyleButton("检查更新");
+    MacStyleCheckBox *updateCheckBox = new MacStyleCheckBox("自动更新");
+    MacStyleButton   *checkNewButton = new MacStyleButton("检查更新");
 
     updateLayout->addWidget(updateCheckBox, 0, 0);
     updateLayout->addWidget(checkNewButton, 0, 1);
@@ -118,8 +118,8 @@ void Settings::initBasePage()
     NoBorderGroupBox *logGroupBox = new NoBorderGroupBox("日志");
     QGridLayout *logLayout = new QGridLayout(logGroupBox);
 
-    QCheckBox      *debugCheckBox   = new QCheckBox("debug日志");
-    MacStyleButton *exportLogButton = new MacStyleButton("导出日志");
+    MacStyleCheckBox *debugCheckBox   = new MacStyleCheckBox("debug日志");
+    MacStyleButton   *exportLogButton = new MacStyleButton("导出日志");
 
     logLayout->addWidget(debugCheckBox,   0, 0);
     logLayout->addWidget(exportLogButton, 0, 1);

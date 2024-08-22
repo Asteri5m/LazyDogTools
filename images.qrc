@@ -3,5 +3,7 @@
         <file alias="LD.ico">images/ico/LD_64.ico</file>
         <file alias="arrow_white.svg">images/ico/arrow_white.svg</file>
         <file alias="arrow_black.svg">images/ico/arrow_black.svg</file>
+        <file alias="check_black.svg">images/ico/check_black.svg</file>
+        <file alias="check_white.svg">images/ico/check_white.svg</file>
     </qresource>
 </RCC>
