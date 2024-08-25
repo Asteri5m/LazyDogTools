@@ -65,6 +65,8 @@ void ToolManager::setTray(TrayList *tray)
 void ToolManager::setActive(bool state)
 {
     mActive = state;
+    if (!state)
+        deleteUI();
 }
 
 void ToolManager::initUI()

@@ -5,5 +5,7 @@
         <file alias="arrow_black.svg">images/ico/arrow_black.svg</file>
         <file alias="check_black.svg">images/ico/check_black.svg</file>
         <file alias="check_white.svg">images/ico/check_white.svg</file>
+        <file alias="jump_black.svg">images/ico/jump_black.svg</file>
+        <file alias="jump_white.svg">images/ico/jump_white.svg</file>
     </qresource>
 </RCC>

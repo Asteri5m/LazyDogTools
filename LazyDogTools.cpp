@@ -18,7 +18,6 @@ LazyDogTools::LazyDogTools(QWidget *parent)
     settingsManager->initialize();  // 手动初始化
     settingsManager->initUI();
     Settings* settings = settingsManager->getTool();
-    settings->setToolManagerList(&mToolManagerList); // 将应用管理器的列表传递给“设置”
 
     // 设置中可以关闭不需要的工具，那么就需要更新主界面
     connect(settings, SIGNAL(appActiveChanged()), this, SLOT(updateUI()));
@@ -27,7 +26,10 @@ LazyDogTools::LazyDogTools(QWidget *parent)
     mToolManagerList.append(new AudioHelperManager());
     mToolManagerList.append(new TransHelperManager());
 
+
     initUI();
+    // 将应用管理器的列表传递给“设置”,完成settings剩余的初始化工作
+    settings->setToolManagerList(&mToolManagerList);
 }
 
 LazyDogTools::~LazyDogTools()
@@ -122,7 +124,7 @@ void LazyDogTools::updateUI()
         connect(widget, SIGNAL(widgetDoubleClicked()), tool, SLOT(show()));
     }
     // 添加一个垂直间隔，以便于在Tool较少时撑起空间
-    mLayout->addSpacerItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding));
+    mLayout->addStretch();
 }
 
 void LazyDogTools::updateData()

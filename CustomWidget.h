@@ -378,7 +378,7 @@ protected:
 private:
     // 颜色定义
     QColor mCheckedColor{15,  106, 235};  // #0f6aeb
-    QColor mNormalColor {255, 255, 255};  // #E0E0E0
+    QColor mNormalColor {255, 255, 255};
     // 字体颜色
     QColor mFontColor{"black"};
 };
@@ -391,9 +391,10 @@ class MacSwitchButton : public QWidget
     Q_PROPERTY(bool checked READ isChecked WRITE setChecked NOTIFY checkedChanged)
 
 public:
-    explicit MacSwitchButton(QWidget *parent = nullptr)
+    explicit MacSwitchButton(const QString &text = nullptr, QWidget *parent = nullptr)
         : QWidget(parent), mOffset(0), mRadius(10), mIsAnimating(false), mChecked(false)
     {
+        mText = text;
         setFixedSize(40, 20);
         mAnimation = new QPropertyAnimation(this, "offset", this);
         mAnimation->setDuration(200);
@@ -421,6 +422,8 @@ public:
         mOffset = checked ? 1.0 : 0.0;
         update();
     }
+
+    QString text() { return mText; }
 
 signals:
     void checkedChanged(bool checked);
@@ -492,6 +495,7 @@ private:
     QPropertyAnimation *mAnimation;
     bool mIsAnimating;
     bool mChecked;
+    QString mText;
 };
 
 #include <QGroupBox>
@@ -620,7 +624,7 @@ protected:
 private slots:
     void onInertiaScroll()
     {
-        mVelocity *= 0.9; // 惯性因子
+        mVelocity *= 0.95; // 惯性因子
 
         if (qAbs(mVelocity) < 1)
         {
@@ -701,7 +705,7 @@ protected:
 
         // 绘制文字
         painter.setPen(QColor(0, 0, 0));
-        painter.drawText(rect.adjusted(10, 0, -30, 0), Qt::AlignVCenter, currentText());
+        painter.drawText(rect.adjusted(10, 0, -25, 0), Qt::AlignVCenter, currentText());
 
         // 箭头的大小和位置设置
         int arrowSize = rect.height() * 0.7;
@@ -834,5 +838,48 @@ private:
     QPropertyAnimation *animation;
     qreal m_checkBoxAnimationValue;
 };
+
+
+class JumpButton : public QPushButton
+{
+    Q_OBJECT
+public:
+    explicit JumpButton(const QString &text, QWidget *parent = nullptr)
+        : QPushButton(text, parent)
+    {
+        // 设置按钮大小
+        setFixedSize(48, 20);  // 调整尺寸适合图中按钮大小
+    }
+
+protected:
+    void paintEvent(QPaintEvent *event) override
+    {
+        Q_UNUSED(event);
+
+        QPainter painter(this);
+        painter.setRenderHint(QPainter::Antialiasing);
+
+        // 绘制背景
+        QRect rect = this->rect();
+        QColor backgroundColor = isDown()? mCheckedColor: mNormalColor;
+        painter.setBrush(backgroundColor);
+        painter.setPen(Qt::NoPen); // 无边框
+        painter.drawRoundedRect(rect, 5, 5); // 绘制圆角矩形，圆角半径为6px
+
+        // 绘制图标
+        QPixmap iconPixmap(":/ico/jump_white.svg");
+        QSize iconSize(20, 20);
+        QPoint iconPos((width() - iconSize.width()) / 2, (height() - iconSize.height()) / 2);  // 图标居中
+
+        painter.drawPixmap(iconPos, iconPixmap.scaled(iconSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+   }
+
+private:
+   // 颜色定义
+   QColor mCheckedColor{15, 106, 235};  // #0f6aeb
+   QColor mNormalColor {0,  122, 255};
+};
+
+
 
 #endif // CUSTOMWIDGET_H

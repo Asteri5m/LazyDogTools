@@ -24,10 +24,13 @@ private:
     void initAppPage();
     void initShortcutsPage();
 
+    void jumpTool(QString toolName);
+
 private slots:
     void buttonClicked();
     void comboBoxChanged(const QString);
     void checkBoxChecked(bool);
+    void switchButtonChanged(bool);
 };
 
 #endif // SETTINGS_H
