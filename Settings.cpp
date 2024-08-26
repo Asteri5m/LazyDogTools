@@ -19,9 +19,9 @@ Settings::Settings(QWidget *parent)
 
     initBasePage();
 
-    addTab(mBasePage, QIcon(":/ico/LD.ico"), "基础");
-    addTab(mAppPage, QIcon(":/ico/LD.ico"), "应用");
-    addTab(mShortcutsPage, QIcon(":/ico/LD.ico"), "热键");
+    addTab(mBasePage, QIcon(":/ico/settings.svg"), "基础");
+    addTab(mAppPage, QIcon(":/ico/apps.svg"), "应用");
+    addTab(mShortcutsPage, QIcon(":/ico/keyboard.svg"), "热键");
 
     // QVBoxLayout *layout1 = new QVBoxLayout(mBasePage);
     // QVBoxLayout *layout2 = new QVBoxLayout(mAppPage);
@@ -197,7 +197,7 @@ void Settings::initAppPage()
     appListArea->setWidget(applistWidget);
 
     // 设置字体、分割线
-    applistWidget->setStyleSheet("font-weight: bold; font-size: 16px;"
+    applistWidget->setStyleSheet("font-weight: bold; font-size: 14px;"
                                  "border-bottom: 1px solid #DADADA;");
 
     // 隐藏滚动条
@@ -224,7 +224,7 @@ void Settings::initAppPage()
 
         auto toolManager = mToolManagerList->at(i);
         // 设置图标&应用名
-        QIcon *icon = new QIcon(":/ico/LD.ico");
+        QIcon *icon = new QIcon(toolManager->getIcon());
         QLabel *iconLabel = new QLabel();
         iconLabel->setPixmap(icon->pixmap(20, 20));
         iconLabel->setAlignment(Qt::AlignCenter);

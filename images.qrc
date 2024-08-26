@@ -7,5 +7,13 @@
         <file alias="check_white.svg">images/ico/check_white.svg</file>
         <file alias="jump_black.svg">images/ico/jump_black.svg</file>
         <file alias="jump_white.svg">images/ico/jump_white.svg</file>
+        <file alias="apps.svg">images/ico/apps.svg</file>
+        <file alias="headphone.svg">images/ico/headphone.svg</file>
+        <file alias="keyboard.svg">images/ico/keyboard.svg</file>
+        <file alias="list-settings.svg">images/ico/list-settings.svg</file>
+        <file alias="settings.svg">images/ico/settings.svg</file>
+        <file alias="todo.svg">images/ico/todo.svg</file>
+        <file alias="translate.svg">images/ico/translate.svg</file>
+        <file alias="user-settings.svg">images/ico/user-settings.svg</file>
     </qresource>
 </RCC>
