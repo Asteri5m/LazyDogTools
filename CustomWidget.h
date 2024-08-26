@@ -318,6 +318,7 @@ private:
     }
 };
 
+
 // Mac样式的按钮
 class MacStyleButton : public QPushButton
 {
@@ -330,13 +331,13 @@ public:
         // 设置默认样式
         setFixedHeight(24);
         setMinimumWidth(90);
-        // setStyleSheet("background-color: #E0E0E0; border: 1px solid #007AFF; border-radius: 6px; color: black;");
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     }
 
     // 按钮的两种基本颜色，白色、蓝色
     void setNormalColorBlue(bool isBlue)
     {
+        mIsBlue = isBlue;
         if (isBlue)
         {
             mNormalColor = QColor(0, 122, 255);
@@ -358,21 +359,44 @@ protected:
         QPainter painter(this);
         painter.setRenderHint(QPainter::Antialiasing);
 
+        QColor fontColor = mFontColor;
         // 绘制背景
         if (isDown())
         {
             painter.setBrush(mCheckedColor);
+            fontColor = QColor("white");
         }
         else
         {
             painter.setBrush(mNormalColor);
         }
-        painter.setPen(QColor(200, 200, 200)); // 边框颜色
+
+        // 绘制边框
+        painter.setPen(mBorderColor);
         painter.drawRoundedRect(rect(), 6, 6);
 
         // 绘制文本
-        painter.setPen(mFontColor);
+        painter.setPen(fontColor);
         painter.drawText(rect(), Qt::AlignCenter, text());
+    }
+
+    void enterEvent(QEnterEvent *event) override
+    {
+        Q_UNUSED(event);
+        if (!mIsBlue)
+        {
+            mBorderColor = mBorderColorFocus;
+        }
+        else
+        {
+            mBorderColor = mCheckedColor;
+        }
+    }
+
+    void leaveEvent(QEvent *event) override
+    {
+        Q_UNUSED(event);
+        mBorderColor = mBorderColorNormal;
     }
 
 private:
@@ -381,6 +405,12 @@ private:
     QColor mNormalColor {255, 255, 255};
     // 字体颜色
     QColor mFontColor{"black"};
+
+    QColor mBorderColorNormal{200, 200, 200};
+    QColor mBorderColorFocus {245, 245, 245};
+
+    QColor mBorderColor = mBorderColorNormal;
+    bool mIsBlue = false;
 };
 
 // Mac样式开关
