@@ -910,6 +910,141 @@ private:
    QColor mNormalColor {0,  122, 255};
 };
 
+#include <QKeySequenceEdit>
+#include <QKeyEvent>
+#include <QToolTip>
+#include <QLineEdit>
+class CustomKeySequenceEdit : public QKeySequenceEdit
+{
+    Q_OBJECT
 
+public:
+    explicit CustomKeySequenceEdit(const QString &text=QString(), QWidget *parent = nullptr)
+        : QKeySequenceEdit(parent)
+        , mText(text)
+        , mIsAlert(false)
+    {
+        setStyleSheet("QLineEdit { "
+                      "     border: 1px solid #C8C8C8;"
+                      "     border-radius: 2px;"
+                      "}"
+                      "QLineEdit::hover { "
+                      "     border: 1px solid #007AFF; "
+                      "}"
+                      "QLineEdit::focus { "
+                      "     border: 2px solid #007AFF; "
+                      "     border-radius: 4px;"
+                      "}"
+                      "QLineEdit::!placeholder { "
+                      "     color: red;"
+                      ""
+                      "}");
+
+        QLineEdit *lineEdit = findChild<QLineEdit *>();
+        lineEdit->setFixedHeight(20);
+    }
+
+    void setAlert(bool isAlert, const QString &alertText = QString())
+    {
+        mIsAlert = isAlert;
+        mAlertText = alertText;
+        if (mIsAlert)
+        {
+            setStyleSheet("QLineEdit { "
+                          "     border: 1px solid red;"
+                          "     border-radius: 2px;"
+                          "}"
+                          "QLineEdit::focus { "
+                          "     border: 2px solid #007AFF; "
+                          "     border-radius: 4px;"
+                          "}");
+        }
+        else
+        {
+            setStyleSheet("QLineEdit { "
+                          "     border: 1px solid #C8C8C8;"
+                          "     border-radius: 2px;"
+                          "}"
+                          "QLineEdit:hover { "
+                          "     border: 1px solid #007AFF; "
+                          "}"
+                          "QLineEdit::focus { "
+                          "     border: 2px solid #007AFF; "
+                          "     border-radius: 4px;"
+                          "}");
+        }
+        update();
+    }
+
+    void setText(const QString &text) { mText = text; }
+    QString text() { return mText; }
+
+protected:
+    void keyPressEvent(QKeyEvent *event) override
+    {
+        if (event->key() == Qt::Key_Backspace || event->key() == Qt::Key_Delete)
+        {
+            this->clear();
+        }
+        else
+        {
+            QKeySequenceEdit::keyPressEvent(event);
+            QString strKeySequence = keySequence().toString().split(",").first();
+            QKeySequence seq(QKeySequence::fromString(strKeySequence));
+
+            // 如果输入值是单个按键且没有修饰符，则默认加上 Ctrl+Alt
+            if (seq.count() == 1 && (seq[0] & Qt::KeyboardModifierMask) == 0)
+            {
+                seq = QKeySequence(Qt::CTRL | Qt::ALT | seq[0]);
+                setAlert(false);
+            }
+
+            setKeySequence(seq);
+        }
+
+        emit editingFinished();
+    }
+
+    void paintEvent(QPaintEvent *event) override
+    {
+        Q_UNUSED(event);
+
+        QPainter painter(this);
+        painter.setRenderHint(QPainter::Antialiasing);
+
+        // 如果是告警状态，绘制感叹号图标
+        if (mIsAlert)
+        {
+            // 简单画个感叹号图标
+            QPixmap pixmap(24, 24);
+            pixmap.fill(Qt::transparent);
+            QPainter iconPainter(&pixmap);
+            iconPainter.setPen(Qt::red);
+            iconPainter.setBrush(Qt::red);
+            iconPainter.drawEllipse(1, 2, 13, 13);
+            iconPainter.setPen(Qt::white);
+            iconPainter.drawText(QRect(0, 0, 16, 16), Qt::AlignCenter, "!");
+            iconPainter.end();
+
+            painter.drawPixmap(width() - 18, (height() - 16) / 2, pixmap);
+
+            // 设置感叹号的鼠标提示
+            if (!mAlertText.isEmpty())
+            {
+                QToolTip::showText(mapToGlobal(QPoint(width() - 18, (height() - 16) / 2)), mAlertText, this);
+            }
+        }
+
+        // 清除提示占位符
+        QLineEdit *lineEdit = findChild<QLineEdit *>();
+        lineEdit->setPlaceholderText("");
+    }
+
+private:
+    bool mIsAlert;
+    QString mAlertText;
+    QString mText;
+
+};
 
 #endif // CUSTOMWIDGET_H
