@@ -3,6 +3,7 @@
 
 #include "CustomWidget.h"
 #include "ToolManager.h"
+#include "HotkeyManager.h"
 
 class Settings : public ToolWidgetModel {
     Q_OBJECT
@@ -19,6 +20,7 @@ private:
     QWidget *mAppPage;
     QWidget *mShortcutsPage;
     ToolManagerList *mToolManagerList;
+    HotkeyManager *mHotkeyManager;
 
     void initBasePage();
     void initAppPage();
@@ -31,6 +33,8 @@ private slots:
     void comboBoxChanged(const QString);
     void checkBoxChecked(bool);
     void switchButtonChanged(bool);
+    void onHotkeyPressed(int);
+    void keySequenceChanged(QKeySequence);
 };
 
 #endif // SETTINGS_H

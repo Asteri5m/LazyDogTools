@@ -1,11 +1,12 @@
-#include <QCheckBox>
-#include <QRadioButton>
-#include <QButtonGroup>
+#include <QMessageBox>
 #include "Settings.h"
 
 Settings::Settings(QWidget *parent)
     : ToolWidgetModel{parent}
+    , mHotkeyManager{new HotkeyManager(this)}
 {
+    // 安装全局的事件过滤器
+    qApp->installNativeEventFilter(mHotkeyManager);
     setFixedSize(630, 425);
     // 取消其他按钮，只保留关闭按钮
     setWindowFlags(Qt::Window | Qt::WindowCloseButtonHint | Qt::CustomizeWindowHint);
@@ -23,15 +24,17 @@ Settings::Settings(QWidget *parent)
     addTab(mAppPage, QIcon(":/ico/apps.svg"), "应用");
     addTab(mShortcutsPage, QIcon(":/ico/keyboard.svg"), "热键");
 
-    // QVBoxLayout *layout1 = new QVBoxLayout(mBasePage);
-    // QVBoxLayout *layout2 = new QVBoxLayout(mAppPage);
-    QVBoxLayout *layout3 = new QVBoxLayout(mShortcutsPage);
-
-    // layout1->addWidget(new QLabel("基础页面内容", this));
-    // layout2->addWidget(new QLabel("应用页面内容", this));
-    layout3->addWidget(new QLabel("热键页面内容", this));
-
     finalizeSetup();  // 检查并显示第一个页面
+
+    // 连接热键按下信号
+    connect(mHotkeyManager, SIGNAL(hotkeyPressed(int)), this, SLOT(onHotkeyPressed(int)));
+
+    // 示例：注册 Ctrl + Alt + K 作为热键，ID 设置为 1
+    bool success = mHotkeyManager->registerHotkey(1, QKeySequence("Ctrl+Alt+="));
+    if (!success)
+    {
+        QMessageBox::warning(this, "Hotkey", "无法注册热键 Ctrl+Alt+K");
+    }
 }
 
 // 设置ToolManager列表，通过设置可以修改ToolManager的部分属性，例如是否启用
@@ -250,10 +253,55 @@ void Settings::initAppPage()
 
 }
 
+#include<QKeySequenceEdit>
 // 初始化“快捷键”页面
 void Settings::initShortcutsPage()
 {
+    // 使用滑动区域，内容过多时可以滑动
+    QVBoxLayout *layout = new QVBoxLayout(mShortcutsPage);
+    SmoothScrollArea *scrollArea = new SmoothScrollArea();
+    QWidget *containerWidget = new QWidget(scrollArea);
+    QVBoxLayout *mainLayout = new QVBoxLayout(containerWidget);
+    layout->addWidget(scrollArea);
+    scrollArea->setWidgetResizable(true); // 使内容区域可以自动调整大小
+    scrollArea->setWidget(containerWidget);
 
+    layout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setContentsMargins(20, 10, 10, 10);
+
+    for (int i=1; i<mToolManagerList->length(); i++)
+    {
+        auto toolManager = mToolManagerList->at(i);
+
+        NoBorderGroupBox *toolGroupBox = new NoBorderGroupBox(toolManager->getName());
+        QGridLayout *toolLayout = new QGridLayout(toolGroupBox);
+        toolLayout->addWidget(new QLabel("打开搜索"), 0, 0);
+        CustomKeySequenceEdit *search = new CustomKeySequenceEdit("打开搜索");
+        toolLayout->addWidget(search, 0, 1);
+        toolLayout->addWidget(new QLabel("主动复习"), 0, 3);
+        toolLayout->addWidget(new CustomKeySequenceEdit("主动复习"), 0, 4);
+
+        if (i % 2){
+        toolLayout->addWidget(new QLabel("复习上一个"), 1, 0);
+        toolLayout->addWidget(new CustomKeySequenceEdit(), 1, 1);
+        toolLayout->addWidget(new QLabel("复习下一个"), 1, 3);
+        CustomKeySequenceEdit *test = new CustomKeySequenceEdit();
+        test->setAlert(true, "这是一个测试");
+        toolLayout->addWidget(test, 1, 4);
+        connect(test,   SIGNAL(keySequenceChanged(QKeySequence)), this, SLOT(keySequenceChanged(QKeySequence)));
+        }
+
+        connect(search, SIGNAL(keySequenceChanged(QKeySequence)), this, SLOT(keySequenceChanged(QKeySequence)));
+
+        toolLayout->setColumnStretch(0, 3);
+        toolLayout->setColumnStretch(1, 8);
+        toolLayout->setColumnStretch(2, 2);
+        toolLayout->setColumnStretch(3, 3);
+        toolLayout->setColumnStretch(4, 8);
+
+        mainLayout->addWidget(toolGroupBox);
+    }
+    mainLayout->addStretch();
 }
 
 
@@ -298,7 +346,6 @@ void Settings::checkBoxChecked(bool checked)
 
 }
 
-
 // 对所有开关的事件进行处理
 void Settings::switchButtonChanged(bool checked)
 {
@@ -316,4 +363,21 @@ void Settings::switchButtonChanged(bool checked)
     }
 }
 
+// 热键的处理事件
+void Settings::onHotkeyPressed(int id)
+{
+    qDebug() << id;
+    if (id == 1)
+    {
+        QMessageBox::information(this, "Hotkey", "Ctrl+Alt+K 被按下！");
+    }
+}
 
+// 快捷键输入框的处理事件
+void Settings::keySequenceChanged(QKeySequence keySequence)
+{
+    CustomKeySequenceEdit* keySequenceEdit = qobject_cast<CustomKeySequenceEdit *>(sender());
+    int modifiers = keySequence[0] & (Qt::KeyboardModifierMask);
+    int key = keySequence[0] & ~modifiers;  // 获取按键值，不包括修饰符
+    qDebug() << keySequenceEdit->text() << keySequence[0]<< key;
+}
