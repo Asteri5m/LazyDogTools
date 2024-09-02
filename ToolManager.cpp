@@ -22,9 +22,9 @@ QString ToolManager::getDescription()
     return mDescription;
 }
 
-ShortList *ToolManager::getShortcut()
+HotkeyList *ToolManager::getHotKey()
 {
-    return mShortcut;
+    return mHotKeyList;
 }
 
 TrayList *ToolManager::getTrayn()
@@ -52,9 +52,9 @@ void ToolManager::setDescription(QString desc)
     mDescription = desc;
 }
 
-void ToolManager::setShortcut(ShortList *shortcut)
+void ToolManager::setHotKey(HotkeyList *hotKeyList)
 {
-    mShortcut = shortcut;
+    mHotKeyList = hotKeyList;
 }
 
 void ToolManager::setTray(TrayList *tray)
@@ -121,6 +121,6 @@ void ToolManager::initialize()
     setIcon(":/ico/LD.ico");
     setDescription("使用setXXX方法设置您的相关参数");
     setTray(nullptr);
-    setShortcut(nullptr);
+    setHotKey(nullptr);
     setActive(true);
 }

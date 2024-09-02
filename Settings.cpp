@@ -5,8 +5,6 @@ Settings::Settings(QWidget *parent)
     : ToolWidgetModel{parent}
     , mHotkeyManager{new HotkeyManager(this)}
 {
-    // 安装全局的事件过滤器
-    qApp->installNativeEventFilter(mHotkeyManager);
     setFixedSize(630, 425);
     // 取消其他按钮，只保留关闭按钮
     setWindowFlags(Qt::Window | Qt::WindowCloseButtonHint | Qt::CustomizeWindowHint);
@@ -14,27 +12,24 @@ Settings::Settings(QWidget *parent)
     // 使用默认模板样式
     setDefaultStyle();
 
-    mBasePage = new QWidget(this);
-    mAppPage = new QWidget(this);
+    mBasePage      = new QWidget(this);
+    mAppPage       = new QWidget(this);
     mShortcutsPage = new QWidget(this);
 
     initBasePage();
 
-    addTab(mBasePage, QIcon(":/ico/settings.svg"), "基础");
-    addTab(mAppPage, QIcon(":/ico/apps.svg"), "应用");
+    addTab(mBasePage,      QIcon(":/ico/settings.svg"), "基础");
+    addTab(mAppPage,       QIcon(":/ico/apps.svg"), "应用");
     addTab(mShortcutsPage, QIcon(":/ico/keyboard.svg"), "热键");
 
-    finalizeSetup();  // 检查并显示第一个页面
+    // 检查并显示第一个页面
+    finalizeSetup();
+
+    // 安装全局的事件过滤器
+    qApp->installNativeEventFilter(mHotkeyManager);
 
     // 连接热键按下信号
     connect(mHotkeyManager, SIGNAL(hotkeyPressed(int)), this, SLOT(onHotkeyPressed(int)));
-
-    // 示例：注册 Ctrl + Alt + K 作为热键，ID 设置为 1
-    bool success = mHotkeyManager->registerHotkey(1, QKeySequence("Ctrl+Alt+="));
-    if (!success)
-    {
-        QMessageBox::warning(this, "Hotkey", "无法注册热键 Ctrl+Alt+K");
-    }
 }
 
 // 设置ToolManager列表，通过设置可以修改ToolManager的部分属性，例如是否启用
@@ -46,7 +41,6 @@ void Settings::setToolManagerList(ToolManagerList *toolManagerList)
     initAppPage();
     initShortcutsPage();
 }
-
 
 // 初始化“基础”页面
 void Settings::initBasePage()
@@ -269,30 +263,40 @@ void Settings::initShortcutsPage()
     layout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setContentsMargins(20, 10, 10, 10);
 
+    mHotkeyMap  = new HotkeyMap();
+    mHotkeyIdMap = new HotkeyIdMap();
+
+    // 添加热键编辑区域
     for (int i=1; i<mToolManagerList->length(); i++)
     {
         auto toolManager = mToolManagerList->at(i);
+        auto hotKeyList = toolManager->getHotKey();
+
+        if (hotKeyList->isEmpty())
+            continue;
 
         NoBorderGroupBox *toolGroupBox = new NoBorderGroupBox(toolManager->getName());
         QGridLayout *toolLayout = new QGridLayout(toolGroupBox);
-        toolLayout->addWidget(new QLabel("打开搜索"), 0, 0);
-        CustomKeySequenceEdit *search = new CustomKeySequenceEdit("打开搜索");
-        toolLayout->addWidget(search, 0, 1);
-        toolLayout->addWidget(new QLabel("主动复习"), 0, 3);
-        toolLayout->addWidget(new CustomKeySequenceEdit("主动复习"), 0, 4);
 
-        if (i % 2){
-        toolLayout->addWidget(new QLabel("复习上一个"), 1, 0);
-        toolLayout->addWidget(new CustomKeySequenceEdit(), 1, 1);
-        toolLayout->addWidget(new QLabel("复习下一个"), 1, 3);
-        CustomKeySequenceEdit *test = new CustomKeySequenceEdit();
-        test->setAlert(true, "这是一个测试");
-        toolLayout->addWidget(test, 1, 4);
-        connect(test,   SIGNAL(keySequenceChanged(QKeySequence)), this, SLOT(keySequenceChanged(QKeySequence)));
+        for (int index=0; index<hotKeyList->length(); index++)
+        {
+            // 两列排布，QLabel+keyEdit+间距+QLabel+keyEdit
+            int row     = index / 2;
+            int column  = (index % 2) * 3;
+            auto hotkey = hotKeyList->at(index);
+
+            // 名字用应用名+热键名，形成唯一值
+            CustomKeySequenceEdit *keyEdit = new CustomKeySequenceEdit(toolManager->getName() + ":" + hotkey.Name);
+            toolLayout->addWidget(new QLabel(hotkey.Name), row, column);
+            toolLayout->addWidget(keyEdit, row, column + 1);
+
+            connect(keyEdit, SIGNAL(keySequenceChanged(QKeySequence)), this, SLOT(keySequenceChanged(QKeySequence)));
+
+            // 在绑定槽函数之后设置值，通过槽函数完成热键注册
+            keyEdit->setKeySequence(hotkey.Shortkeys);
         }
 
-        connect(search, SIGNAL(keySequenceChanged(QKeySequence)), this, SLOT(keySequenceChanged(QKeySequence)));
-
+        // 比较美观的间距
         toolLayout->setColumnStretch(0, 3);
         toolLayout->setColumnStretch(1, 8);
         toolLayout->setColumnStretch(2, 2);
@@ -303,7 +307,6 @@ void Settings::initShortcutsPage()
     }
     mainLayout->addStretch();
 }
-
 
 // 打开特定应用
 void Settings::jumpTool(QString toolName)
@@ -318,7 +321,6 @@ void Settings::jumpTool(QString toolName)
         }
     }
 }
-
 
 // 对所有的按钮点击事件进行处理
 void Settings::buttonClicked()
@@ -366,18 +368,50 @@ void Settings::switchButtonChanged(bool checked)
 // 热键的处理事件
 void Settings::onHotkeyPressed(int id)
 {
-    qDebug() << id;
-    if (id == 1)
-    {
-        QMessageBox::information(this, "Hotkey", "Ctrl+Alt+K 被按下！");
-    }
+    qDebug() << id << mHotkeyIdMap->value(id);
 }
 
 // 快捷键输入框的处理事件
 void Settings::keySequenceChanged(QKeySequence keySequence)
 {
     CustomKeySequenceEdit* keySequenceEdit = qobject_cast<CustomKeySequenceEdit *>(sender());
-    int modifiers = keySequence[0] & (Qt::KeyboardModifierMask);
-    int key = keySequence[0] & ~modifiers;  // 获取按键值，不包括修饰符
-    qDebug() << keySequenceEdit->text() << keySequence[0]<< key;
+    QString name = keySequenceEdit->text();
+
+    // 快捷键未变化时，不处理
+    if (mHotkeyMap->value(name) == keySequence)
+        return;
+
+    // 第一步：注销
+    for (auto it = mHotkeyIdMap->begin(); it != mHotkeyIdMap->end(); ++it)
+    {
+        if (it.value() == name)
+        {
+            qDebug() << "注销：" << name << it.key();
+            mHotkeyManager->unregisterHotkey(it.key());
+            mHotkeyIdMap->remove(it.key());
+            mHotkeyMap->remove(name);
+            keySequenceEdit->setAlert(false); // 如果有提示，则清除
+            break;
+        }
+    }
+
+    // 快捷键为空时，不注册
+    if (keySequence.isEmpty())
+        return;
+
+    // 第二步：注册，id自增
+    for (int id=1; id <= mHotkeyMap->size()+1; id++)
+    {
+        if (!mHotkeyIdMap->contains(id)) // 找一个未使用的id
+        {
+            mHotkeyIdMap->insert(id, name);
+            mHotkeyMap->insert(name, keySequence);
+            qDebug() << "注册：" << name << keySequence << id;
+            if (!mHotkeyManager->registerHotkey(id, keySequence))
+                keySequenceEdit->setAlert(true, "快捷键被占用，请重新设置");
+            else
+                keySequenceEdit->setAlert(false);
+            break;
+        }
+    }
 }

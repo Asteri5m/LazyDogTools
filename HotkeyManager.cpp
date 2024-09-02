@@ -19,7 +19,6 @@ bool HotkeyManager::registerHotkey(int id, const QKeySequence &keySequence)
     // 获取修饰符
     int modifiers = keySequence[0] & (Qt::KeyboardModifierMask);
     int key = keySequence[0] & ~modifiers;
-    qDebug() << keySequence << key;
 
     // 将 Qt 的修饰符转换为 Windows API 的修饰符
     UINT fsModifiers = 0;
@@ -27,6 +26,8 @@ bool HotkeyManager::registerHotkey(int id, const QKeySequence &keySequence)
     if (modifiers & Qt::ControlModifier) fsModifiers |= MOD_CONTROL;
     if (modifiers & Qt::AltModifier)     fsModifiers |= MOD_ALT;
     if (modifiers & Qt::MetaModifier)    fsModifiers |= MOD_WIN;
+
+    qDebug() << keySequence << fsModifiers << key;
 
     // 将键位转换为 Windows 的虚拟键码
     UINT vk = MapQtKeyToVk(key);
@@ -57,12 +58,12 @@ void HotkeyManager::unregisterHotkey(int id)
 
 bool HotkeyManager::nativeEventFilter(const QByteArray &eventType, void *message, qintptr *result)
 {
+    Q_UNUSED(result);
     if (eventType == "windows_generic_MSG")
     {
         MSG *msg = static_cast<MSG*>(message);
         if (msg->message == WM_HOTKEY)
         {
-            qDebug() << eventType << message << result;
             int id = msg->wParam;
             emit hotkeyPressed(id);
             return true;

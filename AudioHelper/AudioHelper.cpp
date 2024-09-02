@@ -22,5 +22,4 @@ AudioHelper::AudioHelper(QWidget *parent)
     layout2->addWidget(new QLabel("偏好页面内容", this));
 
     finalizeSetup();  // 检查并显示第一个页面
-    qDebug() << "实例化了 AudioHelper";
 }

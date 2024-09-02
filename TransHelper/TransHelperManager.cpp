@@ -16,9 +16,12 @@ void TransHelperManager::initUI()
 void TransHelperManager::initialize()
 {
     setName("翻译助手");
-    setIcon(":/ico/LD.ico");
     setDescription("简介");
-    setTray(nullptr);
-    setShortcut(nullptr);
-    setActive(true);
+
+    HotkeyList *hotKeyList = new HotkeyList();
+    hotKeyList->append(HotKey({"打开搜索", QKeySequence(),nullptr}));
+    hotKeyList->append(HotKey({"复习上一个", QKeySequence(),nullptr}));
+    hotKeyList->append(HotKey({"暂停/开启", QKeySequence(),nullptr}));
+    hotKeyList->append(HotKey({"复习下一个", QKeySequence(),nullptr}));
+    setHotKey(hotKeyList);
 }

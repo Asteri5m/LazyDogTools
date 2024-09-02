@@ -1026,12 +1026,12 @@ protected:
             iconPainter.drawText(QRect(0, 0, 16, 16), Qt::AlignCenter, "!");
             iconPainter.end();
 
-            painter.drawPixmap(width() - 18, (height() - 16) / 2, pixmap);
+            painter.drawPixmap(width() - 18, (height() - 18) / 2, pixmap);
 
             // 设置感叹号的鼠标提示
             if (!mAlertText.isEmpty())
             {
-                QToolTip::showText(mapToGlobal(QPoint(width() - 18, (height() - 16) / 2)), mAlertText, this);
+                QToolTip::showText(mapToGlobal(QPoint(width() - 18, (height() - 18) / 2)), mAlertText, this);
             }
         }
 

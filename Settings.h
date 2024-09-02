@@ -5,6 +5,9 @@
 #include "ToolManager.h"
 #include "HotkeyManager.h"
 
+typedef QMap<QString, QKeySequence> HotkeyMap;
+typedef QMap<int, QString> HotkeyIdMap;
+
 class Settings : public ToolWidgetModel {
     Q_OBJECT
 public:
@@ -21,6 +24,8 @@ private:
     QWidget *mShortcutsPage;
     ToolManagerList *mToolManagerList;
     HotkeyManager *mHotkeyManager;
+    HotkeyMap *mHotkeyMap;
+    HotkeyIdMap *mHotkeyIdMap;
 
     void initBasePage();
     void initAppPage();
