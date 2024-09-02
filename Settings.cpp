@@ -1,4 +1,4 @@
-#include <QMessageBox>
+#include <QKeySequenceEdit>
 #include "Settings.h"
 
 Settings::Settings(QWidget *parent)
@@ -247,7 +247,6 @@ void Settings::initAppPage()
 
 }
 
-#include<QKeySequenceEdit>
 // 初始化“快捷键”页面
 void Settings::initShortcutsPage()
 {

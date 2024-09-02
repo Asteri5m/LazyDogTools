@@ -1,4 +1,3 @@
-#include <QScrollArea>
 #include "LazyDogTools.h"
 #include "ui_lazydogtools.h"
 #include "SettingsManager.h"
