@@ -368,6 +368,7 @@ void Settings::switchButtonChanged(bool checked)
 void Settings::onHotkeyPressed(int id)
 {
     qDebug() << id << mHotkeyIdMap->value(id);
+
 }
 
 // 快捷键输入框的处理事件
@@ -385,7 +386,8 @@ void Settings::keySequenceChanged(QKeySequence keySequence)
     {
         if (it.value() == name)
         {
-            qDebug() << "注销：" << name << it.key();
+            qInfo() << "注销快捷键：" << name << mHotkeyMap->value(name);
+            qDebug() << "操作id：" << mHotkeyMap->value(name) << it.key();
             mHotkeyManager->unregisterHotkey(it.key());
             mHotkeyIdMap->remove(it.key());
             mHotkeyMap->remove(name);
@@ -405,7 +407,8 @@ void Settings::keySequenceChanged(QKeySequence keySequence)
         {
             mHotkeyIdMap->insert(id, name);
             mHotkeyMap->insert(name, keySequence);
-            qDebug() << "注册：" << name << keySequence << id;
+            qInfo() << "注册快捷键：" << name << keySequence;
+            qDebug() << "操作id：" << keySequence << id;
             if (!mHotkeyManager->registerHotkey(id, keySequence))
                 keySequenceEdit->setAlert(true, "快捷键被占用，请重新设置");
             else

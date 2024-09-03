@@ -36,12 +36,12 @@ bool HotkeyManager::registerHotkey(int id, const QKeySequence &keySequence)
     if (RegisterHotKey(nullptr, id, fsModifiers, vk))
     {
         m_hotkeys[id] = vk;
-        qDebug() << "Registered hotkey ID:" << id << vk;
+        qDebug() << "Registered hotkey:" << vk << ", Modifiers:" << fsModifiers << ", ID:" << id;
         return true;
     }
     else
     {
-        qWarning() << "Failed to register hotkey ID:" << id;
+        qWarning() << "Failed to register hotkey:" << vk << ", Modifiers:" << fsModifiers << ", ID:" << id;
         return false;
     }
 }

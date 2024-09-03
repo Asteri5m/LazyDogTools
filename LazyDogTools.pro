@@ -14,6 +14,7 @@ SOURCES += \
     AudioHelper/AudioHelper.cpp \
     AudioHelper/AudioHelperManager.cpp \
     HotkeyManager.cpp \
+    LogHandler.cpp \
     Settings.cpp \
     SettingsManager.cpp \
     ToolManager.cpp \
@@ -28,6 +29,7 @@ HEADERS += \
     CustomWidget.h \
     HotkeyManager.h \
     LazyDogTools.h \
+    LogHandler.h \
     Settings.h \
     SettingsManager.h \
     ToolManager.h \

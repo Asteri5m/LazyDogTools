@@ -1,3 +1,4 @@
+#include <QSysInfo>
 #include "LazyDogTools.h"
 #include "ui_lazydogtools.h"
 #include "SettingsManager.h"
@@ -8,6 +9,11 @@ LazyDogTools::LazyDogTools(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::LazyDogTools)
 {
+    qInfo() << "程序启动";
+    qDebug() << "操作系统:" << QSysInfo::productType() << QSysInfo::productVersion();
+    qDebug() << "系统架构:" << QSysInfo::currentCpuArchitecture();
+    qDebug() << "内核版本:" << QSysInfo::kernelVersion();
+
     ui->setupUi(this);
 
     setWindowIcon(QIcon(":/ico/LD.ico"));
@@ -25,10 +31,11 @@ LazyDogTools::LazyDogTools(QWidget *parent)
     mToolManagerList.append(new AudioHelperManager());
     mToolManagerList.append(new TransHelperManager());
 
-
     initUI();
     // 将应用管理器的列表传递给“设置”,完成settings剩余的初始化工作
     settings->setToolManagerList(&mToolManagerList);
+
+    qInfo() << "程序加载完成";
 }
 
 LazyDogTools::~LazyDogTools()
