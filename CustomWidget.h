@@ -134,6 +134,7 @@ class LeftMenuButton : public QPushButton
 public:
     explicit LeftMenuButton(const QIcon &icon, const QString &name, QWidget *parent = nullptr)
         : QPushButton(parent) {
+        setCheckable(true);
         // 使用栈分配
         QSize buttonSize(56, 56);
         QSize iconSize(24, 24);
@@ -176,50 +177,7 @@ public:
             textLabel->setAlignment(Qt::AlignCenter);
             layout->addWidget(textLabel);
         }
-
     }
-
-    void setChecked(bool checked)
-    {
-        isChecked = checked;
-        if (isChecked)
-        {
-            setStyleSheet("background-color: #d0d0d0;"
-                          "border-radius: 6px;"
-                          "border: none;");
-        }
-        else
-        {
-            setStyleSheet("background-color: none;"
-                          "border: none;");
-        }
-    }
-
-protected:
-    void enterEvent(QEnterEvent *event) override
-    {
-        Q_UNUSED(event);
-        if (!isChecked)
-        {
-            setStyleSheet("background-color: #f0f0f0;"
-                          "border-radius: 6px;"
-                          "border: none;");
-        }
-    }
-
-    void leaveEvent(QEvent *event) override
-    {
-        Q_UNUSED(event);
-        if (!isChecked)
-        {
-            setStyleSheet("background-color: none;"
-                          "border: none;");
-        }
-    }
-
-private:
-    bool isChecked = false;
-
 };
 
 // 工具窗口模板，可以根据该模板快生成一个具有左侧菜单栏的“TabWidget”
@@ -249,20 +207,42 @@ public:
         mStackedWidget = new QStackedWidget();
         mMainLayout->addWidget(mStackedWidget);
 
+        QString menuStyle;
         if (menuRight)
         {
-            mMenuWidget->setStyleSheet("border-left: 1px solid gray;"
-                                       "background-color: white;");   // 设置边框线为1像素宽，灰色
+            // 设置边框线为1像素宽，灰色
+            menuStyle = "QWidget { "
+                        "   border-left: 1px solid gray;"
+                        "   background-color: white;"
+                        "}";
             mOverLayout->addLayout(mMainLayout);
             mOverLayout->addWidget(mMenuWidget);
         }
         else
         {
-            mMenuWidget->setStyleSheet("border-right: 1px solid gray;"
-                                       "background-color: white;");   // 设置边框线为1像素宽，灰色
+            menuStyle = "QWidget { "
+                        "   border-right: 1px solid gray;"
+                        "   background-color: white;"
+                        "}";
             mOverLayout->addWidget(mMenuWidget);
             mOverLayout->addLayout(mMainLayout);
         }
+
+        menuStyle += "QPushButton, QPushButton * {"
+                     "    background-color: none;"
+                     "    border: none;"
+                     "}"
+                     "QPushButton:hover {"
+                     "    background-color: #f0f0f0; "
+                     "    border-radius: 6px;"
+                     "    border: none;"
+                     "}"
+                     "QPushButton:checked {"
+                     "    background-color: #d0d0d0;"
+                     "    border-radius: 6px;"
+                     "    border: none;"
+                     "}";
+        mMenuWidget->setStyleSheet(menuStyle);
     }
 
     void addTab(QWidget* page, const QIcon &icon=QIcon(), const QString &name=nullptr)
@@ -317,7 +297,6 @@ private:
         }
     }
 };
-
 
 // Mac样式的按钮
 class MacStyleButton : public QPushButton
@@ -675,7 +654,6 @@ private:
     QTimer *mInertiaTimer;
 };
 
-
 #include <QComboBox>
 #include <QStyleOptionComboBox>
 #include <QSvgRenderer>
@@ -703,7 +681,7 @@ public:
             "QComboBox QAbstractItemView {"
             "   background-color: rgba(255, 255, 255, 0.8);"
             "   border-radius: 6px;"
-            "   border: 1px solid #CCCCCC;;"
+            "   border: 1px solid #CCCCCC;"
             "   selection-background-color: #fff;"
             "   selection-color: white;"
             "}"
@@ -784,7 +762,6 @@ private:
     bool mIsPressed = false;  // 记录按钮是否按下
     QString mName;
 };
-
 
 #include <QCheckBox>
 // Mac样式的复选框
