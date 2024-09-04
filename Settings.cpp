@@ -1,4 +1,5 @@
-#include <QKeySequenceEdit>
+// #include <QKeySequenceEdit>
+#include "LogHandler.h"
 #include "Settings.h"
 
 Settings::Settings(QWidget *parent)
@@ -30,6 +31,10 @@ Settings::Settings(QWidget *parent)
 
     // 连接热键按下信号
     connect(mHotkeyManager, SIGNAL(hotkeyPressed(int)), this, SLOT(onHotkeyPressed(int)));
+
+    // LogHandler::instance().setLogLevel(DebugLevel);
+    LogHandler::instance().setLogLevel(InfoLevel);
+    LogHandler::instance().clearBuffer();
 }
 
 // 设置ToolManager列表，通过设置可以修改ToolManager的部分属性，例如是否启用
@@ -344,6 +349,10 @@ void Settings::checkBoxChecked(bool checked)
 {
     QCheckBox *checkBox = qobject_cast<QCheckBox *>(sender());
     qDebug() << checkBox->text() << "选中：" << checked;
+
+    if (checkBox->text() == "debug日志") {
+        LogHandler::instance().setLogLevel(checked ? DebugLevel : InfoLevel);
+    }
 
 }
 

@@ -6,8 +6,11 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    // 设置自定义消息处理器---日志管理器
+
+    // 设置全局日志，初始为debug，直到加载到设置内容后修改
+    // LogHandler::instance().setLogLevel(DebugLevel);
     qInstallMessageHandler(LogHandler::messageHandler);
+
     LazyDogTools w;
     w.show();
     return a.exec();
