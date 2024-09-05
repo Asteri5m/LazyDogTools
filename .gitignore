@@ -74,6 +74,7 @@ CMakeLists.txt.user*
 
 # Running products
 Log/
+Data/
 
 # Compile product
 build/

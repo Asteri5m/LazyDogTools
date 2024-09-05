@@ -61,10 +61,10 @@ void LogHandler::writeLog(QtMsgType type, const QString& tag, const QString& msg
             levelText = "DEBUG";
             break;
         case QtInfoMsg:
-            levelText = "INFO";
+            levelText = "INFO ";
             break;
         case QtWarningMsg:
-            levelText = "WARN";
+            levelText = "WARN ";
             break;
         case QtCriticalMsg:
             levelText = "ERROR";

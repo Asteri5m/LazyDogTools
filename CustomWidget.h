@@ -664,10 +664,10 @@ class MacStyleComboBox : public QComboBox
     Q_OBJECT
 
 public:
-    MacStyleComboBox(QString name = "", QWidget *parent = nullptr)
+    MacStyleComboBox(const QString &text = QString(), QWidget *parent = nullptr)
         : QComboBox(parent)
+        , mText(text)
     {
-        mName = name;
         setStyleSheet(
             "MacStyleComboBox {"
             "   border: 1px solid #CCCCCC;"
@@ -692,8 +692,8 @@ public:
     }
 
     // 设置与获取组件名，便于识别
-    void setName(QString name){ mName = name; }
-    QString getName()         { return mName; }
+    void setText(const QString &text){ mText = text; }
+    const QString text()             { return mText; }
 
 protected:
     void paintEvent(QPaintEvent *event) override
@@ -760,7 +760,7 @@ protected:
 
 private:
     bool mIsPressed = false;  // 记录按钮是否按下
-    QString mName;
+    QString mText;
 };
 
 #include <QCheckBox>

@@ -7,7 +7,6 @@
 #include <QMutexLocker>
 #include <QDir>
 #include <QRegularExpression>
-// #include <QTuple>
 
 
 enum LogLevel {
@@ -18,8 +17,6 @@ enum LogLevel {
     FatalLevel,
     Undefined,
 };
-
-
 
 
 class LogHandler

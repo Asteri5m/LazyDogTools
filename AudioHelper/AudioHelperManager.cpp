@@ -8,6 +8,7 @@ void AudioHelperManager::initUI()
     if (mToolWidget != nullptr)
         return;
 
+    qInfo() << "加载应用：" << getName();
     mToolWidget = new AudioHelper();
     mToolWidget->setWindowTitle(getName());
     mToolWidget->setWindowIcon(QIcon(getIcon()));
@@ -20,7 +21,7 @@ void AudioHelperManager::initialize()
 
     HotkeyList *hotKeyList = new HotkeyList();
     hotKeyList->append(HotKey({"切换设置", QKeySequence("Ctrl+Alt+C"),nullptr}));
-    hotKeyList->append(HotKey({"锁定设备", QKeySequence(),nullptr}));
+    hotKeyList->append(HotKey({"锁定设备", QKeySequence("Ctrl+Alt+A"),nullptr}));
     hotKeyList->append(HotKey({"切换模式", QKeySequence(),nullptr}));
     setHotKey(hotKeyList);
 }

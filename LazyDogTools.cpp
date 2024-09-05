@@ -40,6 +40,7 @@ LazyDogTools::LazyDogTools(QWidget *parent)
 
 LazyDogTools::~LazyDogTools()
 {
+    qInfo() << "程序退出";
     delete ui;
 }
 
@@ -48,10 +49,13 @@ LazyDogTools::~LazyDogTools()
 */
 void LazyDogTools::initData()
 {
+    Settings* settings = qobject_cast<SettingsManager*>(mToolManagerList.at(0))->getTool();
     short id = 0;
     for(auto toolManager:mToolManagerList)
     {
         toolManager->initialize();
+        bool active = settings->loadSetting("active:"+toolManager->getName(), "true") == "true";
+        toolManager->setActive(active);
         if (toolManager->getActive())
         {
             toolManager->initUI();

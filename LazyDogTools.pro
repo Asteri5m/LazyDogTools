@@ -1,4 +1,4 @@
-QT       += core gui svg
+QT       += core gui svg sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 

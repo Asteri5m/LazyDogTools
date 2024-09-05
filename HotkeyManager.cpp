@@ -27,8 +27,6 @@ bool HotkeyManager::registerHotkey(int id, const QKeySequence &keySequence)
     if (modifiers & Qt::AltModifier)     fsModifiers |= MOD_ALT;
     if (modifiers & Qt::MetaModifier)    fsModifiers |= MOD_WIN;
 
-    qDebug() << keySequence << fsModifiers << key;
-
     // 将键位转换为 Windows 的虚拟键码
     UINT vk = MapQtKeyToVk(key);
 

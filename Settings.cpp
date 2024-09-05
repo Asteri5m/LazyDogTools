@@ -1,10 +1,13 @@
-// #include <QKeySequenceEdit>
+#include <QSqlQuery>
+#include <QSqlError>
 #include "LogHandler.h"
 #include "Settings.h"
 
 Settings::Settings(QWidget *parent)
     : ToolWidgetModel{parent}
     , mHotkeyManager{new HotkeyManager(this)}
+    , mdbDir(QDir("Data"))
+    , mdbName("settings.db")
 {
     setFixedSize(630, 425);
     // 取消其他按钮，只保留关闭按钮
@@ -13,15 +16,18 @@ Settings::Settings(QWidget *parent)
     // 使用默认模板样式
     setDefaultStyle();
 
+    // 初始化数据库
+    initializeDatabase();
+
     mBasePage      = new QWidget(this);
     mAppPage       = new QWidget(this);
     mShortcutsPage = new QWidget(this);
 
-    initBasePage();
-
     addTab(mBasePage,      QIcon(":/ico/settings.svg"), "基础");
     addTab(mAppPage,       QIcon(":/ico/apps.svg"), "应用");
     addTab(mShortcutsPage, QIcon(":/ico/keyboard.svg"), "热键");
+
+    initBasePage();
 
     // 检查并显示第一个页面
     finalizeSetup();
@@ -31,10 +37,11 @@ Settings::Settings(QWidget *parent)
 
     // 连接热键按下信号
     connect(mHotkeyManager, SIGNAL(hotkeyPressed(int)), this, SLOT(onHotkeyPressed(int)));
+}
 
-    // LogHandler::instance().setLogLevel(DebugLevel);
-    LogHandler::instance().setLogLevel(InfoLevel);
-    LogHandler::instance().clearBuffer();
+Settings::~Settings()
+{
+    closeDatabase();
 }
 
 // 设置ToolManager列表，通过设置可以修改ToolManager的部分属性，例如是否启用
@@ -138,6 +145,18 @@ void Settings::initBasePage()
     // 添加一个弹簧，用于撑起空白区域
     mainLayout->addStretch();
 
+
+    // 加载配置
+    loadSettingsHandler(startCheckBox,      "true");
+    loadSettingsHandler(adminStartCheckBox, "false");
+    loadSettingsHandler(startHideCheckBox,  "true");
+    loadSettingsHandler(updateCheckBox,     "true");
+    loadSettingsHandler(debugCheckBox,      "false");
+
+    loadSettingsHandler(minimizeComBox, "托盘");
+    loadSettingsHandler(closeComBox,    "最小化托盘");
+
+
     // 连接槽 - 按钮
     connect(checkNewButton,  SIGNAL(clicked()), this, SLOT(buttonClicked()));
     connect(exportLogButton, SIGNAL(clicked()), this, SLOT(buttonClicked()));
@@ -234,9 +253,9 @@ void Settings::initAppPage()
         nameLayout->addWidget(new QLabel(toolManager->getName()), 4);
 
         // 添加开关按钮
-        MacSwitchButton *enableButton = new MacSwitchButton(toolManager->getName());
+        MacSwitchButton *enableButton = new MacSwitchButton("active:" + toolManager->getName());
         enableLayout->addWidget(enableButton);
-        enableButton->setChecked(toolManager->getActive());
+        loadSettingsHandler(enableButton, "true");
         connect(enableButton, SIGNAL(checkedChanged(bool)), this, SLOT(switchButtonChanged(bool)));
 
         // // 添加跳转按钮
@@ -290,14 +309,13 @@ void Settings::initShortcutsPage()
             auto hotkey = hotKeyList->at(index);
 
             // 名字用应用名+热键名，形成唯一值
-            CustomKeySequenceEdit *keyEdit = new CustomKeySequenceEdit(toolManager->getName() + ":" + hotkey.Name);
+            CustomKeySequenceEdit *keyEdit = new CustomKeySequenceEdit("hotkey:" + toolManager->getName() + ":" + hotkey.Name);
             toolLayout->addWidget(new QLabel(hotkey.Name), row, column);
             toolLayout->addWidget(keyEdit, row, column + 1);
 
+            // 先加载配置后绑定槽
+            loadSettingsHandler(keyEdit, hotkey.Shortkeys.toString(QKeySequence::NativeText));
             connect(keyEdit, SIGNAL(keySequenceChanged(QKeySequence)), this, SLOT(keySequenceChanged(QKeySequence)));
-
-            // 在绑定槽函数之后设置值，通过槽函数完成热键注册
-            keyEdit->setKeySequence(hotkey.Shortkeys);
         }
 
         // 比较美观的间距
@@ -326,6 +344,82 @@ void Settings::jumpTool(QString toolName)
     }
 }
 
+// 关闭数据库
+void Settings::closeDatabase()
+{
+    QSqlDatabase::removeDatabase(mdbName);
+}
+
+// 初始化数据库配置
+bool Settings::initializeDatabase()
+{
+    if (!mdbDir.exists())
+        mdbDir.mkpath(".");
+
+    mdb = QSqlDatabase::addDatabase("QSQLITE", mdbDir.filePath(mdbName));
+    mdb.setDatabaseName(mdbDir.filePath(mdbName));
+
+    if (!mdb.open()) {
+        qCritical() << "Failed to open the database:" << mdb.lastError().text();
+        return false;
+    }
+
+    QSqlQuery query(mdb);
+    return query.exec("CREATE TABLE IF NOT EXISTS settings ("
+                      "key TEXT PRIMARY KEY,"
+                      "value TEXT)");
+}
+
+// 保存配置
+bool Settings::saveSetting(const QString &key, const QString &value) const
+{
+    if (!mdb.isOpen()) {
+        qWarning() << "Database is not open, save data failed";
+        return false;
+    }
+
+    qDebug() << "Insert Data, Key:" << key << ", value:" << value;
+
+    QSqlQuery query(mdb);
+    query.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (:key, :value)");
+    query.bindValue(":key", key);
+    query.bindValue(":value", value);
+
+    if (!query.exec()) {
+        qCritical() << "Failed to save setting:" << query.lastError().text();
+        return false;
+    }
+
+    return true;
+}
+
+// 加载配置
+QString Settings::loadSetting(const QString &key, const QString &defaultValue) const
+{
+    if (!mdb.isOpen()) {
+        qWarning() << "Database is not open, load data failed";
+        return defaultValue;
+    }
+
+    QSqlQuery query(mdb);
+    query.prepare("SELECT value FROM settings WHERE key = :key");
+    query.bindValue(":key", key);
+
+    if (!query.exec()) {
+        qCritical() << "Load setting failed:" << query.lastError().text();
+        return defaultValue;
+    }
+
+    if (!query.next()) {
+        qDebug() << "Load setting failed: select result is null of " + key;
+        if (!defaultValue.isNull())
+            saveSetting(key, defaultValue);
+        return defaultValue;
+    }
+
+    return query.value(0).toString();
+}
+
 // 对所有的按钮点击事件进行处理
 void Settings::buttonClicked()
 {
@@ -341,32 +435,36 @@ void Settings::buttonClicked()
 void Settings::comboBoxChanged(const QString currentText)
 {
     MacStyleComboBox *comboBox = qobject_cast<MacStyleComboBox *>(sender());
-    qDebug() << comboBox->getName() << "切换选项：" << comboBox->currentIndex() << currentText;
+    qDebug() << comboBox->text() << "切换选项:" << comboBox->currentIndex() << currentText;
+    saveSetting(comboBox->text(), currentText);
 }
 
 // 对所有的选项框事件进行处理
 void Settings::checkBoxChecked(bool checked)
 {
     QCheckBox *checkBox = qobject_cast<QCheckBox *>(sender());
-    qDebug() << checkBox->text() << "选中：" << checked;
+    qDebug() << (checked ? "勾选:" : "取消勾选:") << checkBox->text();
 
     if (checkBox->text() == "debug日志") {
         LogHandler::instance().setLogLevel(checked ? DebugLevel : InfoLevel);
+        qInfo() << (checked ? "开启" : "关闭") << "debug日志";
     }
 
+    saveSetting(checkBox->text(), checked ? "true" : "false");
 }
 
 // 对所有开关的事件进行处理
 void Settings::switchButtonChanged(bool checked)
 {
     MacSwitchButton *switchButton = qobject_cast<MacSwitchButton *>(sender());
-    qDebug() << switchButton->text() << "选中：" << checked;
+    qDebug() << switchButton->text().mid(7) << "选中：" << checked;
 
     for (auto toolManager : *mToolManagerList)
     {
-        if (switchButton->text() == toolManager->getName())
+        if (switchButton->text().mid(7) == toolManager->getName())
         {
             toolManager->setActive(checked);
+            saveSetting(switchButton->text(), checked ? "true" : "false");
             emit appActiveChanged();
             return;
         }
@@ -395,8 +493,8 @@ void Settings::keySequenceChanged(QKeySequence keySequence)
     {
         if (it.value() == name)
         {
-            qInfo() << "注销快捷键：" << name << mHotkeyMap->value(name);
-            qDebug() << "操作id：" << mHotkeyMap->value(name) << it.key();
+            qInfo() << "注销快捷键:" << name.mid(7) << mHotkeyMap->value(name).toString();
+            qDebug() << "操作id:" << mHotkeyMap->value(name).toString() << it.key();
             mHotkeyManager->unregisterHotkey(it.key());
             mHotkeyIdMap->remove(it.key());
             mHotkeyMap->remove(name);
@@ -407,7 +505,10 @@ void Settings::keySequenceChanged(QKeySequence keySequence)
 
     // 快捷键为空时，不注册
     if (keySequence.isEmpty())
+    {
+        saveSetting(name, "");
         return;
+    }
 
     // 第二步：注册，id自增
     for (int id=1; id <= mHotkeyMap->size()+1; id++)
@@ -416,13 +517,79 @@ void Settings::keySequenceChanged(QKeySequence keySequence)
         {
             mHotkeyIdMap->insert(id, name);
             mHotkeyMap->insert(name, keySequence);
-            qInfo() << "注册快捷键：" << name << keySequence;
-            qDebug() << "操作id：" << keySequence << id;
+            qInfo() << "注册快捷键:" << name.mid(7) << keySequence.toString();
+            qDebug() << "操作id:" << keySequence.toString() << id;
             if (!mHotkeyManager->registerHotkey(id, keySequence))
                 keySequenceEdit->setAlert(true, "快捷键被占用，请重新设置");
             else
-                keySequenceEdit->setAlert(false);
+                keySequenceEdit->setAlert(false),
+                saveSetting(name, keySequence.toString());
             break;
         }
     }
+}
+
+template<typename T>
+void Settings::loadSettingsHandler(T *widget, const QString &defaultValue)
+{
+    QString value;
+    QString typeName = QString(typeid(widget).name()).split(' ')[1];
+
+    if (typeName == "MacStyleCheckBox") {
+        MacStyleCheckBox* checkbox = qobject_cast<MacStyleCheckBox*>(widget);
+        if (checkbox) {
+            value = loadSetting(checkbox->text(), defaultValue);
+            checkbox->setChecked(value == "true" ? true : false);
+
+            if (checkbox->text() == "debug日志"){
+                LogHandler::instance().setLogLevel(value == "true" ? DebugLevel : InfoLevel);
+                LogHandler::instance().clearBuffer();
+            }
+            return;
+        }
+    } else if (typeName == "MacSwitchButton") {
+        MacSwitchButton* switchButton = qobject_cast<MacSwitchButton*>(widget);
+        if (switchButton) {
+            value = loadSetting(switchButton->text(), defaultValue);
+            switchButton->setChecked(value == "true" ? true : false);
+            return;
+        }
+    } else if (typeName == "MacStyleComboBox") {
+        MacStyleComboBox* comboBox = qobject_cast<MacStyleComboBox*>(widget);
+        if (comboBox) {
+            value = loadSetting(comboBox->text(), defaultValue);
+            comboBox->setCurrentText(value);
+            return;
+        }
+    } else if (typeName == "CustomKeySequenceEdit") {
+        CustomKeySequenceEdit* keyEdit = qobject_cast<CustomKeySequenceEdit*>(widget);
+        if (keyEdit) {
+            QString name(keyEdit->text());
+            value = loadSetting(name, defaultValue);
+
+            QKeySequence keySequence(value);
+            keyEdit->setKeySequence(QKeySequence(value));
+
+            if (keySequence.isEmpty())
+                return;
+
+            for (int id=1; id <= mHotkeyMap->size()+1; id++) {
+                if (!mHotkeyIdMap->contains(id)) {  // 找一个未使用的id
+                    mHotkeyIdMap->insert(id, name);
+                    mHotkeyMap->insert(name, keySequence);
+                    qInfo() << "注册快捷键:" << name.mid(7) << keySequence.toString();
+                    qDebug() << "操作id:" << keySequence.toString() << id;
+                    if (!mHotkeyManager->registerHotkey(id, keySequence))
+                        keyEdit->setAlert(true, "快捷键被占用，请重新设置");
+                    else
+                        keyEdit->setAlert(false);
+                    break;
+                }
+            }
+
+            return;
+        }
+    }
+
+    qCritical() << "无法识别的类型:" << typeName << defaultValue;
 }
