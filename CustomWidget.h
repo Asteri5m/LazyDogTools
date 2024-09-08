@@ -695,6 +695,17 @@ public:
     void setText(const QString &text){ mText = text; }
     const QString text()             { return mText; }
 
+    QSize sizeHint() const override {
+        // 获取原始的 sizeHint
+        QSize originalSize = QComboBox::sizeHint();
+
+        // 在原来的宽度上增加 10 像素
+        int newWidth = originalSize.width() + 10;
+
+        // 返回新的尺寸，保持高度不变
+        return QSize(newWidth, originalSize.height());
+    }
+
 protected:
     void paintEvent(QPaintEvent *event) override
     {
