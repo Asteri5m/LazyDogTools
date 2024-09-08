@@ -1,6 +1,7 @@
 #include <QTextStream>
 #include <QDebug>
 #include <QDateTime>
+#include <QMessageBox>
 #include "LogHandler.h"
 
 
@@ -71,6 +72,7 @@ void LogHandler::writeLog(QtMsgType type, const QString& tag, const QString& msg
             break;
         case QtFatalMsg:
             levelText = "FATAL";
+            QMessageBox::critical(nullptr, "程序崩溃", msg);
             break;
         }
 
@@ -206,4 +208,63 @@ bool LogHandler::enablePrint(QtMsgType type)
 
     // 返回是否可以输出日志
     return logLevel >= LogHandler::instance().logLevel();
+}
+
+LONG WINAPI LogHandler::UnhandledExceptionFilter(EXCEPTION_POINTERS *exceptionInfo) {
+    // 获取异常信息
+    PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
+
+    // 输出异常代码和地址
+    DWORD exceptionCode = exceptionRecord->ExceptionCode;
+    PVOID exceptionAddress = exceptionRecord->ExceptionAddress;
+
+    // 信息输出到日志
+    qCritical() << "Unhandled Exception occurred!";
+    qCritical() << "Exception Code:" << QString::number(exceptionCode, 16);
+    qCritical() << "Exception Address:" << reinterpret_cast<quintptr>(exceptionAddress);
+
+    // 获取线程和进程信息
+    HANDLE process = GetCurrentProcess();
+    HANDLE thread = GetCurrentThread();
+    DWORD threadId = GetThreadId(thread);
+    DWORD processId = GetProcessId(process);
+
+    qDebug() << "Thread ID:" << threadId;
+    qDebug() << "Process ID:" << processId;
+
+    // 堆栈信息
+    SymInitialize(process, NULL, TRUE);
+    SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_LOAD_LINES);
+
+    STACKFRAME64 stackFrame = {0};
+    CONTEXT* context = exceptionInfo->ContextRecord;
+    stackFrame.AddrPC.Offset = context->Rip;
+    stackFrame.AddrPC.Mode = AddrModeFlat;
+    stackFrame.AddrStack.Offset = context->Rsp;
+    stackFrame.AddrStack.Mode = AddrModeFlat;
+    stackFrame.AddrFrame.Offset = context->Rbp;
+    stackFrame.AddrFrame.Mode = AddrModeFlat;
+
+    while (StackWalk64(IMAGE_FILE_MACHINE_AMD64, process, thread, &stackFrame, context, NULL, SymFunctionTableAccess64, SymGetModuleBase64, NULL)) {
+        if (stackFrame.AddrPC.Offset == 0)
+            break;
+
+        char symbolBuffer[sizeof(SYMBOL_INFO) + 256] = {0};
+        PSYMBOL_INFO symbol = (PSYMBOL_INFO)symbolBuffer;
+        symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+        symbol->MaxNameLen = 255;
+
+        if (SymFromAddr(process, stackFrame.AddrPC.Offset, 0, symbol)) {
+            qDebug() <<  QString("0x%1: %2").arg(symbol->Address, 0, 16).arg(symbol->Name);
+        }
+    }
+
+    QString message = QString("程序发生了意外错误，程序将关闭。<br><br>"
+                              "异常代码: 0x%1<br>"
+                              "异常地址: %2")
+                          .arg(QString::number(exceptionCode, 16))
+                          .arg(reinterpret_cast<quintptr>(exceptionAddress), 0, 16);
+    qFatal() << message.toUtf8().constData();
+
+    return EXCEPTION_EXECUTE_HANDLER;
 }

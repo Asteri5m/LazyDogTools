@@ -7,6 +7,8 @@
 #include <QMutexLocker>
 #include <QDir>
 #include <QRegularExpression>
+#include <Windows.h>
+#include <DbgHelp.h>
 
 
 enum LogLevel {
@@ -24,6 +26,7 @@ class LogHandler
 public:
     static LogHandler& instance();
     static void messageHandler(QtMsgType type, const QMessageLogContext& context, const QString& msg);
+    static LONG UnhandledExceptionFilter(EXCEPTION_POINTERS *exceptionInfo);
 
     void writeLog(QtMsgType type, const QString& tag, const QString& msg);
     void rotateLogs();
@@ -57,5 +60,8 @@ private:
     LogLevel mLogLevel;
     LogBuffer mLogBuffer;
 };
+
+
+// LONG WINAPI CustomUnhandledExceptionFilter(EXCEPTION_POINTERS *exceptionInfo);
 
 #endif // LOGHANDLER_H
