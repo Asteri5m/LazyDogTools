@@ -13,6 +13,7 @@ LIBS += -lUser32 -lDbgHelp
 SOURCES += \
     AudioHelper/AudioHelper.cpp \
     AudioHelper/AudioHelperManager.cpp \
+    AudioHelper/SelectionDialog.cpp \
     HotkeyManager.cpp \
     LogHandler.cpp \
     Settings.cpp \
@@ -27,6 +28,7 @@ HEADERS += \
     AudioHelper/AudioCustom.h \
     AudioHelper/AudioHelper.h \
     AudioHelper/AudioHelperManager.h \
+    AudioHelper/SelectionDialog.h \
     CustomWidget.h \
     HotkeyManager.h \
     LazyDogTools.h \
