@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include "CustomWidget.h"
+#include "AudioCustom.h"
 
 class SelectionDialog : public QDialog
 {

@@ -208,7 +208,7 @@ void AudioHelper::buttonClicked()
 
     if (button->text() == "添加")
     {
-        SelectionDialog dialog;
+        SelectionDialog dialog(this);
 
         // 以模态方式运行对话框，等待用户选择
         if (dialog.exec() == QDialog::Accepted) {
