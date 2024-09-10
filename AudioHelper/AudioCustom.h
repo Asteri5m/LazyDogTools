@@ -201,12 +201,14 @@ public:
     }
 };
 
+#include <QDir>
 #include <QLineEdit>
 #include <QListView>
-#include <QFileSystemModel>
-#include <QDir>
 #include <QMessageBox>
 #include <QStringListModel>
+#include <QStandardItemModel>
+#include <QFileIconProvider>
+
 
 class DiskWidget : public QWidget {
     Q_OBJECT
@@ -217,65 +219,65 @@ public:
         layout->setContentsMargins(0, 0, 0, 0);
 
         // 创建导航栏
-        pathListView = new QListView(this);
-        pathLineEdit = new QLineEdit(this);
+        mPathLineView = new QListView(this);
+        mPathLineEdit = new QLineEdit(this);
 
-        pathListView->setFlow(QListView::LeftToRight);
-        pathListView->setWrapping(false);
-        pathListView->setSelectionMode(QListView::SingleSelection);
-        pathListView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        mPathLineView->setFlow(QListView::LeftToRight);
+        mPathLineView->setWrapping(false);
+        mPathLineView->setSelectionMode(QListView::SingleSelection);
+        mPathLineView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         // pathListView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
-        layout->addWidget(pathListView);
-        layout->addWidget(pathLineEdit);
+        layout->addWidget(mPathLineView);
+        layout->addWidget(mPathLineEdit);
 
-        pathListView->setFixedHeight(30);
-        pathLineEdit->setFixedHeight(30);
-        pathLineEdit->hide();
+        mPathLineView->setFixedHeight(30);
+        mPathLineEdit->setFixedHeight(30);
+        mPathLineEdit->hide();
 
         // 设置自定义委托
-        pathListView->setItemDelegate(new PathDelegate(this));
+        mPathLineView->setItemDelegate(new PathDelegate(this));
 
         // 路径模型
-        pathModel = new QStringListModel(this);
-        pathListView->setModel(pathModel);
+        mPathLineModel = new QStringListModel(this);
+        mPathLineView->setModel(mPathLineModel);
 
         // 文件视图：QListView 显示当前文件夹内容
-        listView = new QListView(this);
-        layout->addWidget(listView);
+        mPathListView = new QListView(this);
+        layout->addWidget(mPathListView);
 
         // 文件系统模型
-        fileModel = new QFileSystemModel(this);
-        fileModel->setFilter(QDir::NoDotAndDotDot | QDir::AllEntries);
-        listView->setModel(fileModel);
+        mPathListModel = new QStandardItemModel(this);
+        mPathListView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        mPathListView->setModel(mPathListModel);
 
         // 初始显示根目录 QDir::rootPath()
         setDirectory("");
 
         // 连接信号槽：点击路径列表项时切换到对应目录
-        connect(pathListView, &QListView::clicked, this, &DiskWidget::onPathItemClicked);
+        connect(mPathLineView, &QListView::clicked, this, &DiskWidget::onPathItemClicked);
 
         // 双击进入文件夹
-        connect(listView, &QListView::doubleClicked, this, &DiskWidget::onItemDoubleClicked);
+        connect(mPathListView, &QListView::doubleClicked, this, &DiskWidget::onItemDoubleClicked);
 
-        connect(listView, &QListView::clicked, this, &DiskWidget::onItemClicked);
+        connect(mPathListView, &QListView::clicked, this, &DiskWidget::onItemClicked);
 
         // 双击路径列表的空白处以手动输入路径
-        pathListView->viewport()->installEventFilter(this);
+        mPathLineView->viewport()->installEventFilter(this);
         // 连接信号槽: 当路径编辑框按回车键时，跳转到输入的路径
-        connect(pathLineEdit, &QLineEdit::returnPressed, this, &DiskWidget::onPathEntered);
-        connect(pathLineEdit, &QLineEdit::editingFinished, this, &DiskWidget::onEditingFinished);
+        connect(mPathLineEdit, &QLineEdit::returnPressed, this, &DiskWidget::onPathEntered);
+        connect(mPathLineEdit, &QLineEdit::editingFinished, this, &DiskWidget::onEditingFinished);
 
     }
 
 protected:
     // 捕捉双击事件，在路径栏双击空白处时，弹出输入框
     bool eventFilter(QObject *obj, QEvent *event) override {
-        if (obj == pathListView->viewport() && event->type() == QEvent::MouseButtonDblClick) {
-            pathLineEdit->setText(currentPath);
-            pathListView->hide();
-            pathLineEdit->show();
-            pathLineEdit->setFocus();
+        if (obj == mPathLineView->viewport() && event->type() == QEvent::MouseButtonDblClick) {
+            mPathLineEdit->setText(mCurrentPath);
+            mPathLineView->hide();
+            mPathLineEdit->show();
+            mPathLineEdit->setFocus();
         }
         return QWidget::eventFilter(obj, event);
     }
@@ -283,34 +285,36 @@ protected:
 private slots:
     // 用户点击路径中的某一部分时，切换到该路径
     void onPathItemClicked(const QModelIndex &index) {
-        QStringList pathList = currentPath.split("/", Qt::SkipEmptyParts);
-        QString newPath = pathList.mid(0, index.row() + 1).join("/");
+        QStringList pathList = mCurrentPath.split("/", Qt::SkipEmptyParts);
+        QString newPath = pathList.mid(0, index.row()).join("/");
         setDirectory(newPath);
     }
 
     // 用户双击文件夹时进入该目录
     void onItemDoubleClicked(const QModelIndex &index) {
-        if (fileModel->isDir(index)) {
-            QString newPath = fileModel->filePath(index);
+        QString newPath = QDir(mCurrentPath).filePath(index.data().toString());
+        QFileInfo fileInfo(newPath);
+        if (fileInfo.isDir()) {
             setDirectory(newPath);
         }
     }
 
+    // 输入完后自动切会列表
     void onEditingFinished() {
-        pathLineEdit->hide();
-        pathListView->show();
+        mPathLineEdit->hide();
+        mPathLineView->show();
     }
 
     // 用户按回车输入路径时的处理函数
     void onPathEntered() {
-        QString enteredPath = pathLineEdit->text();
-        pathLineEdit->hide();
-        pathListView->show();
-        setDirectory(enteredPath.replace("\\", "/"));
+        QString enteredPath = mPathLineEdit->text();
+        mPathLineEdit->hide();
+        mPathLineView->show();
+        setDirectory(QDir::cleanPath(enteredPath));
     }
 
     void onItemClicked(const QModelIndex &index) {
-        QString currentText = fileModel->filePath(index);
+        QString currentText = QDir(mCurrentPath).filePath(index.data().toString());
         emit currentChanged(currentText);
     }
 
@@ -321,29 +325,59 @@ private:
     // 更新当前显示的路径
     void setDirectory(const QString &path) {
         QDir dir(path);
+        if (path.endsWith(":"))
+            dir = QDir(path + "/");
+
+        // 相对路径会导致图标解析失败
+        dir = QDir(dir.canonicalPath());
+
         if (!dir.exists()) {
             QMessageBox::warning(this, tr("路径错误"), tr("该路径不存在！"));
-        } else {
-            currentPath = path;
-
-            // 更新路径模型
-            QStringList pathList = currentPath.split("/", Qt::SkipEmptyParts);
-            pathModel->setStringList(pathList);
-
-            // 始终滚动到路径的最后一个部分
-            pathListView->scrollTo(pathModel->index(pathModel->rowCount() - 1), QAbstractItemView::PositionAtCenter);
-
-            // 更新文件视图
-            listView->setRootIndex(fileModel->setRootPath(currentPath));
+            return;
         }
+
+        mCurrentPath = path=="" ? "" : dir.absolutePath();
+
+        // 更新路径模型
+        QStringList pathList = mCurrentPath.split("/", Qt::SkipEmptyParts);
+        pathList.insert(0, "此设备");
+        mPathLineModel->setStringList(pathList);
+
+        // 始终滚动到路径的最后一个部分
+        mPathLineView->scrollTo(mPathLineModel->index(mPathLineModel->rowCount() - 1), QAbstractItemView::PositionAtCenter);
+
+        // 更新文件视图
+        QFileIconProvider iconProvider;
+        dir.setSorting(QDir::DirsFirst);
+
+        // 处理根目录
+        QFileInfoList fileInfoList;
+        if (path == "")
+            fileInfoList = QDir::drives();
+        else
+            fileInfoList =  dir.entryInfoList(QDir::AllEntries | QDir::NoDot);
+
+        // 列出文件和文件夹
+        mPathListModel->clear();
+        foreach (const QFileInfo fileInfo, fileInfoList) {
+            QStandardItem *item;
+            if (path == "")
+                // drives的fileName是空的
+                item = new QStandardItem(iconProvider.icon(fileInfo), fileInfo.absoluteFilePath());
+            else
+                item = new QStandardItem(iconProvider.icon(fileInfo), fileInfo.fileName());
+            mPathListModel->appendRow(item);
+        }
+
+        mPathListView->update();
     }
 
-    QLineEdit *pathLineEdit;
-    QListView *pathListView;          // 用于显示路径的横向列表
-    QStringListModel *pathModel;      // 路径模型
-    QListView *listView;              // 文件列表视图
-    QFileSystemModel *fileModel;      // 文件系统模型
-    QString currentPath;              // 当前路径
+    QLineEdit *mPathLineEdit;          // 用于编辑路径
+    QListView *mPathLineView;          // 用于显示当前路径
+    QStringListModel *mPathLineModel;  // 路径模型
+    QListView *mPathListView;          // 文件列表视图
+    QStandardItemModel *mPathListModel;// 文件列表模型
+    QString mCurrentPath;              // 当前路径
 };
 
 #endif // AUDIOCUSTOM_H
