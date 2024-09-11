@@ -209,7 +209,6 @@ public:
 #include <QStandardItemModel>
 #include <QFileIconProvider>
 
-
 class DiskWidget : public QWidget {
     Q_OBJECT
 
@@ -217,6 +216,7 @@ public:
     DiskWidget(QWidget *parent = nullptr) : QWidget(parent) {
         QVBoxLayout *layout = new QVBoxLayout(this);
         layout->setContentsMargins(0, 0, 0, 0);
+        layout->setSpacing(3);
 
         // 创建导航栏
         mPathLineView = new QListView(this);
@@ -226,7 +226,6 @@ public:
         mPathLineView->setWrapping(false);
         mPathLineView->setSelectionMode(QListView::SingleSelection);
         mPathLineView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        // pathListView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
         layout->addWidget(mPathLineView);
         layout->addWidget(mPathLineEdit);
@@ -257,9 +256,8 @@ public:
         // 连接信号槽：点击路径列表项时切换到对应目录
         connect(mPathLineView, &QListView::clicked, this, &DiskWidget::onPathItemClicked);
 
-        // 双击进入文件夹
+        // 双击进入文件夹，单击选中
         connect(mPathListView, &QListView::doubleClicked, this, &DiskWidget::onItemDoubleClicked);
-
         connect(mPathListView, &QListView::clicked, this, &DiskWidget::onItemClicked);
 
         // 双击路径列表的空白处以手动输入路径

@@ -167,15 +167,23 @@ void AudioHelper::initPrefsPage()
     // 通知
     NoBorderGroupBox *notifyGroupBox = new NoBorderGroupBox("通知");
     QGridLayout *notifyLayout = new QGridLayout(notifyGroupBox);
-
     MacStyleCheckBox *notifyCheckBox = new MacStyleCheckBox("切换时通知");
     notifyLayout->addWidget(notifyCheckBox, 0, 0);
+
+
+    // 过滤
+    NoBorderGroupBox *filterGroupBox = new NoBorderGroupBox("通知");
+    QGridLayout *filterLayout = new QGridLayout(filterGroupBox);
+    MacStyleCheckBox *filterCheckBox = new MacStyleCheckBox("开启过滤");
+    filterLayout->addWidget(new QLabel("在添加关联项时过程系统应用的进程与窗口"), 0, 0);
+    filterLayout->addWidget(filterCheckBox, 1, 0);
 
 
     // 添加各个区域到mainLayout
     mainLayout->addWidget(modeGroupBox);
     mainLayout->addWidget(sceneGroupBox);
     mainLayout->addWidget(notifyGroupBox);
+    mainLayout->addWidget(filterGroupBox);
 
     // 添加一个弹簧，用于撑起空白区域
     mainLayout->addStretch();
@@ -195,6 +203,7 @@ void AudioHelper::initPrefsPage()
 
     // 连接槽 - 选择框
     connect(notifyCheckBox, SIGNAL(clicked(bool)), this, SLOT(checkBoxChecked(bool)));
+    connect(filterCheckBox, SIGNAL(clicked(bool)), this, SLOT(checkBoxChecked(bool)));
 
     // 连接槽 - 下拉框
     connect(modeComBox, SIGNAL(currentTextChanged(QString)), this, SLOT(comboBoxChanged(QString)));

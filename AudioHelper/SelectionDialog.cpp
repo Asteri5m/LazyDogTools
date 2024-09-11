@@ -1,12 +1,9 @@
 #include "SelectionDialog.h"
-#include <QDialogButtonBox>
-#include <QTabWidget>
-#include <QFileDialog>
-#include <QListView>
-#include <QTreeView>
+
 
 SelectionDialog::SelectionDialog(QWidget *parent)
     : QDialog{parent}
+    , mTaskMonitor(new TaskMonitor(this))
 {
     setWindowTitle("添加关联项");
     setFixedSize(460, 520);
@@ -21,18 +18,27 @@ SelectionDialog::SelectionDialog(QWidget *parent)
     // 创建第一个选项卡“进程”
     QWidget *processTab = new QWidget();
     QVBoxLayout *processLayout = new QVBoxLayout(processTab);
-    QLabel *processLabel = new QLabel("这是进程选项卡的内容");
-    processLayout->addWidget(processLabel);
+    processLayout->setContentsMargins(6, 6, 5, 5);
+    QListView *processListView = new QListView();
+    processListView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    processListView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    processListView->setModel(mTaskMonitor->getProcessModel());
+    processLayout->addWidget(processListView);
 
     // 创建第二个选项卡“窗口”
     QWidget *windowTab = new QWidget();
     QVBoxLayout *windowLayout = new QVBoxLayout(windowTab);
-    QLabel *windowLabel = new QLabel("这是窗口选项卡的内容");
-    windowLayout->addWidget(windowLabel);
+    windowLayout->setContentsMargins(6, 6, 5, 5);
+    QListView *windowListView = new QListView();
+    windowListView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    windowListView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    windowListView->setModel(mTaskMonitor->getWindowsModel());
+    windowLayout->addWidget(windowListView);
 
-    // 创建第二个选项卡“磁盘”
+    // 创建第三个选项卡“磁盘”
     QWidget *diskTab = new QWidget();
     QVBoxLayout *diskLayout = new QVBoxLayout(diskTab);
+    diskLayout->setContentsMargins(6, 6, 5, 5);
     DiskWidget *diskWidget = new DiskWidget();
     diskLayout->addWidget(diskWidget);
 
@@ -41,59 +47,33 @@ SelectionDialog::SelectionDialog(QWidget *parent)
     tabWidget->addTab(windowTab, "窗口");
     tabWidget->addTab(diskTab, "磁盘");
 
-
     MacStyleButton *checkButton  = new MacStyleButton("添加");
     MacStyleButton *cancelButton = new MacStyleButton("取消");
     MacStyleButton *renewButton  = new MacStyleButton("刷新");
-    // MacStyleButton *fileButton   = new MacStyleButton("从文件添加");
 
     checkButton->setNormalColorBlue(true);
-    // fileButton ->setNormalColorBlue(true);
     renewButton->setNormalColorBlue(true);
 
+    //添加底部按钮
     footLayout->addWidget(checkButton);
-    // footLayout->addWidget(fileButton);
     footLayout->addWidget(renewButton);
     footLayout->addStretch(1);
     footLayout->addWidget(cancelButton);
 
-    // 连接按钮信号到槽
+    // 连接槽
     connect(diskWidget, SIGNAL(currentChanged(QString)), this, SLOT(updateSelection(QString)));
     connect(checkButton,  SIGNAL(clicked()), this, SLOT(accept()));
     connect(cancelButton, SIGNAL(clicked()), this, SLOT(reject()));
+    connect(renewButton, SIGNAL(clicked()), mTaskMonitor, SLOT(update()));
+    connect(processListView, SIGNAL(clicked(QModelIndex)), this, SLOT(onProcessItemClicked(QModelIndex)));
+    connect(windowListView,  SIGNAL(clicked(QModelIndex)), this, SLOT(onWindowItemClicked(QModelIndex)));
 
-    // 连接按钮点击事件
-    // QObject::connect(fileButton, &MacStyleButton::clicked, [&]() {
-    //     // 创建文件对话框，可以选择文件或目录
-    //     QFileDialog dialog;
-
-    //     dialog.setFileMode(QFileDialog::ExistingFile);
-
-    //     // 设置文件过滤器（可以根据需要修改）
-    //     dialog.setNameFilters(QStringList() << "可执行文件 (*.exe *.bat *.lnk)"
-    //                                         << "所有文件 (*.*)");
-
-    //     // 设置默认过滤器
-    //     dialog.setDefaultSuffix("exe");
-
-    //     // 允许用户选择目录或者文件
-    //     dialog.setWindowTitle("选择文件或目录");
-
-    //     // 打开对话框并获取用户选择的路径
-    //     if (dialog.exec() == QDialog::Accepted) {
-    //         // 获取选中的路径
-    //         QStringList selectedFiles = dialog.selectedFiles();
-
-    //         // 这里只显示选择的第一个文件或目录
-    //         QString selectedPath = selectedFiles.isEmpty() ? "" : selectedFiles.first();
-
-    //         // 弹出消息框显示选择的路径
-    //         qDebug() << "选择路径: " << selectedPath;
-    //     } else {
-    //         qDebug() << "没有选择任何文件或目录";
-    //     }
-    // });
-
+    // 设置过滤器并刷新
+    QStringList filter;
+    filter << "C:/Windows/" << "C:/Program Files/WindowsApps/";
+    mTaskMonitor->setFilter(filter, TaskMonitor::Process);
+    mTaskMonitor->setFilter(filter, TaskMonitor::Windows);
+    mTaskMonitor->update();
 }
 
 QString SelectionDialog::getSelectedOption() const
@@ -104,6 +84,16 @@ QString SelectionDialog::getSelectedOption() const
 void SelectionDialog::updateSelection(const QString &text)
 {
     mSelectedOption = text;
+}
+
+void SelectionDialog::onWindowItemClicked(const QModelIndex &index)
+{
+    updateSelection(mTaskMonitor->filePath(index, TaskMonitor::Windows));
+}
+
+void SelectionDialog::onProcessItemClicked(const QModelIndex &index)
+{
+    updateSelection(mTaskMonitor->filePath(index, TaskMonitor::Process));
 }
 
 
