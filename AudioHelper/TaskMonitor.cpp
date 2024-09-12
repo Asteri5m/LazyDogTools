@@ -48,7 +48,6 @@ QString TaskMonitor::filePath(const QModelIndex& index, TaskMode mode)
 
 void TaskMonitor::setFilter(QStringList &headers, TaskMode mode)
 {
-    qDebug() << headers;
     switch (mode) {
     case Process:
         mProcessFilter = new QStringList(headers);
@@ -56,7 +55,6 @@ void TaskMonitor::setFilter(QStringList &headers, TaskMode mode)
     case Windows:
         mWindowsFilter = new QStringList(headers);
     }
-    qDebug() << *mProcessFilter;
 }
 
 // 更新数据（更新模型）
@@ -105,6 +103,9 @@ void TaskMonitor::updateProcessModel()
 
         // 将进程信息添加到文件信息列表（模拟 QFileInfo 用于兼容接口）
         QFileInfo fileInfo(drivepath);
+        if (mProcessInfoList->contains(fileInfo))
+            continue;
+
         mProcessInfoList->append(fileInfo);
 
         // 获取friendname, 首先尝试解析，解析失败后则使用QFileInfo::baseName

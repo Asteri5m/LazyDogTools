@@ -88,6 +88,9 @@ inline QMap<QString, TagLabel::Theme> TagTheme =  {
     {"游戏", TagLabel::Pink},
 };
 
+
+#include <QFileIconProvider>
+#include <QPixmap>
 class AudioTaskListWidgetItem : public QWidget {
     Q_OBJECT
 public:
@@ -103,8 +106,23 @@ public:
         label2 = new TagLabel(col2.length() > 2 ? col2 : QString(col2).insert(1, "   "));
         label3 = new QLabel(col3);
 
+        // 获取文件的图标
+        QFileIconProvider fileIconProvider;
+        QIcon icon = fileIconProvider.icon(QFileInfo(col1));
+        QList<QSize> sizes = icon.availableSizes();
+        QPixmap pixmap = icon.pixmap(sizes.first());
+        QLabel *iconLabel = new QLabel();
+        iconLabel->setPixmap(pixmap);
+
+        // 第一列由 图标+描述 组成
+        QHBoxLayout *headerLayout = new QHBoxLayout();
+        headerLayout->setAlignment(Qt::AlignLeft);
+        headerLayout->addWidget(iconLabel);
+        headerLayout->addWidget(label1);
+
+
         // 添加到布局
-        layout->addWidget(label1);
+        layout->addLayout(headerLayout);
         layout->addWidget(label2);
         layout->addWidget(label3);
 
@@ -145,9 +163,9 @@ protected:
         int totalWidth = event->size().width();  // 当前控件总宽度
         int columnWidth = (totalWidth - label2->width()) / 2;
 
-        // 动态调整每个 QLabel 的文本长度并添加省略号
-        updateLabelText(label1, originalText1, columnWidth);
-        updateLabelText(label3, originalText3, columnWidth);
+        // 动态调整每个 QLabel 的文本长度并添加省略号 需要额外留出空间，否则无法对齐
+        updateLabelText(label1, originalText1, columnWidth - 20); // 减去图标长度
+        updateLabelText(label3, originalText3, columnWidth - 5);
     }
 
 private:
@@ -370,12 +388,68 @@ private:
         mPathListView->update();
     }
 
-    QLineEdit *mPathLineEdit;          // 用于编辑路径
-    QListView *mPathLineView;          // 用于显示当前路径
-    QStringListModel *mPathLineModel;  // 路径模型
-    QListView *mPathListView;          // 文件列表视图
-    QStandardItemModel *mPathListModel;// 文件列表模型
     QString mCurrentPath;              // 当前路径
+    QLineEdit *mPathLineEdit;          // 路径列表编辑栏
+    QListView *mPathLineView;          // 路径列表视图
+    QListView *mPathListView;          // 文件列表视图
+    QStringListModel *mPathLineModel;  // 路径列表模型
+    QStandardItemModel *mPathListModel;// 文件列表模型
+};
+
+
+#include "AudioManager.h"
+#include "CustomWidget.h"
+
+class AudioChoiceDialog : public QDialog {
+    Q_OBJECT
+
+public:
+    explicit AudioChoiceDialog(QWidget *parent = nullptr) : QDialog(parent) {
+        // 设置对话框标题
+        setWindowTitle("请选择音频设备");
+
+        // 创建一个 QLabel 来描述下拉框的用途
+        QLabel* label = new QLabel("请选择需要关联的音频设备:", this);
+
+        // 创建 QComboBox 并添加选项
+        mComboBox = new MacStyleComboBox(this);
+        AudioDeviceList deviceList = AudioManager::GetAudioOutDeviceList();
+        foreach (QString name, deviceList.keys()) {
+            mComboBox->addItem(name);
+        }
+
+        // 创建按钮框，包含 "确定" 和 "取消" 按钮
+        QHBoxLayout *buttonLayout = new QHBoxLayout();
+        MacStyleButton *checkButton  = new MacStyleButton("添加");
+        MacStyleButton *cancelButton = new MacStyleButton("取消");
+
+        checkButton->setNormalColorBlue(true);
+
+        buttonLayout->addWidget(checkButton);
+        buttonLayout->addStretch(1);
+        buttonLayout->addWidget(cancelButton);
+
+
+        // 连接 "确定" 和 "取消" 按钮的信号到相应的槽
+        connect(checkButton,  SIGNAL(clicked()), this, SLOT(accept()));  // 点击 "确定"
+        connect(cancelButton, SIGNAL(clicked()), this, SLOT(reject()));  // 点击 "取消"
+
+        // 创建布局并将部件添加到布局中
+        QVBoxLayout* layout = new QVBoxLayout(this);
+        layout->addWidget(label);
+        layout->addWidget(mComboBox);
+        layout->addLayout(buttonLayout);
+
+        setFixedSize(sizeHint());
+    }
+
+    // 提供一个方法来返回 QComboBox 的当前选择
+    QString selectedOption() const {
+        return mComboBox->currentText();
+    }
+
+private:
+    QComboBox* mComboBox;
 };
 
 #endif // AUDIOCUSTOM_H

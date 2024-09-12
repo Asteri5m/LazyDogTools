@@ -17,11 +17,6 @@ AudioHelper::AudioHelper(QWidget *parent)
     addTab(mHomePage,  QIcon(":/ico/todo.svg"), "任务");
     addTab(mPrefsPage, QIcon(":/ico/user-settings.svg"), "偏好");
 
-    // QVBoxLayout *layout1 = new QVBoxLayout(mHomePage);
-    // QVBoxLayout *layout2 = new QVBoxLayout(mPrefsPage);
-
-    // layout1->addWidget(new QLabel("任务页面内容", this));
-    // layout2->addWidget(new QLabel("偏好页面内容", this));
     initHomePage();
     initPrefsPage();
 
@@ -172,11 +167,14 @@ void AudioHelper::initPrefsPage()
 
 
     // 过滤
-    NoBorderGroupBox *filterGroupBox = new NoBorderGroupBox("通知");
+    NoBorderGroupBox *filterGroupBox = new NoBorderGroupBox("过滤");
     QGridLayout *filterLayout = new QGridLayout(filterGroupBox);
-    MacStyleCheckBox *filterCheckBox = new MacStyleCheckBox("开启过滤");
-    filterLayout->addWidget(new QLabel("在添加关联项时过程系统应用的进程与窗口"), 0, 0);
-    filterLayout->addWidget(filterCheckBox, 1, 0);
+    MacStyleCheckBox *filterProcessCheckBox    = new MacStyleCheckBox("过滤系统项");
+    MacStyleCheckBox *filterRepetitionCheckBox = new MacStyleCheckBox("过滤重复项");
+    filterLayout->addWidget(filterProcessCheckBox, 1, 0);
+    filterLayout->addWidget(filterRepetitionCheckBox, 1, 1);
+    filterProcessCheckBox->setToolTip("在添加关联项时过滤系统应用的进程与窗口");
+    filterRepetitionCheckBox->setToolTip("在添加关联项时过滤同一可执行文件的重复进程");
 
 
     // 添加各个区域到mainLayout
@@ -203,7 +201,8 @@ void AudioHelper::initPrefsPage()
 
     // 连接槽 - 选择框
     connect(notifyCheckBox, SIGNAL(clicked(bool)), this, SLOT(checkBoxChecked(bool)));
-    connect(filterCheckBox, SIGNAL(clicked(bool)), this, SLOT(checkBoxChecked(bool)));
+    connect(filterProcessCheckBox, SIGNAL(clicked(bool)), this, SLOT(checkBoxChecked(bool)));
+    connect(filterRepetitionCheckBox, SIGNAL(clicked(bool)), this, SLOT(checkBoxChecked(bool)));
 
     // 连接槽 - 下拉框
     connect(modeComBox, SIGNAL(currentTextChanged(QString)), this, SLOT(comboBoxChanged(QString)));
@@ -217,15 +216,35 @@ void AudioHelper::buttonClicked()
 
     if (button->text() == "添加")
     {
-        SelectionDialog dialog(this);
+        SelectionDialog selectioDialog(this);
 
-        // 以模态方式运行对话框，等待用户选择
-        if (dialog.exec() == QDialog::Accepted) {
-            QString selected = dialog.getSelectedOption();
-            qDebug() << "你选择了: " <<  selected;
-        } else {
-            qDebug() << "你取消了选择";
+        // 先选任务触发项
+        if (selectioDialog.exec() != QDialog::Accepted) {
+            qDebug() << "任务触发项：取消选择";
+            return;
         }
+
+        QString selected = selectioDialog.selectedOption();
+        qDebug() << "任务触发项：" <<  selected;
+
+        // 再选任务关联项
+        AudioChoiceDialog choiceDialog(this);
+        if (choiceDialog.exec() != QDialog::Accepted) {
+            qDebug() << "任务关联项：取消选择";
+            return;
+        }
+
+        QString device = choiceDialog.selectedOption();
+        qDebug() << "任务关联项：" <<  device;
+
+        // test
+        AudioTaskListWidgetItem *widget = new AudioTaskListWidgetItem(selected, "测试", device);
+
+        // 将自定义的 QWidget 添加到 QListWidgetItem 中
+        QListWidgetItem *item = new QListWidgetItem(mTaskTab);
+        mTaskTab->setItemWidget(item, widget);
+        item->setSizeHint(widget->sizeHint());
+        // test end
     }
 }
 

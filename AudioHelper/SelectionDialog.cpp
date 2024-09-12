@@ -76,7 +76,7 @@ SelectionDialog::SelectionDialog(QWidget *parent)
     mTaskMonitor->update();
 }
 
-QString SelectionDialog::getSelectedOption() const
+QString SelectionDialog::selectedOption() const
 {
     return mSelectedOption;
 }

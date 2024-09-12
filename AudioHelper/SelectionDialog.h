@@ -12,7 +12,7 @@ class SelectionDialog : public QDialog
 public:
     explicit SelectionDialog(QWidget *parent = nullptr);
 
-    QString getSelectedOption() const;
+    QString selectedOption() const;
 
 signals:
 
