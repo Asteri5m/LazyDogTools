@@ -664,6 +664,11 @@ class MacStyleComboBox : public QComboBox
     Q_OBJECT
 
 public:
+    MacStyleComboBox(QWidget *parent = nullptr)
+    {
+        MacStyleComboBox(QString(), parent);
+    }
+
     MacStyleComboBox(const QString &text = QString(), QWidget *parent = nullptr)
         : QComboBox(parent)
         , mText(text)
@@ -685,9 +690,9 @@ public:
             "   selection-background-color: #fff;"
             "   selection-color: white;"
             "}"
-            "QComboBox::item {"
-            "   padding: 5px;"
-            "}"
+            // "QComboBox::item {"
+            // "   padding: 5px;"
+            // "}"
             );
     }
 
@@ -699,11 +704,11 @@ public:
         // 获取原始的 sizeHint
         QSize originalSize = QComboBox::sizeHint();
 
-        // 在原来的宽度上增加 10 像素
         int newWidth = originalSize.width() + 10;
+        int newHeight = originalSize.height() + 4;
 
-        // 返回新的尺寸，保持高度不变
-        return QSize(newWidth, originalSize.height());
+        // 返回新的尺寸
+        return QSize(newWidth, newHeight);
     }
 
 protected:
