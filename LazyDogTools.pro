@@ -4,7 +4,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++17
 
-LIBS += -lUser32 -lDbgHelp  -lversion
+LIBS += -lUser32 -lDbgHelp -lversion -lole32
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -13,6 +13,7 @@ LIBS += -lUser32 -lDbgHelp  -lversion
 SOURCES += \
     AudioHelper/AudioHelper.cpp \
     AudioHelper/AudioHelperManager.cpp \
+    AudioHelper/AudioManager.cpp \
     AudioHelper/SelectionDialog.cpp \
     AudioHelper/TaskMonitor.cpp \
     HotkeyManager.cpp \
@@ -29,12 +30,15 @@ HEADERS += \
     AudioHelper/AudioCustom.h \
     AudioHelper/AudioHelper.h \
     AudioHelper/AudioHelperManager.h \
+    AudioHelper/AudioManager.h \
+    AudioHelper/PolicyConfig.h \
     AudioHelper/SelectionDialog.h \
     AudioHelper/TaskMonitor.h \
     CustomWidget.h \
     HotkeyManager.h \
     LazyDogTools.h \
     LogHandler.h \
+    PolicyConfig.h \
     Settings.h \
     SettingsManager.h \
     ToolManager.h \
