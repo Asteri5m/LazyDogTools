@@ -172,9 +172,17 @@ void AudioHelper::initPrefsPage()
     MacStyleCheckBox *filterProcessCheckBox    = new MacStyleCheckBox("过滤系统项");
     MacStyleCheckBox *filterRepetitionCheckBox = new MacStyleCheckBox("过滤重复项");
     filterLayout->addWidget(filterProcessCheckBox, 1, 0);
-    filterLayout->addWidget(filterRepetitionCheckBox, 1, 1);
-    filterProcessCheckBox->setToolTip("在添加关联项时过滤系统应用的进程与窗口");
-    filterRepetitionCheckBox->setToolTip("在添加关联项时过滤同一可执行文件的重复进程");
+    filterLayout->addWidget(filterRepetitionCheckBox, 1, 3);
+
+    // 提示按钮
+    HintLabel *processHint    = new HintLabel("?", "在添加关联项时过滤系统应用的进程与窗口");
+    HintLabel *RepetitionHint = new HintLabel("?", "在添加关联项时过滤同一可执行文件的重复进程");
+    filterLayout->addWidget(processHint, 1, 1);
+    filterLayout->addWidget(RepetitionHint, 1, 4);
+
+    // 设置填充
+    filterLayout->setColumnStretch(2, 1);
+    filterLayout->setColumnStretch(5, 1);
 
 
     // 添加各个区域到mainLayout

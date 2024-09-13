@@ -996,4 +996,32 @@ private:
 
 };
 
+
+class HintLabel : public QLabel
+{
+    Q_OBJECT
+public:
+    explicit HintLabel(const QString &text, const QString &hint, QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags())
+        : QLabel(text.at(0), parent, f)
+        , mHint(hint)
+    {
+        setFixedSize(16, 16);
+        setAlignment(Qt::AlignCenter);
+        setStyleSheet("border-radius: 8px;"
+                      "background-color: #007AFF;"
+                      "color: white;");
+        setToolTip(mHint);
+    }
+
+protected:
+    // 添加按下鼠标也能显示提示
+    void mousePressEvent(QMouseEvent *event) override
+    {
+        QToolTip::showText(event->globalPos(), mHint,this);
+    }
+
+private:
+    QString mHint;
+};
+
 #endif // CUSTOMWIDGET_H
