@@ -307,90 +307,46 @@ public:
     explicit MacStyleButton(const QString &text, QWidget *parent = nullptr)
         : QPushButton(text, parent)
     {
-        // 设置默认样式
+        // 设置按钮的样式表
+        setStyleSheet(generateStyleSheet(false));  // 默认使用白色样式
         setFixedHeight(24);
         setMinimumWidth(90);
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     }
 
-    // 按钮的两种基本颜色，白色、蓝色
+    // 切换蓝色或白色样式
     void setNormalColorBlue(bool isBlue)
     {
-        mIsBlue = isBlue;
-        if (isBlue)
-        {
-            mNormalColor = QColor(0, 122, 255);
-            mFontColor   = QColor("white");
-        }
-        else
-        {
-            mNormalColor = QColor(255, 255, 255);
-            mFontColor   = QColor("black");
-        }
-    }
-
-protected:
-    void paintEvent(QPaintEvent *event) override {
-        Q_UNUSED(event);
-        QStyleOptionButton option;
-        option.initFrom(this);
-
-        QPainter painter(this);
-        painter.setRenderHint(QPainter::Antialiasing);
-
-        QColor fontColor = mFontColor;
-        // 绘制背景
-        if (isDown())
-        {
-            painter.setBrush(mCheckedColor);
-            fontColor = QColor("white");
-        }
-        else
-        {
-            painter.setBrush(mNormalColor);
-        }
-
-        // 绘制边框
-        painter.setPen(mBorderColor);
-        painter.drawRoundedRect(rect(), 6, 6);
-
-        // 绘制文本
-        painter.setPen(fontColor);
-        painter.drawText(rect(), Qt::AlignCenter, text());
-    }
-
-    void enterEvent(QEnterEvent *event) override
-    {
-        Q_UNUSED(event);
-        if (!mIsBlue)
-        {
-            mBorderColor = mBorderColorFocus;
-        }
-        else
-        {
-            mBorderColor = mCheckedColor;
-        }
-    }
-
-    void leaveEvent(QEvent *event) override
-    {
-        Q_UNUSED(event);
-        mBorderColor = mBorderColorNormal;
+        // 重新设置样式表
+        setStyleSheet(generateStyleSheet(isBlue));
     }
 
 private:
-    // 颜色定义
-    QColor mCheckedColor{15,  106, 235};  // #0f6aeb
-    QColor mNormalColor {255, 255, 255};
-    // 字体颜色
-    QColor mFontColor{"black"};
+    // 生成QSS样式表
+    QString generateStyleSheet(bool isBlue) const
+    {
+        // 定义蓝色渐变的线性渐变背景
+        QString backgroundColor = isBlue ? "qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #2d8cff, stop:1 #0c75ff)" : "#FFFFFF";
+        QString borderColor = isBlue ? "#007AFF" : "#C8C8C8";
+        QString fontColor = isBlue ? "white" : "black";
+        // QString hoverColor = isBlue ? "#0066CC" : "#0f6aeb";
+        QString pressedColor = isBlue ? "#0f6aeb" : "#0f6aeb";
 
-    QColor mBorderColorNormal{200, 200, 200};
-    QColor mBorderColorFocus {245, 245, 245};
-
-    QColor mBorderColor = mBorderColorNormal;
-    bool mIsBlue = false;
+        return QString(
+                   "QPushButton {"
+                   "   background-color: %1;"
+                   "   border: 1px solid %2;"
+                   "   border-radius: 6px;"
+                   "   color: %3;"
+                   "}"
+                   "QPushButton:pressed {"
+                   "   background-color: %4;"
+                   "   color: white;"  // 按下时文本变为白色
+                   "}"
+                   ).arg(backgroundColor, borderColor, fontColor, pressedColor);
+    }
 };
+
 
 // Mac样式开关
 class MacSwitchButton : public QWidget

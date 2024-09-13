@@ -29,12 +29,12 @@ public:
         mainLayout->setAlignment(Qt::AlignCenter);
 
         mLabel->setFixedSize(60, 20);
-        mLabel->setStyleSheet(getStyleSheet(theme));
+        mLabel->setStyleSheet(generateStyleSheet(theme));
         mLabel->setAlignment(Qt::AlignCenter);
         mainLayout->addWidget(mLabel);
     }
 
-    QString getStyleSheet(Theme theme)
+    QString generateStyleSheet(Theme theme)
     {
         QString back_color = "#fffbce";
         QString text_color = "#fdaf32";
@@ -72,7 +72,7 @@ public:
 
     void setTheme(Theme theme)
     {
-        mLabel->setStyleSheet(getStyleSheet(theme));
+        mLabel->setStyleSheet(generateStyleSheet(theme));
     }
 
 private:
@@ -119,7 +119,6 @@ public:
         headerLayout->setAlignment(Qt::AlignLeft);
         headerLayout->addWidget(iconLabel);
         headerLayout->addWidget(label1);
-
 
         // 添加到布局
         layout->addLayout(headerLayout);
