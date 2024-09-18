@@ -1,5 +1,6 @@
 #include "SelectionDialog.h"
 #include "AudioHelper.h"
+#include "AudioDatabaseManager.h"
 
 AudioHelper::AudioHelper(QWidget *parent)
     : ToolWidgetModel{parent}
@@ -38,6 +39,8 @@ void AudioHelper::initHomePage()
     mainLayout->addWidget(mTaskTab);
     mainLayout->addLayout(footLayout);
 
+
+    // 设置表头
     QLabel *keyLabel   = new QLabel("关联项");
     QLabel *typeLabel  = new QLabel("关联类型");
     QLabel *valueLabel = new QLabel("关联设备");
@@ -56,23 +59,22 @@ void AudioHelper::initHomePage()
     typeLabel ->setStyleSheet("font-size: 14px; font-weight: bold;");
     valueLabel->setStyleSheet("font-size: 14px; font-weight: bold;");
 
-    // widget->setStyleSheet("border: 1px solid balck;");
 
-    // QStringList tags = {"进程", "窗口", "文件夹","文件", "游戏"};
-    // // 创建多个自定义的 AudioTaskListWidgetItem 并将其添加到 QListWidget 中
-    // for (int i = 0; i < 50; ++i) {
-    //     AudioTaskListWidgetItem *widget = new AudioTaskListWidgetItem(
-    //         "Row " + QString::number(i) + " - Col 1231819623871638761873198236871239081278361872638192jahsgdjhgawydjahgduywad187263ashjgdu2tq8tdg18276iuhgc81276",
-    //         tags[i%5],
-    //         "Row " + QString::number(i) + " - Col 31231819623871638761873198236871239081278361872638192jahsgdjhgawydjahgduywad187263ashjgdu2tq8tdg18276iuhgc81276"
-    //         );
+    // 从数据库读取数据
+    RelatedList relatedList = AudioDatabaseManager::instance().queryItems("", "");
+    qDebug() << "Loading related data：" << relatedList.length();
 
-    //     // 将自定义的 QWidget 添加到 QListWidgetItem 中
-    //     QListWidgetItem *item = new QListWidgetItem(mTaskTab);
-    //     mTaskTab->setItemWidget(item, widget);
-    //     item->setSizeHint(widget->sizeHint());
-    // }
+    // 将数据显示到ListWidget
+    foreach (RelatedItem relatedItem, relatedList) {
+        AudioTaskListWidgetItem *widget = new AudioTaskListWidgetItem(&relatedItem);
+        QListWidgetItem *widgetItem = new QListWidgetItem(mTaskTab);
+        mTaskTab->setItemWidget(widgetItem, widget);
+        widgetItem->setSizeHint(widget->sizeHint());
+        mRelatedList->append(relatedItem);
+    }
 
+
+    // 添加底部按钮
     footLayout->setContentsMargins(5, 5, 5, 0);
 
     MacStyleButton *addButton = new MacStyleButton("添加");
@@ -200,22 +202,14 @@ void AudioHelper::initPrefsPage()
 
 void AudioHelper::onItemClicked(QListWidgetItem *item)
 {
-    QListWidget *listWidget = qobject_cast<QListWidget*>(QObject::sender());
-    if (listWidget) {
-        // 获取 AudioTaskListWidgetItem
-        AudioTaskListWidgetItem *widgetItem = qobject_cast<AudioTaskListWidgetItem*>(listWidget->itemWidget(item));
+    // 获取 AudioTaskListWidgetItem
+    AudioTaskListWidgetItem *widgetItem = qobject_cast<AudioTaskListWidgetItem*>(mTaskTab->itemWidget(item));
 
-        if (widgetItem) {
-            // 获取和打印文本
-            qDebug() << "Column 1:" << widgetItem->text(0);
-            qDebug() << "Column 2:" << widgetItem->text(1);
-            qDebug() << "Column 3:" << widgetItem->text(2);
-
-            if (widgetItem->text(1) == "游戏")
-                mGameButton->setText("取消标记");
-            else
-                mGameButton->setText("标记游戏");
-        }
+    if (widgetItem) {
+        if (widgetItem->text(1) == "游戏")
+            mGameButton->setText("取消标记");
+        else
+            mGameButton->setText("标记游戏");
     }
 }
 
@@ -244,9 +238,14 @@ void AudioHelper::addRelatedItem()
 
     // 结构化数据
     TypeInfo typeInfo{selectionInfo->type, ""};
-    RelatedItem relatedItem{selectionInfo->taskInfo, typeInfo, *deviceInfo};
+    RelatedItem relatedItem{0, selectionInfo->taskInfo, typeInfo, *deviceInfo};
 
-    // 添加到列表
+    // 添加到列表和数据库
+    if (!AudioDatabaseManager::instance().insertItem(relatedItem))
+    {
+        return;
+    }
+
     mRelatedList->append(relatedItem);
 
     // 添加到视图
@@ -265,9 +264,17 @@ void AudioHelper::delRelatedItem()
 
     AudioTaskListWidgetItem *widgetItem = qobject_cast<AudioTaskListWidgetItem*>(mTaskTab->itemWidget(item));
     qDebug() << "删除:" << widgetItem->text(0) << "|" << widgetItem->text(2);
+    if (!AudioDatabaseManager::instance().deleteItem(mRelatedList->at(mTaskTab->currentRow()).id))
+    {
+        qCritical() << "Failed to delete item:" <<AudioDatabaseManager::instance().lastError();
+        return;
+    }
+
     mRelatedList->removeAt(mTaskTab->currentRow());
+
     delete widgetItem;
     delete item;
+
     mTaskTab->clearSelection();
 }
 
@@ -289,6 +296,11 @@ void AudioHelper::changeRelatedItem()
 
     RelatedItem &relatedItem = (*mRelatedList)[mTaskTab->currentRow()];
     relatedItem.audioDeviceInfo = *deviceInfo;
+    if (!AudioDatabaseManager::instance().updateItem(relatedItem))
+    {
+        qCritical() << "Failed to update item:" << AudioDatabaseManager::instance().lastError();
+        return;
+    }
 
     // 删除旧的
     mTaskTab->removeItemWidget(item);
@@ -309,6 +321,13 @@ void AudioHelper::setGameTag(bool isGame)
 
     RelatedItem &relatedItem = (*mRelatedList)[mTaskTab->currentRow()];
     relatedItem.typeInfo.tag = isGame ? "游戏" : "";
+
+    // 保存到数据库
+    if (!AudioDatabaseManager::instance().updateItem(relatedItem))
+    {
+        qCritical() << "Failed to update item:" << AudioDatabaseManager::instance().lastError();
+        return;
+    }
 
     // 删除旧的
     mTaskTab->removeItemWidget(item);

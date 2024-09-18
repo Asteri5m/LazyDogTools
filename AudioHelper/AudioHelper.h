@@ -5,7 +5,6 @@
 #include "AudioCustom.h"
 #include <QListWidget>
 
-typedef QList<RelatedItem> RelatedList;
 
 class AudioHelper : public ToolWidgetModel {
     Q_OBJECT

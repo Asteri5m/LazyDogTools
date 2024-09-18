@@ -19,9 +19,6 @@ public:
 
     SelectionInfo* selectedOption() const;
 
-// protected:
-//     void showEvent(QShowEvent *event) override;
-
 signals:
 
 private slots:

@@ -11,6 +11,7 @@ LIBS += -lUser32 -lDbgHelp -lversion -lole32
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    AudioHelper/AudioDatabaseManager.cpp \
     AudioHelper/AudioHelper.cpp \
     AudioHelper/AudioHelperManager.cpp \
     AudioHelper/AudioManager.cpp \
@@ -28,6 +29,7 @@ SOURCES += \
 
 HEADERS += \
     AudioHelper/AudioCustom.h \
+    AudioHelper/AudioDatabaseManager.h \
     AudioHelper/AudioHelper.h \
     AudioHelper/AudioHelperManager.h \
     AudioHelper/AudioManager.h \

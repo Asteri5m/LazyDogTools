@@ -82,13 +82,6 @@ SelectionInfo *SelectionDialog::selectedOption() const
     return mSelectedOption;
 }
 
-// void SelectionDialog::showEvent(QShowEvent *event)
-// {
-//     // 调用基类的 showEvent
-//     QDialog::showEvent(event);
-//     mTaskMonitor->update();
-// }
-
 void SelectionDialog::updateSelection(const TaskInfo &taskInfo, const QString &type)
 {
     mSelectedOption->taskInfo = taskInfo;

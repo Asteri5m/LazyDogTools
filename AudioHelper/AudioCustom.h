@@ -109,10 +109,13 @@ struct TypeInfo
 };
 
 struct RelatedItem {
+    unsigned int id;    // 数据库id
     TaskInfo taskInfo;
     TypeInfo typeInfo;
     AudioDeviceInfo audioDeviceInfo;
 };
+
+typedef QList<RelatedItem> RelatedList;
 
 class AudioTaskListWidgetItem : public QWidget {
     Q_OBJECT
