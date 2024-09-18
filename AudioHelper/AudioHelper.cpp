@@ -1,5 +1,4 @@
 #include "SelectionDialog.h"
-#include "AudioCustom.h"
 #include "AudioHelper.h"
 
 AudioHelper::AudioHelper(QWidget *parent)
@@ -7,6 +6,7 @@ AudioHelper::AudioHelper(QWidget *parent)
     , mHomePage(new QWidget(this))
     , mPrefsPage(new QWidget(this))
     , mTaskTab(new QListWidget())
+    , mRelatedList(new RelatedList())
 {
     resize(800, 480);
     setMinimumSize(800, 480);
@@ -21,29 +21,10 @@ AudioHelper::AudioHelper(QWidget *parent)
     initPrefsPage();
 
     connect(mTaskTab, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(onItemClicked(QListWidgetItem*)));
+    mTaskTab->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    mTaskTab->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
     finalizeSetup();  // 检查并显示第一个页面
-}
-
-void AudioHelper::onItemClicked(QListWidgetItem *item)
-{
-    QListWidget *listWidget = qobject_cast<QListWidget*>(QObject::sender());
-    if (listWidget) {
-        // 获取 AudioTaskListWidgetItem
-        AudioTaskListWidgetItem *widgetItem = qobject_cast<AudioTaskListWidgetItem*>(listWidget->itemWidget(item));
-
-        if (widgetItem) {
-            // 获取和打印文本
-            qDebug() << "Column 1:" << widgetItem->text(0).mid(0, 15);
-            qDebug() << "Column 2:" << widgetItem->text(1);
-            qDebug() << "Column 3:" << widgetItem->text(2).mid(0, 15);
-
-            if (widgetItem->text(1) == "游戏")
-                mGameButton->setText("取消标记");
-            else
-                mGameButton->setText("标记游戏");
-        }
-    }
 }
 
 void AudioHelper::initHomePage()
@@ -77,20 +58,20 @@ void AudioHelper::initHomePage()
 
     // widget->setStyleSheet("border: 1px solid balck;");
 
-    QStringList tags = {"进程", "窗口", "文件夹","文件", "游戏"};
-    // 创建多个自定义的 AudioTaskListWidgetItem 并将其添加到 QListWidget 中
-    for (int i = 0; i < 50; ++i) {
-        AudioTaskListWidgetItem *widget = new AudioTaskListWidgetItem(
-            "Row " + QString::number(i) + " - Col 1231819623871638761873198236871239081278361872638192jahsgdjhgawydjahgduywad187263ashjgdu2tq8tdg18276iuhgc81276",
-            tags[i%5],
-            "Row " + QString::number(i) + " - Col 31231819623871638761873198236871239081278361872638192jahsgdjhgawydjahgduywad187263ashjgdu2tq8tdg18276iuhgc81276"
-            );
+    // QStringList tags = {"进程", "窗口", "文件夹","文件", "游戏"};
+    // // 创建多个自定义的 AudioTaskListWidgetItem 并将其添加到 QListWidget 中
+    // for (int i = 0; i < 50; ++i) {
+    //     AudioTaskListWidgetItem *widget = new AudioTaskListWidgetItem(
+    //         "Row " + QString::number(i) + " - Col 1231819623871638761873198236871239081278361872638192jahsgdjhgawydjahgduywad187263ashjgdu2tq8tdg18276iuhgc81276",
+    //         tags[i%5],
+    //         "Row " + QString::number(i) + " - Col 31231819623871638761873198236871239081278361872638192jahsgdjhgawydjahgduywad187263ashjgdu2tq8tdg18276iuhgc81276"
+    //         );
 
-        // 将自定义的 QWidget 添加到 QListWidgetItem 中
-        QListWidgetItem *item = new QListWidgetItem(mTaskTab);
-        mTaskTab->setItemWidget(item, widget);
-        item->setSizeHint(widget->sizeHint());
-    }
+    //     // 将自定义的 QWidget 添加到 QListWidgetItem 中
+    //     QListWidgetItem *item = new QListWidgetItem(mTaskTab);
+    //     mTaskTab->setItemWidget(item, widget);
+    //     item->setSizeHint(widget->sizeHint());
+    // }
 
     footLayout->setContentsMargins(5, 5, 5, 0);
 
@@ -217,43 +198,144 @@ void AudioHelper::initPrefsPage()
     connect(sceneComBox,  SIGNAL(currentTextChanged(QString)), this, SLOT(comboBoxChanged(QString)));
 }
 
+void AudioHelper::onItemClicked(QListWidgetItem *item)
+{
+    QListWidget *listWidget = qobject_cast<QListWidget*>(QObject::sender());
+    if (listWidget) {
+        // 获取 AudioTaskListWidgetItem
+        AudioTaskListWidgetItem *widgetItem = qobject_cast<AudioTaskListWidgetItem*>(listWidget->itemWidget(item));
+
+        if (widgetItem) {
+            // 获取和打印文本
+            qDebug() << "Column 1:" << widgetItem->text(0);
+            qDebug() << "Column 2:" << widgetItem->text(1);
+            qDebug() << "Column 3:" << widgetItem->text(2);
+
+            if (widgetItem->text(1) == "游戏")
+                mGameButton->setText("取消标记");
+            else
+                mGameButton->setText("标记游戏");
+        }
+    }
+}
+
+void AudioHelper::addRelatedItem()
+{
+    SelectionDialog selectionDialog(this);
+
+    // 先选任务触发项
+    if (selectionDialog.exec() != QDialog::Accepted) {
+        qDebug() << "任务触发项：取消选择";
+        return;
+    }
+
+    SelectionInfo *selectionInfo = selectionDialog.selectedOption();
+    qDebug() << "任务触发项：" <<  selectionInfo->taskInfo.name << "|" << selectionInfo->taskInfo.path;
+
+    // 再选任务关联项
+    AudioChoiceDialog choiceDialog(this);
+    if (choiceDialog.exec() != QDialog::Accepted) {
+        qDebug() << "任务关联项：取消选择";
+        return;
+    }
+
+    AudioDeviceInfo* deviceInfo = choiceDialog.selectedOption();
+    qDebug() << "任务关联项：" <<  deviceInfo->name;
+
+    // 结构化数据
+    TypeInfo typeInfo{selectionInfo->type, ""};
+    RelatedItem relatedItem{selectionInfo->taskInfo, typeInfo, *deviceInfo};
+
+    // 添加到列表
+    mRelatedList->append(relatedItem);
+
+    // 添加到视图
+    AudioTaskListWidgetItem *widget = new AudioTaskListWidgetItem(&relatedItem);
+    QListWidgetItem *item = new QListWidgetItem(mTaskTab);
+    mTaskTab->setItemWidget(item, widget);
+    item->setSizeHint(widget->sizeHint());
+}
+
+void AudioHelper::delRelatedItem()
+{
+    QListWidgetItem *item = mTaskTab->currentItem();
+
+    if (!item)
+        return;
+
+    AudioTaskListWidgetItem *widgetItem = qobject_cast<AudioTaskListWidgetItem*>(mTaskTab->itemWidget(item));
+    qDebug() << "删除:" << widgetItem->text(0) << "|" << widgetItem->text(2);
+    mRelatedList->removeAt(mTaskTab->currentRow());
+    delete widgetItem;
+    delete item;
+    mTaskTab->clearSelection();
+}
+
+void AudioHelper::changeRelatedItem()
+{
+    QListWidgetItem *item = mTaskTab->currentItem();
+
+    if (!item)
+        return;
+
+    AudioChoiceDialog choiceDialog(this);
+    if (choiceDialog.exec() != QDialog::Accepted) {
+        qDebug() << "更改任务关联项：取消选择";
+        return;
+    }
+
+    AudioDeviceInfo* deviceInfo = choiceDialog.selectedOption();
+    qDebug() << "更改任务关联项：" <<  deviceInfo->name;
+
+    RelatedItem &relatedItem = (*mRelatedList)[mTaskTab->currentRow()];
+    relatedItem.audioDeviceInfo = *deviceInfo;
+
+    // 删除旧的
+    mTaskTab->removeItemWidget(item);
+
+    // 创建新的并关联
+    AudioTaskListWidgetItem *widget = new AudioTaskListWidgetItem(&relatedItem);
+    qDebug() << "更新:" << widget->text(0) << "|" << widget->text(2);
+    mTaskTab->setItemWidget(item, widget);
+    mTaskTab->clearSelection();
+}
+
+void AudioHelper::setGameTag(bool isGame)
+{
+    QListWidgetItem *item = mTaskTab->currentItem();
+
+    if (!item)
+        return;
+
+    RelatedItem &relatedItem = (*mRelatedList)[mTaskTab->currentRow()];
+    relatedItem.typeInfo.tag = isGame ? "游戏" : "";
+
+    // 删除旧的
+    mTaskTab->removeItemWidget(item);
+
+    // 创建新的并关联
+    AudioTaskListWidgetItem *widget = new AudioTaskListWidgetItem(&relatedItem);
+    qDebug() << "标记:" << widget->text(0) << "|" << relatedItem.typeInfo.tag;
+    mTaskTab->setItemWidget(item, widget);
+
+    mGameButton->setText(isGame ? "取消标记" : "标记游戏");
+}
+
 void AudioHelper::buttonClicked()
 {
     QPushButton *button = qobject_cast<QPushButton *>(sender());
     qDebug() << "点击按钮：" << button->text();
 
     if (button->text() == "添加")
-    {
-        SelectionDialog selectioDialog(this);
-
-        // 先选任务触发项
-        if (selectioDialog.exec() != QDialog::Accepted) {
-            qDebug() << "任务触发项：取消选择";
-            return;
-        }
-
-        QString selected = selectioDialog.selectedOption();
-        qDebug() << "任务触发项：" <<  selected;
-
-        // 再选任务关联项
-        AudioChoiceDialog choiceDialog(this);
-        if (choiceDialog.exec() != QDialog::Accepted) {
-            qDebug() << "任务关联项：取消选择";
-            return;
-        }
-
-        QString device = choiceDialog.selectedOption();
-        qDebug() << "任务关联项：" <<  device;
-
-        // test
-        AudioTaskListWidgetItem *widget = new AudioTaskListWidgetItem(selected, "测试", device);
-
-        // 将自定义的 QWidget 添加到 QListWidgetItem 中
-        QListWidgetItem *item = new QListWidgetItem(mTaskTab);
-        mTaskTab->setItemWidget(item, widget);
-        item->setSizeHint(widget->sizeHint());
-        // test end
-    }
+        addRelatedItem();
+    else if (button->text() == "删除")
+        delRelatedItem();
+    else if (button->text() == "修改")
+        changeRelatedItem();
+    else if (button->text() == "标记游戏")
+        setGameTag(true);
+    else if (button->text() == "取消标记")
+        setGameTag(false);
 }
 
 void AudioHelper::checkBoxChecked(bool checked)

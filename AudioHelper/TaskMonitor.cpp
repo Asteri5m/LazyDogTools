@@ -117,6 +117,7 @@ void TaskMonitor::updateProcessModel()
         QStandardItem *item = new QStandardItem(iconProvider.icon(fileInfo), friendName);
         mProcessModel->appendRow(item);
     }
+    qDebug() << "Enumerate process number：" << mProcessInfoList->length();
 }
 
 // 获取friendname
@@ -213,6 +214,8 @@ void TaskMonitor::updateWindowsModel()
         CloseHandle(processHandle);
         return TRUE;
     }, reinterpret_cast<LPARAM>(this));
+
+    qDebug() << "Enumerate windows number：" << mWindowsInfoList->length();
 }
 
 bool TaskMonitor::filterProcess(QString &text)

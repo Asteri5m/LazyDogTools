@@ -6,23 +6,31 @@
 #include "AudioCustom.h"
 #include "TaskMonitor.h"
 
+struct SelectionInfo {
+    TaskInfo taskInfo;
+    QString type;
+};
+
 class SelectionDialog : public QDialog
 {
     Q_OBJECT
 public:
     explicit SelectionDialog(QWidget *parent = nullptr);
 
-    QString selectedOption() const;
+    SelectionInfo* selectedOption() const;
+
+// protected:
+//     void showEvent(QShowEvent *event) override;
 
 signals:
 
 private slots:
-    void updateSelection(const QString &text);
+    void updateSelection(const TaskInfo &taskInfo, const QString &type);
     void onWindowItemClicked(const QModelIndex &index);
     void onProcessItemClicked(const QModelIndex &index);
 
 private:
-    QString mSelectedOption;
+    SelectionInfo* mSelectedOption;
     TaskMonitor* mTaskMonitor;
 };
 

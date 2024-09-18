@@ -91,24 +91,51 @@ inline QMap<QString, TagLabel::Theme> TagTheme =  {
 
 #include <QFileIconProvider>
 #include <QPixmap>
+
+struct TaskInfo {
+    QString name;
+    QString path;
+};
+
+struct AudioDeviceInfo {
+    QString name;
+    QString id;
+};
+
+struct TypeInfo
+{
+    QString type;
+    QString tag;
+};
+
+struct RelatedItem {
+    TaskInfo taskInfo;
+    TypeInfo typeInfo;
+    AudioDeviceInfo audioDeviceInfo;
+};
+
 class AudioTaskListWidgetItem : public QWidget {
     Q_OBJECT
 public:
-    AudioTaskListWidgetItem(const QString& col1, const QString& col2, const QString& col3, QWidget *parent = nullptr)
-        : QWidget(parent), originalText1(col1), originalText2(col2), originalText3(col3) {
-
+    AudioTaskListWidgetItem(RelatedItem *selectionInfo, QWidget *parent = nullptr)
+        : QWidget(parent)
+        , mSelectionInfo(selectionInfo)
+        , mOriginalTaskName(selectionInfo->taskInfo.name)
+        , mTag(selectionInfo->typeInfo.tag  == "" ? selectionInfo->typeInfo.type : selectionInfo->typeInfo.tag)
+        , mOriginalDeviceName(selectionInfo->audioDeviceInfo.name)
+    {
         // 创建水平布局
-        layout = new QHBoxLayout(this);
-        layout->setContentsMargins(5, 0, 0, 0);
+        mLayout = new QHBoxLayout(this);
+        mLayout->setContentsMargins(5, 0, 0, 0);
 
         // 创建每列的 QLabel
-        label1 = new QLabel(col1);
-        label2 = new TagLabel(col2.length() > 2 ? col2 : QString(col2).insert(1, "   "));
-        label3 = new QLabel(col3);
+        mTaskLabel = new QLabel(mOriginalTaskName);
+        mTagLabel = new TagLabel(mTag.length() > 2 ? mTag : QString(mTag).insert(1, "   "));
+        mDevideLabel = new QLabel(mOriginalDeviceName);
 
         // 获取文件的图标
         QFileIconProvider fileIconProvider;
-        QIcon icon = fileIconProvider.icon(QFileInfo(col1));
+        QIcon icon = fileIconProvider.icon(QFileInfo(selectionInfo->taskInfo.path));
         QList<QSize> sizes = icon.availableSizes();
         QPixmap pixmap = icon.pixmap(sizes.first());
         QLabel *iconLabel = new QLabel();
@@ -118,21 +145,21 @@ public:
         QHBoxLayout *headerLayout = new QHBoxLayout();
         headerLayout->setAlignment(Qt::AlignLeft);
         headerLayout->addWidget(iconLabel);
-        headerLayout->addWidget(label1);
+        headerLayout->addWidget(mTaskLabel);
 
         // 添加到布局
-        layout->addLayout(headerLayout);
-        layout->addWidget(label2);
-        layout->addWidget(label3);
+        mLayout->addLayout(headerLayout);
+        mLayout->addWidget(mTagLabel);
+        mLayout->addWidget(mDevideLabel);
 
-        label2->setStyleSheet(
+        mTagLabel->setStyleSheet(
             "border-left: 1px solid #ececec;"
             "border-right: 1px solid #ececec;"
             );
-        label2->setFixedWidth(TAG_DEFAULT_WIDTH);
-        label2->setTheme(TagTheme.value(col2, TagLabel::Theme::Default));
+        mTagLabel->setFixedWidth(TAG_DEFAULT_WIDTH);
+        mTagLabel->setTheme(TagTheme.value(mTag, TagLabel::Theme::Default));
 
-        setLayout(layout);
+        setLayout(mLayout);
     }
 
     QSize sizeHint() const override {
@@ -143,11 +170,11 @@ public:
     QString text(int col) const {
         switch (col) {
         case 0:
-            return originalText1;
+            return mOriginalTaskName;
         case 1:
-            return originalText2;
+            return mTag;
         case 2:
-            return originalText3;
+            return mOriginalDeviceName;
         default:
             qWarning() << QString("Parameter error, no matching case <col (%1)>").arg(1).toLocal8Bit().constData();
             return "";
@@ -160,18 +187,19 @@ protected:
         QWidget::resizeEvent(event);
 
         int totalWidth = event->size().width();  // 当前控件总宽度
-        int columnWidth = (totalWidth - label2->width()) / 2;
+        int columnWidth = (totalWidth - mTagLabel->width()) / 2;
 
         // 动态调整每个 QLabel 的文本长度并添加省略号 需要额外留出空间，否则无法对齐
-        updateLabelText(label1, originalText1, columnWidth - 20); // 减去图标长度
-        updateLabelText(label3, originalText3, columnWidth - 5);
+        updateLabelText(mTaskLabel, mOriginalTaskName, columnWidth - 24); // 减去图标长度
+        updateLabelText(mDevideLabel, mOriginalDeviceName, columnWidth - 8);
     }
 
 private:
-    QLabel *label1, *label3;
-    TagLabel *label2;
-    QString originalText1, originalText2, originalText3;
-    QHBoxLayout *layout;
+    RelatedItem *mSelectionInfo;
+    QLabel *mTaskLabel, *mDevideLabel;
+    TagLabel *mTagLabel;
+    QString mOriginalTaskName, mTag, mOriginalDeviceName;
+    QHBoxLayout *mLayout;
 
     // 更新 QLabel 的文本显示，适配宽度并添加省略号
     void updateLabelText(QLabel *label, const QString &originalText, int columnWidth) {
@@ -330,11 +358,23 @@ private slots:
 
     void onItemClicked(const QModelIndex &index) {
         QString currentText = QDir(mCurrentPath).filePath(index.data().toString());
-        emit currentChanged(currentText);
+
+        QFileInfo fileInfo(currentText);
+
+        if (fileInfo.isDir())
+        {
+            TaskInfo taskInfo{currentText, currentText};
+            emit currentChanged(taskInfo, "文件夹");
+        }
+        else
+        {
+            TaskInfo taskInfo{fileInfo.baseName(), currentText};
+            emit currentChanged(taskInfo, "文件");
+        }
     }
 
 signals:
-    void currentChanged(const QString &text);
+    void currentChanged(const TaskInfo &taskInfo, const QString &type);
 
 private:
     // 更新当前显示的路径
@@ -398,7 +438,6 @@ private:
 
 #include "AudioManager.h"
 #include "CustomWidget.h"
-
 class AudioChoiceDialog : public QDialog {
     Q_OBJECT
 
@@ -412,8 +451,8 @@ public:
 
         // 创建 QComboBox 并添加选项
         mComboBox = new MacStyleComboBox(this);
-        AudioDeviceList deviceList = AudioManager::GetAudioOutDeviceList();
-        foreach (QString name, deviceList.keys()) {
+        mDeviceList = AudioManager::GetAudioOutDeviceList();
+        foreach (QString name, mDeviceList.keys()) {
             mComboBox->addItem(name);
         }
 
@@ -442,13 +481,17 @@ public:
         setFixedSize(sizeHint());
     }
 
-    // 提供一个方法来返回 QComboBox 的当前选择
-    QString selectedOption() const {
-        return mComboBox->currentText();
+    // 返回 QComboBox 的当前选择
+    AudioDeviceInfo* selectedOption() const {
+        QString name = mComboBox->currentText();
+        QString id = mDeviceList.value(name);
+
+        return new AudioDeviceInfo{name, id};
     }
 
 private:
     QComboBox* mComboBox;
+    AudioDeviceList mDeviceList;
 };
 
 #endif // AUDIOCUSTOM_H

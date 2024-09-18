@@ -4,6 +4,7 @@
 SelectionDialog::SelectionDialog(QWidget *parent)
     : QDialog{parent}
     , mTaskMonitor(new TaskMonitor(this))
+    , mSelectedOption(new SelectionInfo)
 {
     setWindowTitle("添加关联项");
     setFixedSize(460, 520);
@@ -61,7 +62,7 @@ SelectionDialog::SelectionDialog(QWidget *parent)
     footLayout->addWidget(cancelButton);
 
     // 连接槽
-    connect(diskWidget, SIGNAL(currentChanged(QString)), this, SLOT(updateSelection(QString)));
+    connect(diskWidget, SIGNAL(currentChanged(TaskInfo,QString)), this, SLOT(updateSelection(TaskInfo,QString)));
     connect(checkButton,  SIGNAL(clicked()), this, SLOT(accept()));
     connect(cancelButton, SIGNAL(clicked()), this, SLOT(reject()));
     connect(renewButton, SIGNAL(clicked()), mTaskMonitor, SLOT(update()));
@@ -76,24 +77,34 @@ SelectionDialog::SelectionDialog(QWidget *parent)
     mTaskMonitor->update();
 }
 
-QString SelectionDialog::selectedOption() const
+SelectionInfo *SelectionDialog::selectedOption() const
 {
     return mSelectedOption;
 }
 
-void SelectionDialog::updateSelection(const QString &text)
+// void SelectionDialog::showEvent(QShowEvent *event)
+// {
+//     // 调用基类的 showEvent
+//     QDialog::showEvent(event);
+//     mTaskMonitor->update();
+// }
+
+void SelectionDialog::updateSelection(const TaskInfo &taskInfo, const QString &type)
 {
-    mSelectedOption = text;
+    mSelectedOption->taskInfo = taskInfo;
+    mSelectedOption->type = type;
 }
 
 void SelectionDialog::onWindowItemClicked(const QModelIndex &index)
 {
-    updateSelection(mTaskMonitor->filePath(index, TaskMonitor::Windows));
+    TaskInfo taskInfo{index.data().toString(), mTaskMonitor->filePath(index, TaskMonitor::Windows)};
+    updateSelection(taskInfo, "窗口");
 }
 
 void SelectionDialog::onProcessItemClicked(const QModelIndex &index)
 {
-    updateSelection(mTaskMonitor->filePath(index, TaskMonitor::Process));
+    TaskInfo taskInfo{index.data().toString(), mTaskMonitor->filePath(index, TaskMonitor::Process)};
+    updateSelection(taskInfo, "进程");
 }
 
 

@@ -2,7 +2,10 @@
 #define AUDIOHELPER_H
 
 #include "CustomWidget.h"
+#include "AudioCustom.h"
 #include <QListWidget>
+
+typedef QList<RelatedItem> RelatedList;
 
 class AudioHelper : public ToolWidgetModel {
     Q_OBJECT
@@ -21,11 +24,16 @@ private:
     QWidget *mHomePage;
     QWidget *mPrefsPage;
     QListWidget *mTaskTab;
+    RelatedList *mRelatedList;
 
     MacStyleButton *mGameButton;
 
     void initHomePage();
     void initPrefsPage();
+    void addRelatedItem();
+    void delRelatedItem();
+    void changeRelatedItem();
+    void setGameTag(bool);
 };
 
 #endif // AUDIOHELPER_H
