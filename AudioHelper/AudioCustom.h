@@ -451,7 +451,7 @@ public:
 
         // 创建 QComboBox 并添加选项
         mComboBox = new MacStyleComboBox(this);
-        mDeviceList = AudioManager::GetAudioOutDeviceList();
+        mDeviceList = AudioManager::getAudioOutDeviceList();
         foreach (QString name, mDeviceList.keys()) {
             mComboBox->addItem(name);
         }

@@ -12,10 +12,10 @@
 
 AudioManager::AudioManager()
 {
-    mCurrentOutDeviceId = GetDefaultAudioOutDevice();
+    mCurrentOutDeviceId = getDefaultAudioOutDevice();
 }
 
-AudioDeviceList AudioManager::GetAudioOutDeviceList()
+AudioDeviceList AudioManager::getAudioOutDeviceList()
 {
     AudioDeviceList audioOutDeviceDist;
     qDebug("Audio Output Devices:");
@@ -76,7 +76,7 @@ AudioDeviceList AudioManager::GetAudioOutDeviceList()
     return audioOutDeviceDist;
 }
 
-QString AudioManager::GetDefaultAudioOutDevice()
+QString AudioManager::getDefaultAudioOutDevice()
 {
     HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
     if (FAILED(hr)) {
@@ -106,7 +106,7 @@ QString AudioManager::GetDefaultAudioOutDevice()
     return "0";
 }
 
-bool AudioManager::SetAudioOutDevice(const QString &deviceId)
+bool AudioManager::setAudioOutDevice(const QString &deviceId)
 {
     // 将QString转换为UTF-16编码的wchar_t数组
     const wchar_t* wcharStr = reinterpret_cast<const wchar_t*>(deviceId.utf16());
@@ -130,7 +130,7 @@ bool AudioManager::SetAudioOutDevice(const QString &deviceId)
     return false;
 }
 
-QString AudioManager::GetCurrentAudioOutDevice()
+QString AudioManager::getCurrentAudioOutDevice()
 {
     return mCurrentOutDeviceId;
 }
