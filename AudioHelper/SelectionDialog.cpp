@@ -1,4 +1,5 @@
 #include "SelectionDialog.h"
+#include "AudioHelper.h"
 
 
 SelectionDialog::SelectionDialog(QWidget *parent)
@@ -8,6 +9,7 @@ SelectionDialog::SelectionDialog(QWidget *parent)
 {
     setWindowTitle("添加关联项");
     setFixedSize(460, 520);
+
     // 创建垂直布局
     QVBoxLayout *layout = new QVBoxLayout(this);
     QHBoxLayout *footLayout = new QHBoxLayout();
@@ -70,10 +72,21 @@ SelectionDialog::SelectionDialog(QWidget *parent)
     connect(windowListView,  SIGNAL(clicked(QModelIndex)), this, SLOT(onWindowItemClicked(QModelIndex)));
 
     // 设置过滤器并刷新
+    AudioHelper *audoiHelper = qobject_cast<AudioHelper*>(parent);
     QStringList filter;
     filter << "C:/Windows/" << "C:/Program Files/WindowsApps/";
-    mTaskMonitor->setFilter(filter, TaskMonitor::Process);
-    mTaskMonitor->setFilter(filter, TaskMonitor::Windows);
+
+    if (audoiHelper->queryConfig("过滤系统项") == "true")
+    {
+        mTaskMonitor->setFilter(filter, TaskMonitor::Process);
+        mTaskMonitor->setFilter(filter, TaskMonitor::Windows);
+    }
+
+    if (audoiHelper->queryConfig("过滤重复项") == "true")
+    {
+        mTaskMonitor->setFilter(TaskMonitor::Clear);
+    }
+
     mTaskMonitor->update();
 }
 

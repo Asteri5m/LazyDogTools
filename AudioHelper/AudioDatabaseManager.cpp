@@ -1,4 +1,6 @@
 #include "AudioDatabaseManager.h"
+#include "CustomWidget.h"
+
 
 AudioDatabaseManager& AudioDatabaseManager::instance()
 {
@@ -38,7 +40,21 @@ bool AudioDatabaseManager::createTable()
                                "tag TEXT, "
                                "deviceName TEXT, "
                                "deviceId TEXT)";
-    return query.exec(createTableQuery);
+    if (!query.exec(createTableQuery)) {
+        qCritical() << "create table (RelatedItems) failed:" << query.lastError().text();
+        return false;
+    }
+
+    createTableQuery = "CREATE TABLE IF NOT EXISTS config ("
+                       "key TEXT PRIMARY KEY,"
+                       "value TEXT)";
+
+    if (!query.exec(createTableQuery)) {
+        qCritical() << "create table (config) failed:" << query.lastError().text();
+        return false;
+    }
+
+    return true;
 }
 
 bool AudioDatabaseManager::insertItem(RelatedItem &item)
@@ -126,6 +142,39 @@ RelatedList AudioDatabaseManager::queryItems(const QString &key, const QString &
     }
     return items;
 }
+
+bool AudioDatabaseManager::saveConfig(const QString &key, const QString &value)
+{
+    QSqlQuery query(mdb);
+    query.prepare("INSERT OR REPLACE INTO config (key, value) VALUES (:key, :value)");
+    query.bindValue(":key", key);
+    query.bindValue(":value", value);
+
+    return query.exec();
+}
+
+QString AudioDatabaseManager::queryConfig(const QString &key, const QString &defaultValue)
+{
+    QSqlQuery query(mdb);
+    query.prepare("SELECT value FROM config WHERE key = :key");
+    query.bindValue(":key", key);
+
+    if (!query.exec()) {
+        qCritical() << "Load config failed:" << query.lastError().text();
+        return defaultValue;
+    }
+
+    if (!query.next()) {
+        qDebug() << "Load config failed: select result is null of " + key;
+        if (!defaultValue.isNull())
+            saveConfig(key, defaultValue);
+        return defaultValue;
+    }
+
+    return query.value(0).toString();
+}
+
+
 
 QString AudioDatabaseManager::lastError()
 {

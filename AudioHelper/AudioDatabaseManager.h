@@ -19,10 +19,18 @@ public:
     AudioDatabaseManager& operator=(const AudioDatabaseManager&) = delete;
 
     bool createTable();
+
+    // 关联任务数据
     bool insertItem(RelatedItem &item);
     bool updateItem(const RelatedItem &item);
     bool deleteItem(int id);
     RelatedList queryItems(const QString &key, const QString &value);
+
+    // 应用配置数据
+    bool saveConfig(const QString &key, const QString &value);
+    QString queryConfig(const QString &key, const QString &defaultValue);
+
+
     QString lastError();
 
 private:

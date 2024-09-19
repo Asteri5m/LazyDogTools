@@ -28,6 +28,11 @@ AudioHelper::AudioHelper(QWidget *parent)
     finalizeSetup();  // 检查并显示第一个页面
 }
 
+QString AudioHelper::queryConfig(const QString &key)
+{
+    return mConfig.value(key, QString());
+}
+
 void AudioHelper::initHomePage()
 {
     QVBoxLayout *mainLayout = new QVBoxLayout(mHomePage);
@@ -120,7 +125,7 @@ void AudioHelper::initPrefsPage()
     modeLayout->addWidget(new QLabel("选择触发任务的算法模式："), 0, 0);
 
     // 模式选项
-    MacStyleComboBox *modeComBox = new MacStyleComboBox("最小化设置");
+    MacStyleComboBox *modeComBox = new MacStyleComboBox("任务模式");
     modeComBox->addItem("进程模式");
     modeComBox->addItem("窗口模式");
     modeComBox->addItem("智能模式");
@@ -134,7 +139,7 @@ void AudioHelper::initPrefsPage()
     sceneLayout->addWidget(new QLabel("多条关联规则命中时的场景选择："), 0, 0);
 
     // 场景选项
-    MacStyleComboBox *sceneComBox = new MacStyleComboBox("场景");
+    MacStyleComboBox *sceneComBox = new MacStyleComboBox("场景识别");
     sceneComBox->addItem("游戏场景");
     sceneComBox->addItem("影音场景");
     sceneComBox->addItem("普通场景");
@@ -179,15 +184,12 @@ void AudioHelper::initPrefsPage()
 
 
     // 加载配置
-    // loadSettingsHandler(startCheckBox,      "true");
-    // loadSettingsHandler(adminStartCheckBox, "false");
-    // loadSettingsHandler(startHideCheckBox,  "true");
-    // loadSettingsHandler(updateCheckBox,     "true");
-    // loadSettingsHandler(debugCheckBox,      "false");
+    loadConfigHandler(notifyCheckBox,           "true");
+    loadConfigHandler(filterProcessCheckBox,    "true");
+    loadConfigHandler(filterRepetitionCheckBox, "true");
 
-    // loadSettingsHandler(minimizeComBox, "托盘");
-    // loadSettingsHandler(closeComBox,    "最小化托盘");
-
+    loadConfigHandler(modeComBox,  "窗口模式");
+    loadConfigHandler(sceneComBox, "普通场景");
 
 
     // 连接槽 - 选择框
@@ -360,11 +362,53 @@ void AudioHelper::buttonClicked()
 void AudioHelper::checkBoxChecked(bool checked)
 {
     QCheckBox *checkBox = qobject_cast<QCheckBox *>(sender());
-    qDebug() << (checked ? "勾选:" : "取消勾选:") << checkBox->text();
+    QString key = checkBox->text();
+    QString value = checked ? "true" : "false";
+    qDebug() << (checked ? "勾选:" : "取消勾选:") << key;
+
+    if (!AudioDatabaseManager::instance().saveConfig(key, value))
+    {
+        qWarning() << QString("save config %1(%2) to database failed").arg(key).arg(value);
+    }
+    mConfig[key] = value;
 }
 
 void AudioHelper::comboBoxChanged(QString currentText)
 {
     MacStyleComboBox *comboBox = qobject_cast<MacStyleComboBox *>(sender());
-    qDebug() << comboBox->text() << "切换选项:" << comboBox->currentIndex() << currentText;
+    QString key = comboBox->text();
+    qDebug() << key << "切换选项:" << comboBox->currentIndex() << currentText;
+
+    if (!AudioDatabaseManager::instance().saveConfig(key, currentText))
+    {
+        qWarning() << QString("save config %1(%2) to database failed").arg(key).arg(currentText);
+    }
+    mConfig[key] = currentText;
+}
+
+template<typename T>
+void AudioHelper::loadConfigHandler(T *widget, const QString &defaultValue)
+{
+    QString value;
+    QString typeName = QString(typeid(widget).name()).split(' ')[1];
+
+    if (typeName == "MacStyleCheckBox") {
+        MacStyleCheckBox* checkbox = qobject_cast<MacStyleCheckBox*>(widget);
+        if (checkbox) {
+            value = AudioDatabaseManager::instance().queryConfig(checkbox->text(), defaultValue);
+            mConfig.insert(checkbox->text(), value);
+            checkbox->setChecked(value == "true" ? true : false);
+            return;
+        }
+    } else if (typeName == "MacStyleComboBox") {
+        MacStyleComboBox* comboBox = qobject_cast<MacStyleComboBox*>(widget);
+        if (comboBox) {
+            value = AudioDatabaseManager::instance().queryConfig(comboBox->text(), defaultValue);
+            mConfig.insert(comboBox->text(), value);
+            comboBox->setCurrentText(value);
+            return;
+        }
+    }
+
+    qCritical() << "无法识别的类型:" << typeName << defaultValue;
 }

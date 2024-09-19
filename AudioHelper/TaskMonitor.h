@@ -22,6 +22,12 @@ public:
     };
     Q_ENUM(TaskMode)
 
+    enum FilterMode {
+        All,
+        Clear
+    };
+    Q_ENUM(FilterMode)
+
     explicit TaskMonitor(QObject *parent = nullptr);
     ~TaskMonitor();
 
@@ -29,6 +35,7 @@ public:
     QStandardItemModel* getWindowsModel();
     QString filePath(const QModelIndex& index, TaskMode mode);
     void setFilter(QStringList& headers, TaskMode mode);
+    void setFilter(FilterMode filterMode);
 
 public slots:
     void update();
@@ -46,6 +53,7 @@ private:
     QFileInfoList *mWindowsInfoList;
     QStringList *mProcessFilter;
     QStringList *mWindowsFilter;
+    FilterMode mFilterMode;
 };
 
 #endif // TASKMONITOR_H

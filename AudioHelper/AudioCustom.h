@@ -109,7 +109,7 @@ struct TypeInfo
 };
 
 struct RelatedItem {
-    unsigned int id;    // 数据库id
+    uint id;            // 数据库id
     TaskInfo taskInfo;
     TypeInfo typeInfo;
     AudioDeviceInfo audioDeviceInfo;

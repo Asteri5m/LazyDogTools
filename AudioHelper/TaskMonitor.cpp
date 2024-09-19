@@ -5,13 +5,14 @@
 
 // 构造函数
 TaskMonitor::TaskMonitor(QObject *parent)
-    : QObject(parent),
-    mProcessModel(new QStandardItemModel(this)),
-    mWindowsModel(new QStandardItemModel(this)),
-    mProcessInfoList(new QFileInfoList),
-    mWindowsInfoList(new QFileInfoList),
-    mProcessFilter(new QStringList()),
-    mWindowsFilter(new QStringList())
+    : QObject(parent)
+    , mProcessModel(new QStandardItemModel(this))
+    , mWindowsModel(new QStandardItemModel(this))
+    , mProcessInfoList(new QFileInfoList)
+    , mWindowsInfoList(new QFileInfoList)
+    , mProcessFilter(new QStringList())
+    , mWindowsFilter(new QStringList())
+    , mFilterMode(FilterMode::All)
 {
 
 }
@@ -55,6 +56,11 @@ void TaskMonitor::setFilter(QStringList &headers, TaskMode mode)
     case Windows:
         mWindowsFilter = new QStringList(headers);
     }
+}
+
+void TaskMonitor::setFilter(FilterMode filterMode)
+{
+    mFilterMode = filterMode;
 }
 
 // 更新数据（更新模型）
@@ -103,9 +109,6 @@ void TaskMonitor::updateProcessModel()
 
         // 将进程信息添加到文件信息列表（模拟 QFileInfo 用于兼容接口）
         QFileInfo fileInfo(drivepath);
-        if (mProcessInfoList->contains(fileInfo))
-            continue;
-
         mProcessInfoList->append(fileInfo);
 
         // 获取friendname, 首先尝试解析，解析失败后则使用QFileInfo::baseName
@@ -218,20 +221,26 @@ void TaskMonitor::updateWindowsModel()
     qDebug() << "Enumerate windows number：" << mWindowsInfoList->length();
 }
 
+// 过滤，需要过滤就返回false
 bool TaskMonitor::filterProcess(QString &text)
 {
-    foreach (QString filter , *mProcessFilter)
+    foreach (QString filter, *mProcessFilter)
     {
         if (text.startsWith(filter))
             return false;
     }
 
+    QFileInfo fileInfo(text);
+    if (mProcessInfoList->contains(fileInfo) && mFilterMode==FilterMode::Clear)
+        return false;
+
     return true;
 }
 
+// 过滤，需要过滤就返回false
 bool TaskMonitor::filterWindows(QString &text)
 {
-    foreach (QString filter , *mWindowsFilter)
+    foreach (QString filter, *mWindowsFilter)
     {
         if (text.startsWith(filter))
             return false;
