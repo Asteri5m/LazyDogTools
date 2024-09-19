@@ -13,8 +13,12 @@ TaskMonitor::TaskMonitor(QObject *parent)
     , mProcessFilter(new QStringList())
     , mWindowsFilter(new QStringList())
     , mFilterMode(FilterMode::All)
+    , mThread(new QThread(this))
 {
-
+    this->moveToThread(mThread);
+    // 更新操作移到子线程，避免卡顿。
+    connect(this, SIGNAL(backgroundUpdate()), this, SLOT(updateModel()));
+    mThread->start();
 }
 
 // 析构函数
@@ -22,6 +26,8 @@ TaskMonitor::~TaskMonitor()
 {
     delete mProcessInfoList;
     delete mWindowsInfoList;
+    mThread->quit();
+    mThread->wait();
 }
 
 // 获取进程模型
@@ -66,6 +72,11 @@ void TaskMonitor::setFilter(FilterMode filterMode)
 // 更新数据（更新模型）
 void TaskMonitor::update()
 {
+    emit backgroundUpdate();
+}
+
+void TaskMonitor::updateModel()
+{
     updateProcessModel();
     updateWindowsModel();
 }
@@ -73,6 +84,9 @@ void TaskMonitor::update()
 // 更新进程模型
 void TaskMonitor::updateProcessModel()
 {
+    if (!mutex.tryLock())
+        return;
+
     // 枚举进程
     DWORD processes[1024], processCount, cbNeeded;
     if (!EnumProcesses(processes, sizeof(processes), &cbNeeded)) {
@@ -121,6 +135,7 @@ void TaskMonitor::updateProcessModel()
         mProcessModel->appendRow(item);
     }
     qDebug() << "Enumerate process number：" << mProcessInfoList->length();
+    mutex.unlock();
 }
 
 // 获取friendname
@@ -170,6 +185,9 @@ QString TaskMonitor::getExeDescription(const QString& filePath)
 
 void TaskMonitor::updateWindowsModel()
 {
+    if (!mutex.tryLock())
+        return;
+
     // 清空模型和窗口信息列表
     mWindowsModel->clear();
     mWindowsInfoList->clear();
@@ -219,6 +237,7 @@ void TaskMonitor::updateWindowsModel()
     }, reinterpret_cast<LPARAM>(this));
 
     qDebug() << "Enumerate windows number：" << mWindowsInfoList->length();
+    mutex.unlock();
 }
 
 // 过滤，需要过滤就返回false

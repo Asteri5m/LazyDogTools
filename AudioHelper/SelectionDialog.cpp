@@ -1,10 +1,11 @@
 #include "SelectionDialog.h"
 #include "AudioHelper.h"
+#include <QThread>
 
 
 SelectionDialog::SelectionDialog(QWidget *parent)
     : QDialog{parent}
-    , mTaskMonitor(new TaskMonitor(this))
+    , mTaskMonitor(new TaskMonitor())
     , mSelectedOption(new SelectionInfo)
 {
     setWindowTitle("添加关联项");

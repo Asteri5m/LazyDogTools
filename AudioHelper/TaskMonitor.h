@@ -11,6 +11,11 @@
 #include <QStandardItemModel>
 #include <QFileIconProvider>
 #include <QDir>
+#include <QThread>
+#include <QMutex>
+
+
+inline QMutex mutex;
 
 class TaskMonitor : public QObject
 {
@@ -40,6 +45,12 @@ public:
 public slots:
     void update();
 
+private slots:
+    void updateModel();
+
+signals:
+    void backgroundUpdate();
+
 private:
     void updateProcessModel();
     void updateWindowsModel();
@@ -54,6 +65,7 @@ private:
     QStringList *mProcessFilter;
     QStringList *mWindowsFilter;
     FilterMode mFilterMode;
+    QThread *mThread;
 };
 
 #endif // TASKMONITOR_H
