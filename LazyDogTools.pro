@@ -14,6 +14,7 @@ SOURCES += \
     AudioHelper/AudioDatabaseManager.cpp \
     AudioHelper/AudioHelper.cpp \
     AudioHelper/AudioHelperManager.cpp \
+    AudioHelper/AudioHelperServer.cpp \
     AudioHelper/AudioManager.cpp \
     AudioHelper/SelectionDialog.cpp \
     AudioHelper/TaskMonitor.cpp \
@@ -32,6 +33,7 @@ HEADERS += \
     AudioHelper/AudioDatabaseManager.h \
     AudioHelper/AudioHelper.h \
     AudioHelper/AudioHelperManager.h \
+    AudioHelper/AudioHelperServer.h \
     AudioHelper/AudioManager.h \
     AudioHelper/PolicyConfig.h \
     AudioHelper/SelectionDialog.h \

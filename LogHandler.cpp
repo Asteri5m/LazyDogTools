@@ -77,7 +77,7 @@ void LogHandler::writeLog(QtMsgType type, const QString& tag, const QString& msg
         }
 
         QString logMessage = QString("%1 [%2] - %3 - %4\n")
-                                 .arg(QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss"))
+                                 .arg(QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss.zzz"))
                                  .arg(levelText).arg(tag).arg(msg);
 
         // 输出到日志

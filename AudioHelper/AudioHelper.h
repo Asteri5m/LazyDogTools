@@ -3,6 +3,7 @@
 
 #include "CustomWidget.h"
 #include "AudioCustom.h"
+#include "AudioHelperServer.h"
 #include <QListWidget>
 
 
@@ -26,6 +27,7 @@ private:
     QListWidget *mTaskTab;
     RelatedList *mRelatedList;
     QMap<QString, QString> mConfig;
+    AudioHelperServer *mServer;
 
     MacStyleButton *mGameButton;
 

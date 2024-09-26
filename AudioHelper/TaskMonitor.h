@@ -13,9 +13,11 @@
 #include <QDir>
 #include <QThread>
 #include <QMutex>
+#include "AudioCustom.h"
 
+typedef QList<TaskInfo> TaskInfoList;
 
-inline QMutex mutex;
+inline QMutex taskMonitorMutex;
 
 class TaskMonitor : public QObject
 {
@@ -42,6 +44,9 @@ public:
     void setFilter(QStringList& headers, TaskMode mode);
     void setFilter(FilterMode filterMode);
 
+    static TaskInfoList getProcessList();
+    static TaskInfoList getWindowsList();
+
 public slots:
     void update();
 
@@ -56,7 +61,7 @@ private:
     void updateWindowsModel();
     bool filterProcess(QString& text);
     bool filterWindows(QString& text);
-    QString getExeDescription(const QString &filePath);
+    static QString getExeDescription(const QString &filePath);
 
     QStandardItemModel* mProcessModel;
     QStandardItemModel* mWindowsModel;

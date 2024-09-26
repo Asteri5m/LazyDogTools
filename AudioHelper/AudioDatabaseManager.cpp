@@ -18,9 +18,7 @@ AudioDatabaseManager::AudioDatabaseManager()
         return;
     }
 
-    if (!createTable()) {
-        qCritical() << "create table (RelatedItems) failed:" << QSqlQuery{mdb}.lastError().text();
-    }
+    createTable();
 
 }
 

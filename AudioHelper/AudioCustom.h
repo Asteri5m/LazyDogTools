@@ -497,4 +497,68 @@ private:
     AudioDeviceList mDeviceList;
 };
 
+// #include <QList>
+// #include <QHash>
+// #include <QString>
+
+template<typename K, typename V>
+class OrderedMap {
+public:
+    void insert(const K &key, const V &value) {
+        if (!hash.contains(key)) { // 确保唯一性
+            hash[key] = value;
+            order.append(key);
+        }
+    }
+
+    bool contains(const K &key) const {
+        return hash.contains(key);
+    }
+
+    V value(const K &key) const {
+        return hash.value(key);
+    }
+
+    V& operator[](const K &key) {
+        return hash[key]; // 返回引用以允许修改
+    }
+
+    void remove(const K &key) {
+        if (hash.remove(key)) {
+            order.removeAll(key);
+        }
+    }
+
+    void clear() {
+        hash.clear();
+        order.clear();
+    }
+
+    QList<K> keys() const {
+        return order;
+    }
+
+    QList<V> values() const {
+        QList<V> vals;
+        for (const K &key : order) {
+            vals.append(hash.value(key));
+        }
+        return vals;
+    }
+
+    // 提供迭代器支持
+    using iterator = typename QList<K>::iterator;
+    using const_iterator = typename QList<K>::const_iterator;
+
+    iterator begin() { return order.begin(); }
+    iterator end() { return order.end(); }
+    const_iterator begin() const { return order.begin(); }
+    const_iterator end() const { return order.end(); }
+
+
+private:
+    QHash<K, V> hash;    // 存储键值对
+    QList<K> order;      // 存储插入顺序
+};
+
 #endif // AUDIOCUSTOM_H

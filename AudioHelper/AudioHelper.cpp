@@ -9,6 +9,8 @@ AudioHelper::AudioHelper(QWidget *parent)
     , mTaskTab(new QListWidget())
     , mRelatedList(new RelatedList())
 {
+    mServer = new AudioHelperServer(mRelatedList);
+
     resize(800, 480);
     setMinimumSize(800, 480);
 
@@ -26,6 +28,8 @@ AudioHelper::AudioHelper(QWidget *parent)
     mTaskTab->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
     finalizeSetup();  // 检查并显示第一个页面
+
+    mServer->start();
 }
 
 QString AudioHelper::queryConfig(const QString &key)
@@ -384,28 +388,71 @@ void AudioHelper::comboBoxChanged(QString currentText)
         qWarning() << QString("save config %1(%2) to database failed").arg(key).arg(currentText);
     }
     mConfig[key] = currentText;
+
+    if (key == "任务模式")
+    {
+        if (currentText == "进程模式")
+            mServer->setMode(AudioHelperServer::Process);
+        else if (currentText == "窗口模式")
+            mServer->setMode(AudioHelperServer::Windows);
+        else
+            mServer->setMode(AudioHelperServer::Smart);
+    }
+
+    if (key == "场景识别")
+    {
+        if (currentText == "游戏场景")
+            mServer->setScene(AudioHelperServer::Entertainment);
+        else if (currentText == "影音场景")
+            mServer->setScene(AudioHelperServer::Audiovisual);
+        else
+            mServer->setScene(AudioHelperServer::Normal);
+    }
 }
 
 template<typename T>
 void AudioHelper::loadConfigHandler(T *widget, const QString &defaultValue)
 {
-    QString value;
+    QString key, value;
     QString typeName = QString(typeid(widget).name()).split(' ')[1];
 
     if (typeName == "MacStyleCheckBox") {
         MacStyleCheckBox* checkbox = qobject_cast<MacStyleCheckBox*>(widget);
         if (checkbox) {
-            value = AudioDatabaseManager::instance().queryConfig(checkbox->text(), defaultValue);
-            mConfig.insert(checkbox->text(), value);
+            key   = checkbox->text();
+            value = AudioDatabaseManager::instance().queryConfig(key, defaultValue);
+            mConfig.insert(key, value);
             checkbox->setChecked(value == "true" ? true : false);
             return;
         }
     } else if (typeName == "MacStyleComboBox") {
         MacStyleComboBox* comboBox = qobject_cast<MacStyleComboBox*>(widget);
         if (comboBox) {
-            value = AudioDatabaseManager::instance().queryConfig(comboBox->text(), defaultValue);
-            mConfig.insert(comboBox->text(), value);
+            key   = comboBox->text();
+            value = AudioDatabaseManager::instance().queryConfig(key, defaultValue);
+            mConfig.insert(key, value);
             comboBox->setCurrentText(value);
+
+            if (key == "任务模式")
+            {
+                if (value == "进程模式")
+                    mServer->setMode(AudioHelperServer::Process);
+                else if (value == "窗口模式")
+                    mServer->setMode(AudioHelperServer::Windows);
+                else
+                    mServer->setMode(AudioHelperServer::Smart);
+            }
+
+            if (key == "场景识别")
+            {
+                if (value == "游戏场景")
+                    mServer->setScene(AudioHelperServer::Entertainment);
+                else if (value == "影音场景")
+                    mServer->setScene(AudioHelperServer::Audiovisual);
+                else
+                    mServer->setScene(AudioHelperServer::Normal);
+            }
+
             return;
         }
     }

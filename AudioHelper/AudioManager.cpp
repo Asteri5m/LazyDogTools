@@ -125,6 +125,7 @@ bool AudioManager::setAudioOutDevice(const QString &deviceId)
 
     // 成功返回true
     if (SUCCEEDED(hr)) {
+        mCurrentOutDeviceId = deviceId;
         return true;
     }
     return false;

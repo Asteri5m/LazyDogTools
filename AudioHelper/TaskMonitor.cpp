@@ -69,6 +69,97 @@ void TaskMonitor::setFilter(FilterMode filterMode)
     mFilterMode = filterMode;
 }
 
+TaskInfoList TaskMonitor::getProcessList()
+{
+    TaskInfoList taskInfoList;
+
+    // 枚举进程
+    DWORD processes[1024], processCount, cbNeeded;
+    if (!EnumProcesses(processes, sizeof(processes), &cbNeeded)) {
+        qDebug() << "Failed to enumerate processes.";
+        return taskInfoList;
+    }
+
+    processCount = cbNeeded / sizeof(DWORD);
+
+    // 遍历所有进程
+    for (unsigned int i = 0; i < processCount; ++i) {
+        DWORD processId = processes[i];
+
+        // 打开进程
+        HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
+        if (hProcess == nullptr)
+            continue;
+
+        // 获取进程的可执行文件路径
+        TCHAR processPath[MAX_PATH];
+        DWORD size = sizeof(processPath) / sizeof(TCHAR);
+        if (!QueryFullProcessImageName(hProcess, 0, processPath, &size))
+            continue;
+
+        QString drivepath = QDir::cleanPath(QString::fromWCharArray(processPath));
+
+        // 获取friendname, 首先尝试解析，解析失败后则使用QFileInfo::baseName
+        QString friendName = getExeDescription(drivepath);
+        if (friendName == "")
+        {
+            QFileInfo fileInfo(drivepath);
+            friendName = fileInfo.baseName();
+        }
+
+        TaskInfo taskInfo{friendName, drivepath};
+        taskInfoList.append(taskInfo);
+    }
+
+    return taskInfoList;
+}
+
+TaskInfoList TaskMonitor::getWindowsList()
+{
+    TaskInfoList taskInfoList;
+
+    // 使用 lambda 表达式作为 EnumWindows 的回调
+    EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL {
+        TaskInfoList *taskInfoList = reinterpret_cast<TaskInfoList *>(lParam);  // 从 lParam 中获取传递的列表指针
+
+        if (!IsWindowVisible(hwnd))
+            return TRUE;
+
+        TCHAR windowTitle[256];
+        GetWindowText(hwnd, windowTitle, sizeof(windowTitle) / sizeof(TCHAR));
+        QString title = QString::fromWCharArray(windowTitle);
+        if (title.isEmpty())
+            return TRUE;
+
+        DWORD processId;
+        GetWindowThreadProcessId(hwnd, &processId);
+
+        HANDLE processHandle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, processId);
+        if (!processHandle)
+            return TRUE;
+
+        WCHAR executablePath[MAX_PATH];
+        DWORD pathSize = MAX_PATH;
+        if (!QueryFullProcessImageNameW(processHandle, 0, executablePath, &pathSize)) {
+            CloseHandle(processHandle);
+            return TRUE;
+        }
+
+        QString drivepath = QDir::cleanPath(QString::fromWCharArray(executablePath));
+
+        // 创建 TaskInfo 并添加到传递的 taskInfoList 中
+        TaskInfo taskInfo{title, drivepath};
+        taskInfoList->insert(0, taskInfo);
+
+        CloseHandle(processHandle);
+
+        return TRUE; // 继续枚举窗口
+    }, reinterpret_cast<LPARAM>(&taskInfoList));  // 将 taskInfoList 传递给 lParam
+
+    return taskInfoList;
+}
+
+
 // 更新数据（更新模型）
 void TaskMonitor::update()
 {
@@ -84,7 +175,7 @@ void TaskMonitor::updateModel()
 // 更新进程模型
 void TaskMonitor::updateProcessModel()
 {
-    if (!mutex.tryLock())
+    if (!taskMonitorMutex.tryLock())
         return;
 
     // 枚举进程
@@ -135,7 +226,7 @@ void TaskMonitor::updateProcessModel()
         mProcessModel->appendRow(item);
     }
     qDebug() << "Enumerate process number：" << mProcessInfoList->length();
-    mutex.unlock();
+    taskMonitorMutex.unlock();
 }
 
 // 获取friendname
@@ -185,7 +276,7 @@ QString TaskMonitor::getExeDescription(const QString& filePath)
 
 void TaskMonitor::updateWindowsModel()
 {
-    if (!mutex.tryLock())
+    if (!taskMonitorMutex.tryLock())
         return;
 
     // 清空模型和窗口信息列表
@@ -237,7 +328,7 @@ void TaskMonitor::updateWindowsModel()
     }, reinterpret_cast<LPARAM>(this));
 
     qDebug() << "Enumerate windows number：" << mWindowsInfoList->length();
-    mutex.unlock();
+    taskMonitorMutex.unlock();
 }
 
 // 过滤，需要过滤就返回false
