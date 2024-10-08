@@ -61,7 +61,7 @@ private:
     void calculateWindowsWeight();
     void calculateSceneWeight();
     void calculateWeight(TaskInfoList *taskInfoList, char weight);
-    LONG searchRelated(const QString path) const;
+    QVector<uint> searchRelateds(const QString path) const;
     const RelatedItem *getRelated(const uint id) const;
 };
 

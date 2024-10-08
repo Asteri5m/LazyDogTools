@@ -17,6 +17,7 @@ public:
         Green,
         Yellow,
         Purple,
+        Orange,
         Default
     };
 
@@ -60,6 +61,10 @@ public:
             back_color = "#EFE3FC";
             text_color = "#9933FF";
             break;
+        case Orange:
+            back_color = "#FFE5E0";
+            text_color = "#FF6347";
+            break;
         }
 
         return QString(
@@ -86,6 +91,7 @@ inline QMap<QString, TagLabel::Theme> TagTheme =  {
     {"文件夹", TagLabel::Yellow},
     {"文件", TagLabel::Purple},
     {"游戏", TagLabel::Pink},
+    {"影音", TagLabel::Orange},
 };
 
 
@@ -461,7 +467,7 @@ public:
 
         // 创建按钮框，包含 "确定" 和 "取消" 按钮
         QHBoxLayout *buttonLayout = new QHBoxLayout();
-        MacStyleButton *checkButton  = new MacStyleButton("添加");
+        MacStyleButton *checkButton  = new MacStyleButton("确定");
         MacStyleButton *cancelButton = new MacStyleButton("取消");
 
         checkButton->setNormalColorBlue(true);
@@ -497,9 +503,56 @@ private:
     AudioDeviceList mDeviceList;
 };
 
-// #include <QList>
-// #include <QHash>
-// #include <QString>
+class TagSwitchDialog : public QDialog {
+    Q_OBJECT
+
+public:
+    explicit TagSwitchDialog(QWidget *parent = nullptr) : QDialog(parent) {
+        // 设置对话框标题
+        setWindowTitle("请选择应用场景");
+
+        // 创建一个 QLabel 来描述下拉框的用途
+        QLabel* label = new QLabel("请选择该任务的应用场景:", this);
+
+        // 创建 QComboBox 并添加选项
+        mComboBox = new MacStyleComboBox(this);
+        mComboBox->addItem("游戏");
+        mComboBox->addItem("影音");
+
+        // 创建按钮框，包含 "确定" 和 "取消" 按钮
+        QHBoxLayout *buttonLayout = new QHBoxLayout();
+        MacStyleButton *checkButton  = new MacStyleButton("确定");
+        MacStyleButton *cancelButton = new MacStyleButton("取消");
+
+        checkButton->setNormalColorBlue(true);
+
+        buttonLayout->addWidget(checkButton);
+        buttonLayout->addStretch(1);
+        buttonLayout->addWidget(cancelButton);
+
+
+        // 连接 "确定" 和 "取消" 按钮的信号到相应的槽
+        connect(checkButton,  SIGNAL(clicked()), this, SLOT(accept()));  // 点击 "确定"
+        connect(cancelButton, SIGNAL(clicked()), this, SLOT(reject()));  // 点击 "取消"
+
+        // 创建布局并将部件添加到布局中
+        QVBoxLayout* layout = new QVBoxLayout(this);
+        layout->addWidget(label);
+        layout->addWidget(mComboBox);
+        layout->addLayout(buttonLayout);
+
+        setFixedSize(sizeHint());
+    }
+
+    // 返回 QComboBox 的当前选择
+    QString selectedOption() const {
+        return mComboBox->currentText();
+    }
+
+private:
+    QComboBox* mComboBox;
+};
+
 
 template<typename K, typename V>
 class OrderedMap {

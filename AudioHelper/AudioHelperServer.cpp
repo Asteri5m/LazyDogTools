@@ -16,7 +16,7 @@ AudioHelperServer::AudioHelperServer(RelatedList *relatedList, QObject *parent)
     mThread->start();
 
     // 服务的轮训的间隔默认为半秒
-    mTimer->setInterval(1000);
+    mTimer->setInterval(500);
 }
 
 AudioHelperServer::~AudioHelperServer()
@@ -89,15 +89,26 @@ void AudioHelperServer::server()
 
     uint targetId = -1;
     CHAR targetWeight = 0;
+    BOOL isDir = false;
 
     for(auto it = mTargetList->begin(); it != mTargetList->end(); it++)
     {
         uint key = *it;
         CHAR value = mTargetList->value(key);
+        const RelatedItem *related = getRelated(key);
         if (value > targetWeight)
         {
             targetId = key;
             targetWeight = value;
+            isDir = related->typeInfo.type == "文件夹" ? true : false;
+        }
+
+        // 降低文件夹的优先级但不降低权重
+        if (value == targetWeight && isDir && related->typeInfo.type != "文件夹")
+        {
+            targetId = key;
+            targetWeight = value;
+            isDir = false;
         }
     }
 
@@ -117,14 +128,22 @@ void AudioHelperServer::server()
         audioServerMutex.unlock();
         return;
     }
-    mAudioManager->setAudioOutDevice(target->audioDeviceInfo.id);
 
-    qDebug() << QString("任务触发：id:%1, weight:%2, name:%3, device:%4")
+    qInfo() << QString("任务触发：id:%1, weight:%2, name:%3, device:%4")
                     .arg(targetId)
                     .arg((short)targetWeight)
                     .arg(target->taskInfo.name)
                     .arg(target->audioDeviceInfo.name)
                     .toUtf8().constData();
+
+    if (mAudioManager->setAudioOutDevice(target->audioDeviceInfo.id))
+    {
+        qDebug() << "执行完成";
+    }
+    else
+    {
+        qDebug() << "执行失败了";
+    }
 
     audioServerMutex.unlock();
 }
@@ -156,24 +175,31 @@ void AudioHelperServer::calculateWindowsWeight()
 
 void AudioHelperServer::calculateWeight(TaskInfoList* taskInfoList, char weight)
 {
-    QVector<QString> buffer;
+    QVector<QString> taskBuffer;
+    QVector<uint> targetBuffer;
     for (auto it = taskInfoList->rbegin(); it != taskInfoList->rend(); ++it) {
         TaskInfo task = *it;
 
         // 避免多进程任务的重复加权
-        if (buffer.contains(task.path))
+        if (taskBuffer.contains(task.path))
             continue;
 
-        LONG id = searchRelated(task.path);
-        if (id < 0)
+        QVector<uint> idList = searchRelateds(task.path);
+        if (idList.isEmpty())
             continue;
 
-        if (mTargetList->contains(id))
-            (*mTargetList)[id] += weight;
-        else
-            mTargetList->insert(id, weight);
+        foreach (uint id, idList) {
+            if (targetBuffer.contains(id))
+                continue;
 
-        buffer.append(task.path);
+            if (mTargetList->contains(id))
+                (*mTargetList)[id] += weight;
+            else
+                mTargetList->insert(id, weight);
+
+            targetBuffer.append(id);
+        }
+        taskBuffer.append(task.path);
     }
 }
 
@@ -183,7 +209,7 @@ void AudioHelperServer::calculateSceneWeight()
     QString scene;
     switch (mScene) {
     case Scene::Normal:
-        return;     // 普通模式不需要进行场景加权
+        return;        // 普通模式不需要进行场景加权
     case Scene::Audiovisual:
         scene = "影音";
         break;
@@ -203,13 +229,14 @@ void AudioHelperServer::calculateSceneWeight()
     }
 }
 
-LONG AudioHelperServer::searchRelated(const QString path) const
+QVector<uint> AudioHelperServer::searchRelateds(const QString path) const
 {
+    QVector<uint> reslut;
     for (const RelatedItem &item : *mRelatedList) {
-        if (item.taskInfo.path == path)
-            return item.id;
+        if (path.startsWith(item.taskInfo.path))
+            reslut.append(item.id);
     }
-    return -1;
+    return reslut;
 }
 
 const RelatedItem *AudioHelperServer::getRelated(const uint id) const

@@ -11,6 +11,7 @@ class AudioHelper : public ToolWidgetModel {
     Q_OBJECT
 public:
     explicit AudioHelper(QWidget *parent = nullptr);
+    ~AudioHelper();
     QString queryConfig(const QString& key);
 
 signals:
@@ -29,14 +30,14 @@ private:
     QMap<QString, QString> mConfig;
     AudioHelperServer *mServer;
 
-    MacStyleButton *mGameButton;
+    MacStyleButton *mTagButton;
 
     void initHomePage();
     void initPrefsPage();
     void addRelatedItem();
     void delRelatedItem();
     void changeRelatedItem();
-    void setGameTag(bool);
+    void setSceneTag(bool isAdd);
     template <typename T>
     void loadConfigHandler(T* widget, const QString& defaultValue = QString());
 };

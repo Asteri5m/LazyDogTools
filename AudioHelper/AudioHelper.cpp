@@ -32,6 +32,11 @@ AudioHelper::AudioHelper(QWidget *parent)
     mServer->start();
 }
 
+AudioHelper::~AudioHelper()
+{
+    mServer->~AudioHelperServer();
+}
+
 QString AudioHelper::queryConfig(const QString &key)
 {
     return mConfig.value(key, QString());
@@ -89,15 +94,15 @@ void AudioHelper::initHomePage()
     MacStyleButton *addButton = new MacStyleButton("添加");
     MacStyleButton *delButton = new MacStyleButton("删除");
     MacStyleButton *chgButton = new MacStyleButton("修改");
-    mGameButton = new MacStyleButton("标记游戏");
-    mGameButton->setNormalColorBlue(true);
+    mTagButton = new MacStyleButton("标记场景");
+    mTagButton->setNormalColorBlue(true);
 
     footLayout->addWidget(new QLabel("关联项管理"));
     footLayout->addWidget(addButton);
     footLayout->addWidget(delButton);
     footLayout->addWidget(chgButton);
     footLayout->addStretch(1);
-    footLayout->addWidget(mGameButton);
+    footLayout->addWidget(mTagButton);
     // footLayout->addWidget(new QLabel("备份与恢复"));
     // footLayout->addWidget(new MacStyleButton("备份"));
     // footLayout->addWidget(new MacStyleButton("恢复"));
@@ -105,7 +110,7 @@ void AudioHelper::initHomePage()
     connect(addButton,   SIGNAL(clicked()), this, SLOT(buttonClicked()));
     connect(delButton,   SIGNAL(clicked()), this, SLOT(buttonClicked()));
     connect(chgButton,   SIGNAL(clicked()), this, SLOT(buttonClicked()));
-    connect(mGameButton, SIGNAL(clicked()), this, SLOT(buttonClicked()));
+    connect(mTagButton, SIGNAL(clicked()), this, SLOT(buttonClicked()));
 
 }
 
@@ -212,10 +217,10 @@ void AudioHelper::onItemClicked(QListWidgetItem *item)
     AudioTaskListWidgetItem *widgetItem = qobject_cast<AudioTaskListWidgetItem*>(mTaskTab->itemWidget(item));
 
     if (widgetItem) {
-        if (widgetItem->text(1) == "游戏")
-            mGameButton->setText("取消标记");
+        if (widgetItem->text(1) == "游戏" || widgetItem->text(1) == "影音")
+            mTagButton->setText("取消标记");
         else
-            mGameButton->setText("标记游戏");
+            mTagButton->setText("标记场景");
     }
 }
 
@@ -269,7 +274,7 @@ void AudioHelper::delRelatedItem()
         return;
 
     AudioTaskListWidgetItem *widgetItem = qobject_cast<AudioTaskListWidgetItem*>(mTaskTab->itemWidget(item));
-    qDebug() << "删除:" << widgetItem->text(0) << "|" << widgetItem->text(2);
+    qInfo() << "delete item:" << widgetItem->text(0) << "-" << widgetItem->text(2);
     if (!AudioDatabaseManager::instance().deleteItem(mRelatedList->at(mTaskTab->currentRow()).id))
     {
         qCritical() << "Failed to delete item:" <<AudioDatabaseManager::instance().lastError();
@@ -318,15 +323,28 @@ void AudioHelper::changeRelatedItem()
     mTaskTab->clearSelection();
 }
 
-void AudioHelper::setGameTag(bool isGame)
+void AudioHelper::setSceneTag(bool isAdd)
 {
     QListWidgetItem *item = mTaskTab->currentItem();
 
     if (!item)
         return;
 
-    RelatedItem &relatedItem = (*mRelatedList)[mTaskTab->currentRow()];
-    relatedItem.typeInfo.tag = isGame ? "游戏" : "";
+    RelatedItem &relatedItem = (*mRelatedList)[mTaskTab->currentRow()];    
+    if (isAdd)
+    {
+        TagSwitchDialog tagSwitchDialog(this);
+
+        if (tagSwitchDialog.exec() != QDialog::Accepted) {
+            qDebug() << "场景关联：取消选择";
+            return;
+        }
+
+        relatedItem.typeInfo.tag = tagSwitchDialog.selectedOption();
+    }
+    else
+        relatedItem.typeInfo.tag = "";
+
 
     // 保存到数据库
     if (!AudioDatabaseManager::instance().updateItem(relatedItem))
@@ -340,10 +358,10 @@ void AudioHelper::setGameTag(bool isGame)
 
     // 创建新的并关联
     AudioTaskListWidgetItem *widget = new AudioTaskListWidgetItem(&relatedItem);
-    qDebug() << "标记:" << widget->text(0) << "|" << relatedItem.typeInfo.tag;
+    qDebug() << "场景关联:" << widget->text(0) << "|" << relatedItem.typeInfo.tag;
     mTaskTab->setItemWidget(item, widget);
 
-    mGameButton->setText(isGame ? "取消标记" : "标记游戏");
+    mTagButton->setText(isAdd ? "取消标记" : "标记场景");
 }
 
 void AudioHelper::buttonClicked()
@@ -357,10 +375,10 @@ void AudioHelper::buttonClicked()
         delRelatedItem();
     else if (button->text() == "修改")
         changeRelatedItem();
-    else if (button->text() == "标记游戏")
-        setGameTag(true);
+    else if (button->text() == "标记场景")
+        setSceneTag(true);
     else if (button->text() == "取消标记")
-        setGameTag(false);
+        setSceneTag(false);
 }
 
 void AudioHelper::checkBoxChecked(bool checked)
