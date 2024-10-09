@@ -42,7 +42,6 @@ private:
     void jumpTool(QString toolName);
 
     // 数据库相关操作
-    void closeDatabase();
     bool initializeDatabase();
     bool saveSetting(const QString& key, const QString& value) const;
     template <typename T>

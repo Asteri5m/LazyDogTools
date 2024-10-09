@@ -41,7 +41,7 @@ Settings::Settings(QWidget *parent)
 
 Settings::~Settings()
 {
-    closeDatabase();
+    mdb.close();
 }
 
 // 设置ToolManager列表，通过设置可以修改ToolManager的部分属性，例如是否启用
@@ -342,19 +342,6 @@ void Settings::jumpTool(QString toolName)
             return;
         }
     }
-}
-
-// 关闭数据库
-void Settings::closeDatabase()
-{
-    if (!QSqlDatabase::contains(mdbName)) {
-        return;
-    }
-
-    if (mdb.isOpen()) {
-        mdb.close(); // 关闭数据库连接
-    }
-    // QSqlDatabase::removeDatabase(mdbName);   // 不回收连接，直接复用，规避wran
 }
 
 // 初始化数据库配置
