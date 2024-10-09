@@ -47,7 +47,8 @@ HEADERS += \
     SettingsManager.h \
     ToolManager.h \
     TransHelper/TransHelper.h \
-    TransHelper/TransHelperManager.h
+    TransHelper/TransHelperManager.h \
+    UAC.h
 
 FORMS += \
     lazydogtools.ui

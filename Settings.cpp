@@ -7,7 +7,7 @@ Settings::Settings(QWidget *parent)
     : ToolWidgetModel{parent}
     , mHotkeyManager{new HotkeyManager(this)}
     , mdbDir(QDir("Data"))
-    , mdbName("settings.db")
+    , mdbName("Settings.db")
 {
     setFixedSize(630, 425);
     // 取消其他按钮，只保留关闭按钮
@@ -347,7 +347,14 @@ void Settings::jumpTool(QString toolName)
 // 关闭数据库
 void Settings::closeDatabase()
 {
-    QSqlDatabase::removeDatabase(mdbName);
+    if (!QSqlDatabase::contains(mdbName)) {
+        return;
+    }
+
+    if (mdb.isOpen()) {
+        mdb.close(); // 关闭数据库连接
+    }
+    // QSqlDatabase::removeDatabase(mdbName);   // 不回收连接，直接复用，规避wran
 }
 
 // 初始化数据库配置
@@ -356,8 +363,12 @@ bool Settings::initializeDatabase()
     if (!mdbDir.exists())
         mdbDir.mkpath(".");
 
-    mdb = QSqlDatabase::addDatabase("QSQLITE", mdbDir.filePath(mdbName));
-    mdb.setDatabaseName(mdbDir.filePath(mdbName));
+    if (QSqlDatabase::contains(mdbName)) {
+        mdb = QSqlDatabase::database(mdbName);
+    } else {
+        mdb = QSqlDatabase::addDatabase("QSQLITE", mdbName);
+        mdb.setDatabaseName(mdbDir.filePath(mdbName));
+    }
 
     if (!mdb.open()) {
         qCritical() << "Failed to open the database:" << mdb.lastError().text();

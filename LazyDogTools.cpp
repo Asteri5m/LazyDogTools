@@ -44,6 +44,13 @@ LazyDogTools::~LazyDogTools()
     delete ui;
 }
 
+QString LazyDogTools::loadSetting(const QString &key)
+{
+    Settings* settings = qobject_cast<SettingsManager*>(mToolManagerList.at(0))->getTool();
+
+    return settings->loadSetting(key);
+}
+
 /**
  * 初始化程序的数据结构，解析各应用的数据
 */

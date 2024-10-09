@@ -35,6 +35,8 @@ public:
     LazyDogTools(QWidget *parent = nullptr);
     ~LazyDogTools();
 
+    QString loadSetting(const QString &key);
+
 public slots:
     void updateUI();
 
