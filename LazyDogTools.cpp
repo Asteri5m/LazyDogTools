@@ -169,6 +169,15 @@ void LazyDogTools::updateUI()
     mLayout->addStretch();
 }
 
+void LazyDogTools::onMessageAvailable(QString message)
+{
+    if (message == "Only one program instance is allowed to run.") {
+        TrayManager::instance()->showNotification("LazyDogTools", "LazyDogTools 已经在运行。");
+        return;
+    }
+    qWarning() << "Unknown message：" << message;
+}
+
 void LazyDogTools::updateData()
 {
     mMinToolList.clear();

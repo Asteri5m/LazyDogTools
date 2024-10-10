@@ -39,6 +39,7 @@ public:
 
 public slots:
     void updateUI();
+    void onMessageAvailable(QString);
 
 
 private:

@@ -1,4 +1,4 @@
-QT       += core gui svg sql
+QT       += core gui svg sql network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -22,6 +22,7 @@ SOURCES += \
     LogHandler.cpp \
     Settings.cpp \
     SettingsManager.cpp \
+    SingleApplication.cpp \
     ToolManager.cpp \
     TransHelper/TransHelper.cpp \
     TransHelper/TransHelperManager.cpp \
@@ -46,6 +47,7 @@ HEADERS += \
     PolicyConfig.h \
     Settings.h \
     SettingsManager.h \
+    SingleApplication.h \
     ToolManager.h \
     TransHelper/TransHelper.h \
     TransHelper/TransHelperManager.h \
