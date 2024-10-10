@@ -54,6 +54,7 @@ void LogHandler::writeLog(QtMsgType type, const QString& tag, const QString& msg
     }
 
     if (mLogFile.isOpen()) {
+        mLogFile.seek(mLogFile.size());
         QTextStream out(&mLogFile);
         QString levelText;
 
