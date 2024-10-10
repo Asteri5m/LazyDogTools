@@ -16,12 +16,13 @@ SingleApplication::SingleApplication(int& argc, char* argv[], const QString uniq
         // create shared memory.
         if (!mSharedMemory.create(1))
         {
-            qWarning("Unable to create single instance.");
+            qCritical("Unable to create single instance.");
             return;
         }
 
         // create local server and listen to incoming messages from other instances.
         mLocalServer = new QLocalServer(this);
+        mLocalServer->setSocketOptions(QLocalServer::WorldAccessOption);
         connect(mLocalServer, SIGNAL(newConnection()), this, SLOT(onNewConnection()));
         mLocalServer->listen(mUniqueKey);
     }
@@ -33,7 +34,7 @@ void SingleApplication::onNewConnection()
     QLocalSocket* localSocket = mLocalServer->nextPendingConnection();
     if (!localSocket->waitForReadyRead(mTimeout))
     {
-        qWarning(localSocket->errorString().toLatin1());
+        qCritical(localSocket->errorString().toLatin1());
         return;
     }
 
@@ -58,14 +59,14 @@ bool SingleApplication::sendMessage(const QString& message)
     localSocket.connectToServer(mUniqueKey, QIODevice::WriteOnly);
     if (!localSocket.waitForConnected(mTimeout))
     {
-        qWarning(localSocket.errorString().toLatin1());
+        qCritical(localSocket.errorString().toLatin1());
         return false;
     }
 
     localSocket.write(message.toUtf8());
     if (!localSocket.waitForBytesWritten(mTimeout))
     {
-        qWarning(localSocket.errorString().toLatin1());
+        qCritical(localSocket.errorString().toLatin1());
         return false;
     }
 
