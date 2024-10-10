@@ -37,8 +37,9 @@ LazyDogTools::LazyDogTools(QWidget *parent)
 
     // 添加托盘菜单项
     TrayManager* trayManager = TrayManager::instance();
-    trayManager->addMenuItem("主界面", [this]() { show(); }, nullptr, QIcon(":/ico/home.svg"));
-    trayManager->addMenuItem("设置", [settings]() { settings->show(); }, nullptr, QIcon(":/ico/settings2.svg"));
+    trayManager->setDoubleClick([this]() { show(); activateWindow(); } );
+    trayManager->addMenuItem("主界面", [this]() { show(); activateWindow(); }, nullptr, QIcon(":/ico/home.svg"));
+    trayManager->addMenuItem("设置", [settings]() { settings->show(); settings->activateWindow(); }, nullptr, QIcon(":/ico/settings2.svg"));
     trayManager->addSeparator();
 
     initUI();
@@ -176,6 +177,7 @@ void LazyDogTools::onMessageAvailable(QString message)
 {
     if (message == "Only one program instance is allowed to run.") {
         TrayManager::instance()->showNotification("LazyDogTools", "LazyDogTools 已经在运行。");
+        qInfo() << "Second instance refused.";
         return;
     }
     qWarning() << "Unknown message：" << message;

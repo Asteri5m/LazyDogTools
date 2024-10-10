@@ -44,6 +44,15 @@ void TrayManager::addMenuItem(const QString& name, std::function<void()> callbac
     menu->addAction(action);
 }
 
+void TrayManager::setDoubleClick(std::function<void ()> callback)
+{
+    connect(mTrayIcon, &QSystemTrayIcon::activated, this, [callback](QSystemTrayIcon::ActivationReason reason) {
+        if (reason == QSystemTrayIcon::DoubleClick) {
+            callback();
+        }
+    });
+}
+
 QMenu* TrayManager::addSubMenu(const QString& name, QMenu* parentMenu, const QIcon& icon)
 {
     QMenu* menu = parentMenu ? parentMenu : mTrayMenu;
