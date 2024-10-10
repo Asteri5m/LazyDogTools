@@ -283,6 +283,13 @@ protected:
     QHBoxLayout *mOverLayout;   // 全局布局，可以在此基础上实现高级自定义
     QGridLayout *mMainLayout;   // 主要布局区域，可以在此基础上实现高级自定义
 
+    //重写关闭信号
+    void closeEvent(QCloseEvent *event)
+    {
+        this->hide();
+        event->ignore();
+    }
+
 private:
     QWidget        *mMenuWidget;
     QVBoxLayout    *mMenuLayout;

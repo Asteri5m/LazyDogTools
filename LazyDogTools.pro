@@ -25,6 +25,7 @@ SOURCES += \
     ToolManager.cpp \
     TransHelper/TransHelper.cpp \
     TransHelper/TransHelperManager.cpp \
+    TrayManager.cpp \
     main.cpp \
     LazyDogTools.cpp
 
@@ -48,6 +49,7 @@ HEADERS += \
     ToolManager.h \
     TransHelper/TransHelper.h \
     TransHelper/TransHelperManager.h \
+    TrayManager.h \
     UAC.h
 
 FORMS += \

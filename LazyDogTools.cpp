@@ -2,6 +2,7 @@
 #include "LazyDogTools.h"
 #include "ui_lazydogtools.h"
 #include "SettingsManager.h"
+#include "TrayManager.h"
 #include "AudioHelper/AudioHelperManager.h"
 #include "TransHelper/TransHelperManager.h"
 
@@ -31,11 +32,22 @@ LazyDogTools::LazyDogTools(QWidget *parent)
     mToolManagerList.append(new AudioHelperManager());
     mToolManagerList.append(new TransHelperManager());
 
+    // 添加托盘菜单项
+    TrayManager* trayManager = TrayManager::instance();
+    trayManager->addMenuItem("主界面", [this]() { show(); }, nullptr, QIcon(":/ico/home.svg"));
+    trayManager->addMenuItem("设置", [settings]() { settings->show(); }, nullptr, QIcon(":/ico/settings2.svg"));
+    trayManager->addSeparator();
+
     initUI();
     // 将应用管理器的列表传递给“设置”,完成settings剩余的初始化工作
     settings->setToolManagerList(&mToolManagerList);
 
+    trayManager->showNotification("程序启动成功", "欢迎使用，您的工具已准备就绪！");
     qInfo() << "程序加载完成";
+
+    trayManager->addSeparator();
+    trayManager->addMenuItem("检查更新", []() { }, nullptr, QIcon(":/ico/loop.svg"));
+    trayManager->addMenuItem("退出", []() { QApplication::exit(); }, nullptr, QIcon(":/ico/close.svg"));
 }
 
 LazyDogTools::~LazyDogTools()
@@ -56,11 +68,24 @@ QString LazyDogTools::loadSetting(const QString &key)
 */
 void LazyDogTools::initData()
 {
+    TrayManager* trayManager = TrayManager::instance();
     Settings* settings = qobject_cast<SettingsManager*>(mToolManagerList.at(0))->getTool();
     short id = 0;
-    for(auto toolManager:mToolManagerList)
+    for(auto toolManager : mToolManagerList)
     {
         toolManager->initialize();
+
+        if (id > 0)
+        {
+            QMenu* subMenu = trayManager->addSubMenu(toolManager->getName(), nullptr, QIcon(toolManager->getIcon()));
+            trayManager->addMenuItem("打开", [toolManager]() { toolManager->show(); }, subMenu, QIcon(":/ico/terminal.svg"));
+
+            TrayList *trayList = toolManager->getTray();
+            if (trayList)
+                for (const TrayItem& trayItem : *trayList)
+                    trayManager->addMenuItem(trayItem.Name, trayItem.Func, subMenu, QIcon(trayItem.Icon));
+        }
+
         bool active = settings->loadSetting("active:"+toolManager->getName(), "true") == "true";
         toolManager->setActive(active);
         if (toolManager->getActive())
@@ -162,5 +187,15 @@ void LazyDogTools::updateData()
             }));
             id++; // id 自增
         }
+    }
+}
+
+void LazyDogTools::closeEvent(QCloseEvent *event)
+{
+    if(loadSetting("关闭设置") == "最小化托盘"){
+        event->ignore();
+        hide();
+    } else {
+        QApplication::exit();
     }
 }

@@ -15,5 +15,13 @@
         <file alias="todo.svg">images/ico/todo.svg</file>
         <file alias="translate.svg">images/ico/translate.svg</file>
         <file alias="user-settings.svg">images/ico/user-settings.svg</file>
+        <file alias="dashboard.svg">images/ico/dashboard.svg</file>
+        <file alias="gamepad.svg">images/ico/gamepad.svg</file>
+        <file alias="close.svg">images/ico/close.svg</file>
+        <file alias="loop.svg">images/ico/loop.svg</file>
+        <file alias="home.svg">images/ico/home.svg</file>
+        <file alias="pushpin.svg">images/ico/pushpin.svg</file>
+        <file alias="terminal.svg">images/ico/terminal.svg</file>
+        <file alias="settings2.svg">images/ico/settings2.svg</file>
     </qresource>
 </RCC>

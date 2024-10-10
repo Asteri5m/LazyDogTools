@@ -5,16 +5,24 @@
 #include <QKeySequence>
 #include "CustomWidget.h"
 
+typedef std::function<void()> Function;
+
 struct HotKey {
     QString      Name;            // 快捷键名，会在设置中展示
     QKeySequence Shortkeys;       // 快捷键内容
-    void*        Func;            // 需要与快捷键关联的函数
+    Function     Func;            // 回调函数
+};
+
+struct TrayItem {
+    QString     Name;            // 条目名，在菜单中显示
+    QString     Icon;            // 图标路径
+    Function    Func;            // 回调函数
 };
 
 // 快捷键列表
-typedef QList<HotKey>      HotkeyList;
+typedef QList<HotKey> HotkeyList;
 // 菜单栏条目，菜单名:关联函数
-typedef QMap<QString, void*> TrayList;
+typedef QList<TrayItem> TrayList;
 
 class ToolManager : public QObject {
     Q_OBJECT
@@ -27,7 +35,7 @@ public:
     QString     getName();
     QString     getDescription();
     HotkeyList* getHotKey();
-    TrayList*   getTrayn();
+    TrayList*   getTray();
     bool        getActive();
 
     // 修改数据接口

@@ -27,7 +27,7 @@ HotkeyList *ToolManager::getHotKey()
     return mHotKeyList;
 }
 
-TrayList *ToolManager::getTrayn()
+TrayList *ToolManager::getTray()
 {
     return mTray;
 }

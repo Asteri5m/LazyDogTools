@@ -20,8 +20,14 @@ void AudioHelperManager::initialize()
     setDescription("一个简单的助手");
 
     HotkeyList *hotKeyList = new HotkeyList();
-    hotKeyList->append(HotKey({"切换设置", QKeySequence("Ctrl+Alt+C"),nullptr}));
-    hotKeyList->append(HotKey({"锁定设备", QKeySequence("Ctrl+Alt+A"),nullptr}));
-    hotKeyList->append(HotKey({"切换模式", QKeySequence(),nullptr}));
+    hotKeyList->append(HotKey({"切换模式", QKeySequence("Ctrl+Alt+C"), nullptr}));
+    hotKeyList->append(HotKey({"锁定设备", QKeySequence("Ctrl+Alt+Z"), nullptr}));
+    hotKeyList->append(HotKey({"切换场景", QKeySequence("Ctrl+Alt+M"), nullptr}));
     setHotKey(hotKeyList);
+
+    TrayList *trayList = new TrayList();
+    trayList->append(TrayItem({"切换模式", ":/ico/dashboard.svg", nullptr}));
+    trayList->append(TrayItem({"切换场景", ":/ico/gamepad.svg", nullptr}));
+    trayList->append(TrayItem({"锁定设备", ":/ico/pushpin.svg", nullptr}));
+    setTray(trayList);
 }

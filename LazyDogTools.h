@@ -54,6 +54,9 @@ private:
     void updateData();
     void minToolWidgetTest();
     void toolWidgetModelTest();
+
+protected:
+    void closeEvent(QCloseEvent *event);
 };
 
 
