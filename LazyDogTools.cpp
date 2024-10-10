@@ -5,11 +5,14 @@
 #include "TrayManager.h"
 #include "AudioHelper/AudioHelperManager.h"
 #include "TransHelper/TransHelperManager.h"
+#include <QApplication>
 
 LazyDogTools::LazyDogTools(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::LazyDogTools)
 {
+    QElapsedTimer timer;
+    timer.start();
     qInfo() << "程序启动";
     qDebug() << "操作系统:" << QSysInfo::productType() << QSysInfo::productVersion();
     qDebug() << "系统架构:" << QSysInfo::currentCpuArchitecture();
@@ -42,12 +45,12 @@ LazyDogTools::LazyDogTools(QWidget *parent)
     // 将应用管理器的列表传递给“设置”,完成settings剩余的初始化工作
     settings->setToolManagerList(&mToolManagerList);
 
-    trayManager->showNotification("程序启动成功", "欢迎使用，您的工具已准备就绪！");
-    qInfo() << "程序加载完成";
-
     trayManager->addSeparator();
     trayManager->addMenuItem("检查更新", []() { }, nullptr, QIcon(":/ico/loop.svg"));
     trayManager->addMenuItem("退出", []() { QApplication::exit(); }, nullptr, QIcon(":/ico/close.svg"));
+
+    trayManager->showNotification("程序启动成功", "欢迎使用，您的工具已准备就绪！");
+    qInfo() << QString("程序加载完成 [%1ms]").arg(timer.elapsed()).toUtf8().constData();
 }
 
 LazyDogTools::~LazyDogTools()
