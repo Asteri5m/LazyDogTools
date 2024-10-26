@@ -100,7 +100,7 @@ void AudioHelperServer::server()
         {
             targetId = key;
             targetWeight = value;
-            isDir = related->typeInfo.type == "文件夹" ? true : false;
+            isDir = related->typeInfo.type == "文件夹";
         }
 
         // 降低文件夹的优先级但不降低权重

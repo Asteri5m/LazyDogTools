@@ -44,10 +44,10 @@ void TrayManager::addMenuItem(const QString& name, std::function<void()> callbac
     menu->addAction(action);
 }
 
-void TrayManager::setDoubleClick(std::function<void ()> callback)
+void TrayManager::setTriggered(std::function<void ()> callback)
 {
     connect(mTrayIcon, &QSystemTrayIcon::activated, this, [callback](QSystemTrayIcon::ActivationReason reason) {
-        if (reason == QSystemTrayIcon::DoubleClick) {
+        if (reason == QSystemTrayIcon::Trigger) {
             callback();
         }
     });

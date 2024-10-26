@@ -37,8 +37,8 @@ LazyDogTools::LazyDogTools(QWidget *parent)
 
     // 添加托盘菜单项
     TrayManager* trayManager = TrayManager::instance();
-    trayManager->setDoubleClick([this]() { show(); activateWindow(); } );
-    trayManager->addMenuItem("主界面", [this]() { show(); activateWindow(); }, nullptr, QIcon(":/ico/home.svg"));
+    trayManager->setTriggered([this]() { this->show(); this->activateWindow(); } );
+    trayManager->addMenuItem("主界面", [this]() { this->show(); this->activateWindow(); }, nullptr, QIcon(":/ico/home.svg"));
     trayManager->addMenuItem("设置", [settings]() { settings->show(); settings->activateWindow(); }, nullptr, QIcon(":/ico/settings2.svg"));
     trayManager->addSeparator();
 
