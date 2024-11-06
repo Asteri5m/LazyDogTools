@@ -101,6 +101,7 @@ inline QMap<QString, TagLabel::Theme> TagTheme =  {
 struct TaskInfo {
     QString name;
     QString path;
+    qint64 survivalTime;
 };
 
 struct AudioDeviceInfo {

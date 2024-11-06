@@ -97,6 +97,21 @@ TaskInfoList TaskMonitor::getProcessList()
         if (!QueryFullProcessImageName(hProcess, 0, processPath, &size))
             continue;
 
+        // 获取进程的创建时间
+        FILETIME creationTime, exitTime, kernelTime, userTime;
+        if (!GetProcessTimes(hProcess, &creationTime, &exitTime, &kernelTime, &userTime))
+            continue;
+
+        // 将 FILETIME 转换为 Unix 时间戳
+        ULARGE_INTEGER time;
+        time.LowPart = creationTime.dwLowDateTime;
+        time.HighPart = creationTime.dwHighDateTime;
+        qint64 processCreationTime = time.QuadPart / 10000 - 11644473600000LL; // 转换为毫秒
+
+        // 转换为相对时间 单位：毫秒
+        qint64 survivalTime = QDateTime::currentMSecsSinceEpoch() - processCreationTime;
+
+        // 获取绝对路径
         QString drivepath = QDir::cleanPath(QString::fromWCharArray(processPath));
 
         // 获取friendname, 首先尝试解析，解析失败后则使用QFileInfo::baseName
@@ -107,7 +122,7 @@ TaskInfoList TaskMonitor::getProcessList()
             friendName = fileInfo.baseName();
         }
 
-        TaskInfo taskInfo{friendName, drivepath};
+        TaskInfo taskInfo{friendName, drivepath, survivalTime};
         taskInfoList.append(taskInfo);
     }
 

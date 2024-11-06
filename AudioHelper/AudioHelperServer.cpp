@@ -70,8 +70,8 @@ void AudioHelperServer::server()
     // 计算初始的权重
     switch (mMode) {
     case Mode::Smart:
-        calculateProcessWeight();
         calculateWindowsWeight();
+        calculateProcessWeight();
         break;
     case Mode::Process:
         calculateProcessWeight();
@@ -158,6 +158,34 @@ void AudioHelperServer::calculateProcessWeight()
     }
 
     calculateWeight(&taskInfoList, 1);
+
+    // 对应刚打开的游戏，初始化需要一段时间，
+    // 但是此时没有窗口，无法得到加权，导致部分程序初始化了错误的音频设备，
+    // 并且该程序无法切换音频设备，那么此时就需要“预处理”，提取准备好音频设备
+    QVector<uint> targetBuffer;
+    for (auto it = taskInfoList.rbegin(); it != taskInfoList.rend(); ++it) {
+        TaskInfo task = *it;
+
+        // 仅补偿10s内打开的进程
+        if (task.survivalTime > 10000)
+            continue;
+
+        QVector<uint> idList = searchRelateds(task.path);
+        if (idList.isEmpty())
+            continue;
+
+        foreach (uint id, idList) {
+            if (targetBuffer.contains(id))
+                continue;
+
+            if (mTargetList->contains(id))
+                (*mTargetList)[id] += 2;
+            else
+                mTargetList->insert(id, 2);
+
+            targetBuffer.append(id);
+        }
+    }
 
 }
 
