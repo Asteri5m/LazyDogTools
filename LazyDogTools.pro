@@ -40,6 +40,7 @@ HEADERS += \
     AudioHelper/PolicyConfig.h \
     AudioHelper/SelectionDialog.h \
     AudioHelper/TaskMonitor.h \
+    Custom.h \
     CustomWidget.h \
     HotkeyManager.h \
     LazyDogTools.h \

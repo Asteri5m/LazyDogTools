@@ -71,6 +71,11 @@ SelectionDialog::SelectionDialog(QWidget *parent)
     connect(renewButton, SIGNAL(clicked()), mTaskMonitor, SLOT(update()));
     connect(processListView, SIGNAL(clicked(QModelIndex)), this, SLOT(onProcessItemClicked(QModelIndex)));
     connect(windowListView,  SIGNAL(clicked(QModelIndex)), this, SLOT(onWindowItemClicked(QModelIndex)));
+    // 取消回车键的关联，以免“文件导航栏”无法键入
+    checkButton->setAutoDefault(false);
+    renewButton->setAutoDefault(false);
+    cancelButton->setAutoDefault(false);
+
 
     // 设置过滤器并刷新
     AudioHelper *audoiHelper = qobject_cast<AudioHelper*>(parent);

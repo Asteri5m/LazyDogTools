@@ -1,3 +1,4 @@
+#include "Custom.h"
 #include "SelectionDialog.h"
 #include "AudioHelper.h"
 #include "AudioDatabaseManager.h"
@@ -236,6 +237,21 @@ void AudioHelper::addRelatedItem()
 
     SelectionInfo *selectionInfo = selectionDialog.selectedOption();
     qDebug() << "任务触发项：" <<  selectionInfo->taskInfo.name << "|" << selectionInfo->taskInfo.path;
+
+    // 空值校验
+    if (selectionInfo->taskInfo.name.isEmpty() && selectionInfo->taskInfo.path.isEmpty()) {
+        showMessage(this, "空选项", "未选择任何触发项，请重新选择！", MessageType::Warning);
+        return addRelatedItem();
+    }
+
+    // 重复值校验
+    RelatedList queryList = AudioDatabaseManager::instance().queryItems("taskPath", selectionInfo->taskInfo.path);
+    if (!queryList.isEmpty()) {
+        qWarning() << "任务已存在: Name:" << queryList.at(0).taskInfo.name << "; TypeInfo:" << queryList.at(0).typeInfo.type;
+        if (showMessage(this, "重复添加", "该选项已经在任务列表中，无法重复添加！\n\n是否继续添加其它项?\n", MessageType::Warning, "继续", "返回") == QMessageBox::Accepted)
+            return addRelatedItem();
+        return;
+    }
 
     // 再选任务关联项
     AudioChoiceDialog choiceDialog(this);
