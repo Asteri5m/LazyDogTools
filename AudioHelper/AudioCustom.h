@@ -8,8 +8,8 @@
 
 #define TAG_DEFAULT_WIDTH 120
 
-class TagLabel : public QWidget
-{
+class TagLabel : public QWidget {
+    Q_OBJECT
 public:
     enum Theme {
         Pink,
@@ -80,6 +80,12 @@ public:
         mLabel->setStyleSheet(generateStyleSheet(theme));
     }
 
+    QString text() const {
+        QString text = mLabel->text();
+        text.remove(" ");
+        return text;
+    }
+
 private:
     QLabel *mLabel;
 
@@ -94,9 +100,6 @@ inline QMap<QString, TagLabel::Theme> TagTheme =  {
     {"影音", TagLabel::Orange},
 };
 
-
-#include <QFileIconProvider>
-#include <QPixmap>
 
 struct TaskInfo {
     QString name;
@@ -123,102 +126,6 @@ struct RelatedItem {
 };
 
 typedef QList<RelatedItem> RelatedList;
-
-class AudioTaskListWidgetItem : public QWidget {
-    Q_OBJECT
-public:
-    AudioTaskListWidgetItem(RelatedItem *selectionInfo, QWidget *parent = nullptr)
-        : QWidget(parent)
-        , mSelectionInfo(selectionInfo)
-        , mOriginalTaskName(selectionInfo->taskInfo.name)
-        , mTag(selectionInfo->typeInfo.tag  == "" ? selectionInfo->typeInfo.type : selectionInfo->typeInfo.tag)
-        , mOriginalDeviceName(selectionInfo->audioDeviceInfo.name)
-    {
-        // 创建水平布局
-        mLayout = new QHBoxLayout(this);
-        mLayout->setContentsMargins(5, 0, 0, 0);
-
-        // 创建每列的 QLabel
-        mTaskLabel = new QLabel(mOriginalTaskName);
-        mTagLabel = new TagLabel(mTag.length() > 2 ? mTag : QString(mTag).insert(1, "   "));
-        mDevideLabel = new QLabel(mOriginalDeviceName);
-
-        // 获取文件的图标
-        QFileIconProvider fileIconProvider;
-        QIcon icon = fileIconProvider.icon(QFileInfo(selectionInfo->taskInfo.path));
-        QList<QSize> sizes = icon.availableSizes();
-        QPixmap pixmap = icon.pixmap(sizes.first());
-        QLabel *iconLabel = new QLabel();
-        iconLabel->setPixmap(pixmap);
-
-        // 第一列由 图标+描述 组成
-        QHBoxLayout *headerLayout = new QHBoxLayout();
-        headerLayout->setAlignment(Qt::AlignLeft);
-        headerLayout->addWidget(iconLabel);
-        headerLayout->addWidget(mTaskLabel);
-
-        // 添加到布局
-        mLayout->addLayout(headerLayout);
-        mLayout->addWidget(mTagLabel);
-        mLayout->addWidget(mDevideLabel);
-
-        mTagLabel->setStyleSheet(
-            "border-left: 1px solid #ececec;"
-            "border-right: 1px solid #ececec;"
-            );
-        mTagLabel->setFixedWidth(TAG_DEFAULT_WIDTH);
-        mTagLabel->setTheme(TagTheme.value(mTag, TagLabel::Theme::Default));
-
-        setLayout(mLayout);
-    }
-
-    QSize sizeHint() const override {
-        auto width = this->parentWidget()->width();
-        return QSize(width, 32);  // 自定义宽度和高度
-    }
-
-    QString text(int col) const {
-        switch (col) {
-        case 0:
-            return mOriginalTaskName;
-        case 1:
-            return mTag;
-        case 2:
-            return mOriginalDeviceName;
-        default:
-            qWarning() << QString("Parameter error, no matching case <col (%1)>").arg(1).toLocal8Bit().constData();
-            return "";
-        };
-    }
-
-protected:
-    // 重写 resizeEvent 以动态调整列的宽度和省略号显示
-    void resizeEvent(QResizeEvent *event) override {
-        QWidget::resizeEvent(event);
-
-        int totalWidth = event->size().width();  // 当前控件总宽度
-        int columnWidth = (totalWidth - mTagLabel->width()) / 2;
-
-        // 动态调整每个 QLabel 的文本长度并添加省略号 需要额外留出空间，否则无法对齐
-        updateLabelText(mTaskLabel, mOriginalTaskName, columnWidth - 24); // 减去图标长度
-        updateLabelText(mDevideLabel, mOriginalDeviceName, columnWidth - 8);
-    }
-
-private:
-    RelatedItem *mSelectionInfo;
-    QLabel *mTaskLabel, *mDevideLabel;
-    TagLabel *mTagLabel;
-    QString mOriginalTaskName, mTag, mOriginalDeviceName;
-    QHBoxLayout *mLayout;
-
-    // 更新 QLabel 的文本显示，适配宽度并添加省略号
-    void updateLabelText(QLabel *label, const QString &originalText, int columnWidth) {
-        QFontMetrics metrics(label->font());
-        QString elidedText = metrics.elidedText(originalText, Qt::ElideRight, columnWidth - 10 );  // 留一点边距
-        label->setText(elidedText);
-    }
-};
-
 
 #include <QStyledItemDelegate>
 #include <QPainter>

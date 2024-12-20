@@ -4,7 +4,7 @@
 #include "CustomWidget.h"
 #include "AudioCustom.h"
 #include "AudioHelperServer.h"
-#include <QListWidget>
+#include "Custom.h"
 
 
 class AudioHelper : public ToolWidgetModel {
@@ -17,7 +17,7 @@ public:
 signals:
 
 private slots:
-    void onItemClicked(QListWidgetItem *item);
+    void onItemClicked(QTableWidgetItem *item);
     void buttonClicked();
     void checkBoxChecked(bool);
     void comboBoxChanged(QString);
@@ -25,7 +25,7 @@ private slots:
 private:
     QWidget *mHomePage;
     QWidget *mPrefsPage;
-    QListWidget *mTaskTab;
+    TableWidget *mTaskTab;
     RelatedList *mRelatedList;
     QMap<QString, QString> mConfig;
     AudioHelperServer *mServer;
