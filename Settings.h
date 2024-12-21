@@ -40,6 +40,8 @@ private:
     void initShortcutsPage();
 
     void jumpTool(QString toolName);
+    bool setStartup(bool add);
+    bool runBatchAsAdmin(const QString& batchCommands);
 
     // 数据库相关操作
     bool initializeDatabase();

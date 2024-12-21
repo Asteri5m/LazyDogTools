@@ -8,7 +8,7 @@ void TransHelperManager::initUI()
     if (mToolWidget != nullptr)
         return;
 
-    qInfo() << "加载应用: " << getName();
+    qInfo() << "加载应用:" << getName();
     mToolWidget = new TransHelper();
     mToolWidget->setWindowTitle(getName());
     mToolWidget->setWindowIcon(QIcon(getIcon()));

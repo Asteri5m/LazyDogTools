@@ -1,7 +1,7 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QDesktopServices>
-#include <QUrl>
+#include <shlobj.h>
 #include "LogHandler.h"
 #include "Settings.h"
 #include "Custom.h"
@@ -347,6 +347,68 @@ void Settings::jumpTool(QString toolName)
     }
 }
 
+bool Settings::setStartup(bool add)
+{
+    PWSTR path = nullptr;
+    // 获取所有用户的启动项目录
+    HRESULT result = SHGetKnownFolderPath(FOLDERID_CommonStartup, 0, nullptr, &path);
+    QString startupPath;
+    if (SUCCEEDED(result)) {
+        startupPath = QString::fromWCharArray(path);
+        CoTaskMemFree(path);  // 释放内存
+    }
+    else
+        return false;
+
+    QString appName = "LazyDogTools"; // 替换为你的应用程序名称
+    QString appPath = QCoreApplication::applicationFilePath();  // 获取应用程序的路径
+    startupPath += "\\" + appName + ".lnk";
+
+    if (add) {
+        if (QFile::exists(startupPath))
+            return true;
+        if (!QFile::link(appPath, startupPath))
+            // 失败尝试用批处理
+            return runBatchAsAdmin(R"(
+                @echo off
+                :: 创建全局启动目录的快捷方式路径
+                set "shortcutPath=%ProgramData%\Microsoft\Windows\Start Menu\Programs\StartUp\LazyDogTools.lnk"
+
+                :: 通过powershell创建指向myApp.exe的快捷方式
+                powershell -Command "$s=(New-Object -COM WScript.Shell).CreateShortcut('%shortcutPath%');$s.TargetPath='%~dp0LazyDogTools.exe';$s.Save() ")");
+        return true;
+    } else {
+        if (!QFile::exists(startupPath))
+            return true;
+        return QFile::remove(startupPath);
+    }
+}
+
+bool Settings::runBatchAsAdmin(const QString &batchCommands)
+{
+    QString batchFile = "LazyDogTask.bat";
+
+    QFile file(batchFile);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream out(&file);
+        out << batchCommands;
+        file.close();
+    }
+
+    // 使用 ShellExecute 以管理员权限运行批处理文件
+    SHELLEXECUTEINFO sei = { sizeof(SHELLEXECUTEINFO) };
+    sei.lpVerb = L"runas";  // 确保以管理员权限运行
+    sei.lpFile = batchFile.toStdWString().c_str();
+    sei.nShow = SW_HIDE;   // 隐藏窗口执行
+    sei.hInstApp = NULL;
+
+    if (ShellExecuteEx(&sei)) {
+        Sleep(1000);    // 创建文件需要时间
+        return (int)(sei.hInstApp) > 32;
+    }
+    return false;
+}
+
 // 初始化数据库配置
 bool Settings::initializeDatabase()
 {
@@ -462,6 +524,13 @@ void Settings::checkBoxChecked(bool checked)
     if (checkBox->text() == "debug日志") {
         LogHandler::instance().setLogLevel(checked ? DebugLevel : InfoLevel);
         qInfo() << (checked ? "开启" : "关闭") << "debug日志";
+    } else if(checkBox->text() == "开机自启动") {
+        bool res = setStartup(checked);
+        qInfo() << (checked ? "开启" : "关闭") << "开机自启动:" << (res ? "成功" : "失败");
+        if (!res) {
+            checkBox->setChecked(!checked);
+            return;
+        }
     }
 
     saveSetting(checkBox->text(), checked ? "true" : "false");
@@ -558,6 +627,11 @@ void Settings::loadSettingsHandler(T *widget, const QString &defaultValue)
             if (checkbox->text() == "debug日志"){
                 LogHandler::instance().setLogLevel(value == "true" ? DebugLevel : InfoLevel);
                 LogHandler::instance().clearBuffer();
+            } else if (checkbox->text() == "开机自启动" && value == "true") {
+                if (!setStartup(true)) {
+                    checkbox->setChecked(false);
+                    saveSetting("开机自启动", "false");
+                }
             }
             return;
         }
