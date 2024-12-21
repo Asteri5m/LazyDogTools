@@ -363,14 +363,14 @@ bool Settings::setStartup(bool add)
     else
         return false;
 
-    QString appName = "LazyDogTools"; // 替换为你的应用程序名称
     QString appPath = QCoreApplication::applicationFilePath();  // 获取应用程序的路径
-    startupPath += "\\" + appName + ".lnk";
+    QDir startupDir(startupPath);
+    QString lnkFilePath = startupDir.filePath("LazyDogTools.lnk");
 
     if (add) {
-        if (QFile::exists(startupPath))
+        if (QFile::exists(lnkFilePath))
             return true;
-        if (!QFile::link(appPath, startupPath))
+        if (!QFile::link(appPath, lnkFilePath))
             // 失败尝试用批处理
             return runBatchAsAdmin(R"(
                 @echo off
@@ -381,15 +381,15 @@ bool Settings::setStartup(bool add)
                 powershell -Command "$s=(New-Object -COM WScript.Shell).CreateShortcut('%shortcutPath%');$s.TargetPath='%~dp0LazyDogTools.exe';$s.Save() ")");
         return true;
     } else {
-        if (!QFile::exists(startupPath))
+        if (!QFile::exists(lnkFilePath))
             return true;
-        return QFile::remove(startupPath);
+        return QFile::remove(lnkFilePath);
     }
 }
 
 bool Settings::runBatchAsAdmin(const QString &batchCommands)
 {
-    QString batchFile = "LazyDogTask.bat";
+    QString batchFile = QCoreApplication::applicationDirPath() + "/LazyDogTask.bat";
 
     QFile file(batchFile);
     if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -405,12 +405,12 @@ bool Settings::runBatchAsAdmin(const QString &batchCommands)
     sei.nShow = SW_HIDE;   // 隐藏窗口执行
     sei.hInstApp = NULL;
 
-    // if (ShellExecuteEx(&sei)) {
-    //     Sleep(1000);    // 创建文件需要时间
-    //     return (int)(sei.hInstApp) > 32;
-    // }
-    // return false;
-    return ShellExecuteEx(&sei) && (int)(sei.hInstApp) > 32;
+    if (ShellExecuteEx(&sei)) {
+        return (int)(sei.hInstApp) > 32;
+    } else {
+        return false; // 失败时返回false
+    }
+
 }
 
 // 初始化数据库配置
