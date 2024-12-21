@@ -24,11 +24,8 @@ AudioHelper::AudioHelper(QWidget *parent)
     initPrefsPage();
 
     connect(mTaskTab, SIGNAL(itemClicked(QTableWidgetItem*)), this, SLOT(onItemClicked(QTableWidgetItem*)));
-    // mTaskTab->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    // mTaskTab->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
     finalizeSetup();  // 检查并显示第一个页面
-
     mServer->start();
 }
 
@@ -240,12 +237,12 @@ void AudioHelper::addRelatedItem()
 
     // 先选任务触发项
     if (selectionDialog.exec() != QDialog::Accepted) {
-        qDebug() << "任务触发项：取消选择";
+        qDebug() << "任务触发项: 取消选择";
         return;
     }
 
     SelectionInfo *selectionInfo = selectionDialog.selectedOption();
-    qDebug() << "任务触发项：" <<  selectionInfo->taskInfo.name << "|" << selectionInfo->taskInfo.path;
+    qDebug() << "任务触发项: " <<  selectionInfo->taskInfo.name << "|" << selectionInfo->taskInfo.path;
 
     // 空值校验
     if (selectionInfo->taskInfo.name.isEmpty() && selectionInfo->taskInfo.path.isEmpty()) {
@@ -265,12 +262,12 @@ void AudioHelper::addRelatedItem()
     // 再选任务关联项
     AudioChoiceDialog choiceDialog(this);
     if (choiceDialog.exec() != QDialog::Accepted) {
-        qDebug() << "任务关联项：取消选择";
+        qDebug() << "任务关联项: 取消选择";
         return;
     }
 
     AudioDeviceInfo* deviceInfo = choiceDialog.selectedOption();
-    qDebug() << "任务关联项：" <<  deviceInfo->name;
+    qDebug() << "任务关联项: " <<  deviceInfo->name;
 
     // 结构化数据
     TypeInfo typeInfo{selectionInfo->type, ""};
@@ -335,12 +332,12 @@ void AudioHelper::changeRelatedItem()
 
     AudioChoiceDialog choiceDialog(this);
     if (choiceDialog.exec() != QDialog::Accepted) {
-        qDebug() << "更改任务关联项：取消选择";
+        qDebug() << "更改任务关联项: 取消选择";
         return;
     }
 
     AudioDeviceInfo* deviceInfo = choiceDialog.selectedOption();
-    qDebug() << "更改任务关联项：" <<  deviceInfo->name;
+    qDebug() << "更改任务关联项: " <<  deviceInfo->name;
 
     RelatedItem &relatedItem = (*mRelatedList)[mTaskTab->currentRow()];
     relatedItem.audioDeviceInfo = *deviceInfo;
@@ -370,7 +367,7 @@ void AudioHelper::setSceneTag(bool isAdd)
         TagSwitchDialog tagSwitchDialog(this);
 
         if (tagSwitchDialog.exec() != QDialog::Accepted) {
-            qDebug() << "场景关联：取消选择";
+            qDebug() << "场景关联: 取消选择";
             return;
         }
 
@@ -403,7 +400,7 @@ void AudioHelper::setSceneTag(bool isAdd)
 void AudioHelper::buttonClicked()
 {
     QPushButton *button = qobject_cast<QPushButton *>(sender());
-    qDebug() << "点击按钮：" << button->text();
+    qDebug() << "点击按钮: " << button->text();
 
     if (button->text() == "添加")
         addRelatedItem();

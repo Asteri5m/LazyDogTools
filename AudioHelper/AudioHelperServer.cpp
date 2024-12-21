@@ -129,7 +129,7 @@ void AudioHelperServer::server()
         return;
     }
 
-    qInfo() << QString("任务触发：id:%1, weight:%2, name:%3, device:%4")
+    qInfo() << QString("任务触发: id:%1, weight:%2, name:%3, device:%4")
                     .arg(targetId)
                     .arg((short)targetWeight)
                     .arg(target->taskInfo.name)

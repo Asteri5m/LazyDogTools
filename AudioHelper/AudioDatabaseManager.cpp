@@ -11,7 +11,7 @@ AudioDatabaseManager& AudioDatabaseManager::instance()
 AudioDatabaseManager::AudioDatabaseManager()
 {
     mdb = QSqlDatabase::addDatabase("QSQLITE", "AudioHelper");
-    mdb.setDatabaseName("Data/AudioHelper.db");
+    mdb.setDatabaseName("data/AudioHelper.db");
 
     if (!mdb.open()) {
         qCritical() << "Could not connect to database.";

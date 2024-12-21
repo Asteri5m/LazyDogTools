@@ -180,7 +180,7 @@ void LazyDogTools::onMessageAvailable(QString message)
         qInfo() << "Second instance refused.";
         return;
     }
-    qWarning() << "Unknown message：" << message;
+    qWarning() << "Unknown message: " << message;
 }
 
 void LazyDogTools::updateData()

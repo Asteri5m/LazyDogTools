@@ -6,7 +6,7 @@
 
 
 LogHandler::LogHandler()
-    :mLogDir("Log")
+    :mLogDir("log")
     ,mLogLevel(Undefined)
 {
     // 初始化日志文件

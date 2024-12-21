@@ -1,12 +1,15 @@
 #include <QSqlQuery>
 #include <QSqlError>
+#include <QDesktopServices>
+#include <QUrl>
 #include "LogHandler.h"
 #include "Settings.h"
+#include "Custom.h"
 
 Settings::Settings(QWidget *parent)
     : ToolWidgetModel{parent}
     , mHotkeyManager{new HotkeyManager(this)}
-    , mdbDir(QDir("Data"))
+    , mdbDir(QDir("data"))
     , mdbName("Settings.db")
 {
     setFixedSize(630, 425);
@@ -128,7 +131,7 @@ void Settings::initBasePage()
     QGridLayout *logLayout = new QGridLayout(logGroupBox);
 
     MacStyleCheckBox *debugCheckBox   = new MacStyleCheckBox("debug日志");
-    MacStyleButton   *exportLogButton = new MacStyleButton("导出日志");
+    MacStyleButton   *exportLogButton = new MacStyleButton("查看日志");
 
     logLayout->addWidget(debugCheckBox,   0, 0);
     logLayout->addWidget(exportLogButton, 0, 1);
@@ -422,10 +425,23 @@ QString Settings::loadSetting(const QString &key, const QString &defaultValue) c
 void Settings::buttonClicked()
 {
     QPushButton *button = qobject_cast<QPushButton *>(sender());
-    qDebug() << "点击按钮：" << button->text();
+    qDebug() << "点击按钮: " << button->text();
 
     if (button->text().startsWith("jump:"))
-        jumpTool(button->text().split(":")[1]);
+        return jumpTool(button->text().split(":")[1]);
+
+    if (button->text() == "查看日志") {
+        QUrl fileUrl = QUrl::fromLocalFile("log/log.txt");
+        // 使用默认程序打开日志文件
+        if (!QDesktopServices::openUrl(fileUrl)) {
+            qWarning() << "Failed to open log file with default application.";
+            showMessage(this, "程序出错了",
+                        "打开文件失败了，程序遇到了一些问题……您可以：\n\n"
+                        "重启程序或等待一段时间后重试；\n"
+                        "手动打开文件：位于安装目录log文件夹下。\n",
+                        MessageType::Critical);
+        }
+    }
 
 }
 
@@ -455,7 +471,7 @@ void Settings::checkBoxChecked(bool checked)
 void Settings::switchButtonChanged(bool checked)
 {
     MacSwitchButton *switchButton = qobject_cast<MacSwitchButton *>(sender());
-    qDebug() << switchButton->text().mid(7) << "选中：" << checked;
+    qDebug() << switchButton->text().mid(7) << "选中: " << checked;
 
     for (auto toolManager : *mToolManagerList)
     {

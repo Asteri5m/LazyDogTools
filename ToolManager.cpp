@@ -75,7 +75,7 @@ void ToolManager::initUI()
     if (mToolWidget != nullptr)
         return;
 
-    qInfo() << "加载应用：" << getName();
+    qInfo() << "加载应用: " << getName();
     mToolWidget = new ToolWidgetModel();
 }
 
@@ -112,7 +112,7 @@ void ToolManager::deleteUI()
     if (mToolWidget == nullptr)
         return;
 
-    qInfo() << "停用应用：" << getName();
+    qInfo() << "停用应用: " << getName();
     delete(mToolWidget);
     mToolWidget = nullptr;
 }
