@@ -22,6 +22,9 @@ Settings::Settings(QWidget *parent)
     // 初始化数据库
     initializeDatabase();
 
+    if (parent == nullptr)
+        return;
+
     mBasePage      = new QWidget(this);
     mAppPage       = new QWidget(this);
     mShortcutsPage = new QWidget(this);
@@ -402,11 +405,12 @@ bool Settings::runBatchAsAdmin(const QString &batchCommands)
     sei.nShow = SW_HIDE;   // 隐藏窗口执行
     sei.hInstApp = NULL;
 
-    if (ShellExecuteEx(&sei)) {
-        Sleep(1000);    // 创建文件需要时间
-        return (int)(sei.hInstApp) > 32;
-    }
-    return false;
+    // if (ShellExecuteEx(&sei)) {
+    //     Sleep(1000);    // 创建文件需要时间
+    //     return (int)(sei.hInstApp) > 32;
+    // }
+    // return false;
+    return ShellExecuteEx(&sei) && (int)(sei.hInstApp) > 32;
 }
 
 // 初始化数据库配置

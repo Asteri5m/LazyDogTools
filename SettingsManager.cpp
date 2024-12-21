@@ -2,13 +2,13 @@
 #include "CustomWidget.h"
 
 
-void SettingsManager::initUI()
+void SettingsManager::initUI(QWidget *parent)
 {
     // 避免多次创建
     if (mToolWidget != nullptr)
         return;
 
-    mToolWidget = new Settings();
+    mToolWidget = new Settings(parent);
     mToolWidget->setWindowTitle(getName());
     mToolWidget->setWindowIcon(QIcon(getIcon()));
 }

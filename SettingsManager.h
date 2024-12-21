@@ -9,7 +9,7 @@ class SettingsManager : public ToolManager
     Q_OBJECT
 public:
     // 重载
-    void initUI() override;
+    void initUI(QWidget *parent);
     void initialize() override;
 
     Settings* getTool();

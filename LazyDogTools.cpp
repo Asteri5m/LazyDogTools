@@ -25,7 +25,7 @@ LazyDogTools::LazyDogTools(QWidget *parent)
     // "设置"属于LazyDogTools的一部分，而不是应用"模块"
     SettingsManager* settingsManager = new SettingsManager();
     settingsManager->initialize();  // 手动初始化
-    settingsManager->initUI();
+    settingsManager->initUI(this);
     Settings* settings = settingsManager->getTool();
 
     // 设置中可以关闭不需要的工具，那么就需要更新主界面

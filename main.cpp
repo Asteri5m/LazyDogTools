@@ -29,6 +29,7 @@ int main(int argc, char *argv[])
                 return 0; // 启动成功，当前程序退出
             } // 未启动，当前程序继续
         }
+        s.deleteLater();
     }
 
     LazyDogTools w;
