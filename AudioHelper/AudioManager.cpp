@@ -122,7 +122,8 @@ bool AudioManager::setAudioOutDevice(const QString &deviceId)
         // 打印失败的原因
         FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
                        NULL, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&errorMsg, 0, NULL);
-        qCritical() << "CoCreateInstance failed - Error code: " << QString::number(hr, 16).toUpper() << ". Description: " << errorMsg;
+        qCritical() << "CoCreateInstance failed - Error code:" << QString::number(hr, 16).toUpper().toUtf8().constData()
+                    << ". Description:" << QString::fromLocal8Bit(errorMsg).trimmed().toUtf8().constData();
         return false;
     }
 
@@ -137,7 +138,8 @@ bool AudioManager::setAudioOutDevice(const QString &deviceId)
 
     FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
                    NULL, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&errorMsg, 0, NULL);
-    qCritical() << "SetDefaultEndpoint failed - Error code: " << QString::number(hr, 16).toUpper() << ". Description: " << errorMsg;
+    qCritical() << "SetDefaultEndpoint failed - Error code:" << QString::number(hr, 16).toUpper().toUtf8().constData()
+                << ". Description:" << QString::fromLocal8Bit(errorMsg).trimmed().toUtf8().constData();
     return false;
 }
 
