@@ -1,5 +1,8 @@
 #include "AudioHelperServer.h"
+#include "AudioDatabaseManager.h"
 #include "TrayManager.h"
+#include <QFileInfo>
+#include <QFileIconProvider>
 
 
 AudioHelperServer::AudioHelperServer(RelatedList *relatedList, QObject *parent)
@@ -140,11 +143,19 @@ void AudioHelperServer::server()
     if (mAudioManager->setAudioOutDevice(target->audioDeviceInfo.id))
     {
         qDebug() << "执行完成";
-        TrayManager::instance()->showMessage("程序启动成功", "欢迎使用，您的工具已准备就绪！");
+        if (AudioDatabaseManager::instance()->queryConfig("切换时通知") == "true")
+        {
+            QFileIconProvider iconProvider;
+            QFileInfo fileInfo(target->taskInfo.path);
+            TrayManager::instance()->showMessage("设备已切换", QString("任务触发: %1\n切换设备:%2")
+                                                                   .arg(target->taskInfo.name)
+                                                                   .arg(target->audioDeviceInfo.name)
+                                                 , iconProvider.icon(fileInfo).pixmap(64, 64).scaled(64, 64, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        }
     }
     else
     {
-        qDebug() << "执行失败了";
+        qWarning() << "任务执行执行失败了...";
     }
 
     audioServerMutex.unlock();

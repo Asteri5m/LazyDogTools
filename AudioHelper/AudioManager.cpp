@@ -114,20 +114,30 @@ bool AudioManager::setAudioOutDevice(const QString &deviceId)
     LPWSTR devID = const_cast<LPWSTR>(wcharStr);
     IPolicyConfigVista* pPolicyConfig;
     ERole reserved = eConsole;
+    char* errorMsg = nullptr;
 
     HRESULT hr = CoCreateInstance(__uuidof(CPolicyConfigVistaClient),
                                   NULL, CLSCTX_ALL, __uuidof(IPolicyConfigVista), (LPVOID*)&pPolicyConfig);
-    if (SUCCEEDED(hr))
-    {
-        hr = pPolicyConfig->SetDefaultEndpoint(devID, reserved);
-        pPolicyConfig->Release();
+    if (FAILED(hr)) {
+        // 打印失败的原因
+        FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                       NULL, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&errorMsg, 0, NULL);
+        qCritical() << "CoCreateInstance failed - Error code: " << QString::number(hr, 16).toUpper() << ". Description: " << errorMsg;
+        return false;
     }
+
+    hr = pPolicyConfig->SetDefaultEndpoint(devID, reserved);
+    pPolicyConfig->Release();
 
     // 成功返回true
     if (SUCCEEDED(hr)) {
         mCurrentOutDeviceId = deviceId;
         return true;
     }
+
+    FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                   NULL, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&errorMsg, 0, NULL);
+    qCritical() << "SetDefaultEndpoint failed - Error code: " << QString::number(hr, 16).toUpper() << ". Description: " << errorMsg;
     return false;
 }
 

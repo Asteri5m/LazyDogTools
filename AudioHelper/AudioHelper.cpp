@@ -191,7 +191,7 @@ void AudioHelper::initPrefsPage()
 
 
     // 加载配置
-    loadConfigHandler(notifyCheckBox,           "true");
+    loadConfigHandler(notifyCheckBox,           "false");
     loadConfigHandler(filterProcessCheckBox,    "true");
     loadConfigHandler(filterRepetitionCheckBox, "true");
 

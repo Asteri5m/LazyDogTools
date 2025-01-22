@@ -28,7 +28,7 @@ public:
 
     // 应用配置数据
     bool saveConfig(const QString &key, const QString &value);
-    QString queryConfig(const QString &key, const QString &defaultValue);
+    QString queryConfig(const QString &key, const QString &defaultValue = QString());
 
 
     QString lastError();
