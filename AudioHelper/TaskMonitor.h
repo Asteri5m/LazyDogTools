@@ -44,8 +44,8 @@ public:
     void setFilter(QStringList& headers, TaskMode mode);
     void setFilter(FilterMode filterMode);
 
-    static TaskInfoList getProcessList();
-    static TaskInfoList getWindowsList();
+    static void getProcessList(TaskInfoList *taskInfoList);
+    static void getWindowsList(TaskInfoList *taskInfoList);
 
 public slots:
     void update();

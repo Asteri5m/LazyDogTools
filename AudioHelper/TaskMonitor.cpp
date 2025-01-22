@@ -69,15 +69,13 @@ void TaskMonitor::setFilter(FilterMode filterMode)
     mFilterMode = filterMode;
 }
 
-TaskInfoList TaskMonitor::getProcessList()
+void TaskMonitor::getProcessList(TaskInfoList *taskInfoList)
 {
-    TaskInfoList taskInfoList;
-
     // 枚举进程
     DWORD processes[1024], processCount, cbNeeded;
     if (!EnumProcesses(processes, sizeof(processes), &cbNeeded)) {
         qDebug() << "Failed to enumerate processes.";
-        return taskInfoList;
+        return;
     }
 
     processCount = cbNeeded / sizeof(DWORD);
@@ -123,16 +121,14 @@ TaskInfoList TaskMonitor::getProcessList()
         }
 
         TaskInfo taskInfo{friendName, drivepath, survivalTime};
-        taskInfoList.append(taskInfo);
+        taskInfoList->append(taskInfo);
     }
 
-    return taskInfoList;
+    return;
 }
 
-TaskInfoList TaskMonitor::getWindowsList()
+void TaskMonitor::getWindowsList(TaskInfoList *taskInfoList)
 {
-    TaskInfoList taskInfoList;
-
     // 使用 lambda 表达式作为 EnumWindows 的回调
     EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL {
         TaskInfoList *taskInfoList = reinterpret_cast<TaskInfoList *>(lParam);  // 从 lParam 中获取传递的列表指针
@@ -169,9 +165,9 @@ TaskInfoList TaskMonitor::getWindowsList()
         CloseHandle(processHandle);
 
         return TRUE; // 继续枚举窗口
-    }, reinterpret_cast<LPARAM>(&taskInfoList));  // 将 taskInfoList 传递给 lParam
+    }, reinterpret_cast<LPARAM>(taskInfoList));  // 将 taskInfoList 传递给 lParam
 
-    return taskInfoList;
+    return;
 }
 
 

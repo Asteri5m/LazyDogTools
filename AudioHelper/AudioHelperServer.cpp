@@ -150,10 +150,12 @@ void AudioHelperServer::server()
 
 void AudioHelperServer::calculateProcessWeight()
 {
-    TaskInfoList taskInfoList = TaskMonitor::getProcessList();
+    TaskInfoList taskInfoList;
+    TaskMonitor::getProcessList(&taskInfoList);
     if (taskInfoList.isEmpty())
     {
         qWarning() << "获取进程信息失败！";
+        stop();
         return;
     }
 
@@ -191,10 +193,12 @@ void AudioHelperServer::calculateProcessWeight()
 
 void AudioHelperServer::calculateWindowsWeight()
 {
-    TaskInfoList taskInfoList = TaskMonitor::getWindowsList();
+    TaskInfoList taskInfoList;
+    TaskMonitor::getWindowsList(&taskInfoList);
     if (taskInfoList.isEmpty())
     {
         qWarning() << "获取窗口信息失败！";
+        stop();
         return;
     }
 
