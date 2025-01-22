@@ -59,7 +59,7 @@ void AudioHelper::initHomePage()
     mTaskTab->setHorizontalHeaderLabels({"关联项", "关联类型", "关联设备"});
 
     // 从数据库读取数据
-    RelatedList relatedList = AudioDatabaseManager::instance().queryItems("", "");
+    RelatedList relatedList = AudioDatabaseManager::instance()->queryItems("", "");
     qDebug() << "Loading related data：" << relatedList.length();
 
     mTaskTab->setRowCount(relatedList.length());
@@ -251,7 +251,7 @@ void AudioHelper::addRelatedItem()
     }
 
     // 重复值校验
-    RelatedList queryList = AudioDatabaseManager::instance().queryItems("taskPath", selectionInfo->taskInfo.path);
+    RelatedList queryList = AudioDatabaseManager::instance()->queryItems("taskPath", selectionInfo->taskInfo.path);
     if (!queryList.isEmpty()) {
         qWarning() << "任务已存在: Name:" << queryList.at(0).taskInfo.name << "; TypeInfo:" << queryList.at(0).typeInfo.type;
         if (showMessage(this, "重复添加", "该选项已经在任务列表中，无法重复添加！\n\n是否继续添加其它项?\n", MessageType::Warning, "继续", "返回") == QMessageBox::Accepted)
@@ -274,7 +274,7 @@ void AudioHelper::addRelatedItem()
     RelatedItem relatedItem{0, selectionInfo->taskInfo, typeInfo, *deviceInfo};
 
     // 添加到列表和数据库
-    if (!AudioDatabaseManager::instance().insertItem(relatedItem))
+    if (!AudioDatabaseManager::instance()->insertItem(relatedItem))
     {
         return;
     }
@@ -311,9 +311,9 @@ void AudioHelper::delRelatedItem()
 
     const RelatedItem *relatedItem = &mRelatedList->at(mTaskTab->currentRow());
     qInfo() << "delete item:" << relatedItem->taskInfo.name << "-" << relatedItem->audioDeviceInfo.name;
-    if (!AudioDatabaseManager::instance().deleteItem(relatedItem->id))
+    if (!AudioDatabaseManager::instance()->deleteItem(relatedItem->id))
     {
-        qCritical() << "Failed to delete item:" <<AudioDatabaseManager::instance().lastError();
+        qCritical() << "Failed to delete item:" <<AudioDatabaseManager::instance()->lastError();
         return;
     }
 
@@ -341,9 +341,9 @@ void AudioHelper::changeRelatedItem()
 
     RelatedItem &relatedItem = (*mRelatedList)[mTaskTab->currentRow()];
     relatedItem.audioDeviceInfo = *deviceInfo;
-    if (!AudioDatabaseManager::instance().updateItem(relatedItem))
+    if (!AudioDatabaseManager::instance()->updateItem(relatedItem))
     {
-        qCritical() << "Failed to update item:" << AudioDatabaseManager::instance().lastError();
+        qCritical() << "Failed to update item:" << AudioDatabaseManager::instance()->lastError();
         return;
     }
 
@@ -378,9 +378,9 @@ void AudioHelper::setSceneTag(bool isAdd)
 
 
     // 保存到数据库
-    if (!AudioDatabaseManager::instance().updateItem(relatedItem))
+    if (!AudioDatabaseManager::instance()->updateItem(relatedItem))
     {
-        qCritical() << "Failed to update item:" << AudioDatabaseManager::instance().lastError();
+        qCritical() << "Failed to update item:" << AudioDatabaseManager::instance()->lastError();
         return;
     }
 
@@ -421,7 +421,7 @@ void AudioHelper::checkBoxChecked(bool checked)
     QString value = checked ? "true" : "false";
     qDebug() << (checked ? "勾选:" : "取消勾选:") << key;
 
-    if (!AudioDatabaseManager::instance().saveConfig(key, value))
+    if (!AudioDatabaseManager::instance()->saveConfig(key, value))
     {
         qWarning() << QString("save config %1(%2) to database failed").arg(key).arg(value);
     }
@@ -434,7 +434,7 @@ void AudioHelper::comboBoxChanged(QString currentText)
     QString key = comboBox->text();
     qDebug() << key << "切换选项:" << comboBox->currentIndex() << currentText;
 
-    if (!AudioDatabaseManager::instance().saveConfig(key, currentText))
+    if (!AudioDatabaseManager::instance()->saveConfig(key, currentText))
     {
         qWarning() << QString("save config %1(%2) to database failed").arg(key).arg(currentText);
     }
@@ -471,7 +471,7 @@ void AudioHelper::loadConfigHandler(T *widget, const QString &defaultValue)
         MacStyleCheckBox* checkbox = qobject_cast<MacStyleCheckBox*>(widget);
         if (checkbox) {
             key   = checkbox->text();
-            value = AudioDatabaseManager::instance().queryConfig(key, defaultValue);
+            value = AudioDatabaseManager::instance()->queryConfig(key, defaultValue);
             mConfig.insert(key, value);
             checkbox->setChecked(value == "true" ? true : false);
             return;
@@ -480,7 +480,7 @@ void AudioHelper::loadConfigHandler(T *widget, const QString &defaultValue)
         MacStyleComboBox* comboBox = qobject_cast<MacStyleComboBox*>(widget);
         if (comboBox) {
             key   = comboBox->text();
-            value = AudioDatabaseManager::instance().queryConfig(key, defaultValue);
+            value = AudioDatabaseManager::instance()->queryConfig(key, defaultValue);
             mConfig.insert(key, value);
             comboBox->setCurrentText(value);
 

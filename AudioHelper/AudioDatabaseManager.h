@@ -13,7 +13,7 @@ class AudioDatabaseManager : public QObject
 {
     Q_OBJECT
 public:
-    static AudioDatabaseManager& instance();
+    static AudioDatabaseManager* instance();
 
     AudioDatabaseManager(const AudioDatabaseManager&) = delete;
     AudioDatabaseManager& operator=(const AudioDatabaseManager&) = delete;
@@ -37,6 +37,7 @@ private:
     explicit AudioDatabaseManager();
     ~AudioDatabaseManager();
 
+    static AudioDatabaseManager* mInstance;
     QSqlDatabase mdb;
 };
 

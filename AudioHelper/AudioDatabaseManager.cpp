@@ -1,11 +1,15 @@
 #include "AudioDatabaseManager.h"
 #include "CustomWidget.h"
 
+AudioDatabaseManager* AudioDatabaseManager::mInstance = nullptr;
 
-AudioDatabaseManager& AudioDatabaseManager::instance()
+AudioDatabaseManager *AudioDatabaseManager::instance()
 {
-    static AudioDatabaseManager instance;
-    return instance;
+    if (!mInstance)
+    {
+        mInstance = new AudioDatabaseManager();
+    }
+    return mInstance;
 }
 
 AudioDatabaseManager::AudioDatabaseManager()
