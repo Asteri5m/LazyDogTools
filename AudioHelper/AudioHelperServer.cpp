@@ -1,4 +1,5 @@
 #include "AudioHelperServer.h"
+#include "TrayManager.h"
 
 
 AudioHelperServer::AudioHelperServer(RelatedList *relatedList, QObject *parent)
@@ -139,6 +140,7 @@ void AudioHelperServer::server()
     if (mAudioManager->setAudioOutDevice(target->audioDeviceInfo.id))
     {
         qDebug() << "执行完成";
+        TrayManager::instance()->showMessage("程序启动成功", "欢迎使用，您的工具已准备就绪！");
     }
     else
     {

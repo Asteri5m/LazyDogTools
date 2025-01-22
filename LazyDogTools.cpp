@@ -50,7 +50,7 @@ LazyDogTools::LazyDogTools(QWidget *parent)
     trayManager->addMenuItem("检查更新", []() { }, nullptr, QIcon(":/ico/loop.svg"));
     trayManager->addMenuItem("退出", []() { QApplication::exit(); }, nullptr, QIcon(":/ico/close.svg"));
 
-    trayManager->showNotification("程序启动成功", "欢迎使用，您的工具已准备就绪！");
+    trayManager->showMessage("程序启动成功", "欢迎使用，您的工具已准备就绪！");
     qInfo() << QString("程序加载完成 [%1ms]").arg(timer.elapsed()).toUtf8().constData();
 }
 
@@ -176,7 +176,7 @@ void LazyDogTools::updateUI()
 void LazyDogTools::onMessageAvailable(QString message)
 {
     if (message == "Only one program instance is allowed to run.") {
-        TrayManager::instance()->showNotification("LazyDogTools", "LazyDogTools 已经在运行。");
+        TrayManager::instance()->showMessage("LazyDogTools", "LazyDogTools 已经在运行。");
         qInfo() << "Second instance refused.";
         return;
     }

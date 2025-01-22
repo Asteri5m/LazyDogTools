@@ -25,11 +25,6 @@ TrayManager* TrayManager::instance()
     return mInstance;
 }
 
-void TrayManager::showNotification(const QString& title, const QString& message)
-{
-    mTrayIcon->showMessage(title, message, QSystemTrayIcon::Information, 3000);
-}
-
 void TrayManager::addMenuItem(const QString& name, std::function<void()> callback, QMenu* parentMenu, const QIcon& icon)
 {
     QMenu* menu = parentMenu ? parentMenu : mTrayMenu;
@@ -66,4 +61,14 @@ void TrayManager::addSeparator(QMenu* parentMenu)
 {
     QMenu* menu = parentMenu ? parentMenu : mTrayMenu;
     menu->addSeparator();
+}
+
+void TrayManager::showMessage(const QString &title, const QString &msg, const QIcon &icon, int msecs)
+{
+    mTrayIcon->showMessage(title, msg, icon, msecs);
+}
+
+void TrayManager::showMessage(const QString &title, const QString &msg, QSystemTrayIcon::MessageIcon icon, int msecs)
+{
+    mTrayIcon->showMessage(title, msg, icon, msecs);
 }

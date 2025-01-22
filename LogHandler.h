@@ -24,7 +24,7 @@ enum LogLevel {
 class LogHandler
 {
 public:
-    static LogHandler& instance();
+    static LogHandler* instance();
     static void messageHandler(QtMsgType type, const QMessageLogContext& context, const QString& msg);
     static LONG UnhandledExceptionFilter(EXCEPTION_POINTERS *exceptionInfo);
 
@@ -53,6 +53,7 @@ private:
     QString extractFunctionName(const QString &functionSignature);
     void bufferLog(QtMsgType type, const QString &tag, const QString &msg);
 
+    static LogHandler *mInstance;
     QDir mLogDir;
     QFile mLogFile;
     QMutex mMutex;

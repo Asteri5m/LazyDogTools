@@ -4,6 +4,7 @@
 #include <QMessageBox>
 #include "LogHandler.h"
 
+LogHandler* LogHandler::mInstance = nullptr;
 
 LogHandler::LogHandler()
     :mLogDir("log")
@@ -19,30 +20,33 @@ LogHandler::~LogHandler()
 {
     // 意外终止时输出缓冲区
     if (!mLogBuffer.isEmpty()){
-        LogHandler::instance().setLogLevel(DebugLevel);
-        LogHandler::instance().clearBuffer();
+        LogHandler::instance()->setLogLevel(DebugLevel);
+        LogHandler::instance()->clearBuffer();
     }
 
     mLogFile.close();
 }
 
-LogHandler& LogHandler::instance()
+LogHandler* LogHandler::instance()
 {
-    static LogHandler instance;
-    return instance;
+    if (!mInstance)
+    {
+        mInstance = new LogHandler();
+    }
+    return mInstance;
 }
 
 void LogHandler::messageHandler(QtMsgType type, const QMessageLogContext& context, const QString& msg)
 {
-    QString functionName = LogHandler::instance().extractFunctionName(QString::fromLatin1(context.function));
+    QString functionName = LogHandler::instance()->extractFunctionName(QString::fromLatin1(context.function));
 
-    if (LogHandler::instance().logLevel() == Undefined)
-        LogHandler::instance().bufferLog(type, functionName, msg);
+    if (LogHandler::instance()->logLevel() == Undefined)
+        LogHandler::instance()->bufferLog(type, functionName, msg);
 
-    if (!LogHandler::instance().enablePrint(type))
+    if (!LogHandler::instance()->enablePrint(type))
         return;
 
-    LogHandler::instance().writeLog(type, functionName, msg);
+    LogHandler::instance()->writeLog(type, functionName, msg);
 }
 
 void LogHandler::writeLog(QtMsgType type, const QString& tag, const QString& msg)
@@ -177,8 +181,8 @@ void LogHandler::clearBuffer()
         const QString& tag   = logEntry.tag;
         const QString& msg   = logEntry.msg;
 
-        if (LogHandler::instance().enablePrint(type)) {
-            LogHandler::instance().writeLog(type, tag, msg);
+        if (LogHandler::instance()->enablePrint(type)) {
+            LogHandler::instance()->writeLog(type, tag, msg);
         }
     }
 
@@ -208,7 +212,7 @@ bool LogHandler::enablePrint(QtMsgType type)
     }
 
     // 返回是否可以输出日志
-    return logLevel >= LogHandler::instance().logLevel();
+    return logLevel >= LogHandler::instance()->logLevel();
 }
 
 LONG WINAPI LogHandler::UnhandledExceptionFilter(EXCEPTION_POINTERS *exceptionInfo) {

@@ -14,9 +14,6 @@ public:
     // 获取单例实例
     static TrayManager* instance();
 
-    // 显示通知
-    void showNotification(const QString& title, const QString& message);
-
     // 添加托盘菜单项，支持设置图标和子菜单
     void addMenuItem(const QString& name, std::function<void()> callback = nullptr, QMenu* parentMenu = nullptr, const QIcon& icon = QIcon());
 
@@ -28,6 +25,12 @@ public:
 
     // 添加分割线
     void addSeparator(QMenu* parentMenu = nullptr);
+
+public Q_SLOTS:
+    // 接口转发
+    void showMessage(const QString &title, const QString &msg, const QIcon &icon, int msecs = 3000);
+    void showMessage(const QString &title, const QString &msg,
+                     QSystemTrayIcon::MessageIcon icon = QSystemTrayIcon::Information, int msecs = 3000);
 
 private:
     explicit TrayManager(QObject *parent = nullptr);

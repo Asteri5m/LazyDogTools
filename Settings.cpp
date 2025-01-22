@@ -526,7 +526,7 @@ void Settings::checkBoxChecked(bool checked)
     qDebug() << (checked ? "勾选:" : "取消勾选:") << checkBox->text();
 
     if (checkBox->text() == "debug日志") {
-        LogHandler::instance().setLogLevel(checked ? DebugLevel : InfoLevel);
+        LogHandler::instance()->setLogLevel(checked ? DebugLevel : InfoLevel);
         qInfo() << (checked ? "开启" : "关闭") << "debug日志";
     } else if(checkBox->text() == "开机自启动") {
         bool res = setStartup(checked);
@@ -629,8 +629,8 @@ void Settings::loadSettingsHandler(T *widget, const QString &defaultValue)
             checkbox->setChecked(value == "true" ? true : false);
 
             if (checkbox->text() == "debug日志"){
-                LogHandler::instance().setLogLevel(value == "true" ? DebugLevel : InfoLevel);
-                LogHandler::instance().clearBuffer();
+                LogHandler::instance()->setLogLevel(value == "true" ? DebugLevel : InfoLevel);
+                LogHandler::instance()->clearBuffer();
             } else if (checkbox->text() == "开机自启动" && value == "true") {
                 if (!setStartup(true)) {
                     checkbox->setChecked(false);
