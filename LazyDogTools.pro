@@ -59,7 +59,9 @@ FORMS += \
     lazydogtools.ui
 
 #设置图标
-RC_ICONS = images\ico\LD_64.ico
+RC_ICONS = images\ico\favicon_32.ico \
+           images\ico\favicon_64.ico \
+           images\ico\favicon.ico
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

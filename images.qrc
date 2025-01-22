@@ -1,6 +1,5 @@
 <RCC>
     <qresource prefix="/ico">
-        <file alias="LD.ico">images/ico/LD_64.ico</file>
         <file alias="arrow_white.svg">images/ico/arrow_white.svg</file>
         <file alias="arrow_black.svg">images/ico/arrow_black.svg</file>
         <file alias="check_black.svg">images/ico/check_black.svg</file>
@@ -23,5 +22,8 @@
         <file alias="pushpin.svg">images/ico/pushpin.svg</file>
         <file alias="terminal.svg">images/ico/terminal.svg</file>
         <file alias="settings2.svg">images/ico/settings2.svg</file>
+        <file alias="LD.ico">images/ico/favicon.ico</file>
+        <file>images/ico/favicon_64.ico</file>
+        <file>images/ico/favicon_32.ico</file>
     </qresource>
 </RCC>
