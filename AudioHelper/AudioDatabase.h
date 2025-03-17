@@ -1,5 +1,12 @@
-#ifndef AUDIODATABASEMANAGER_H
-#define AUDIODATABASEMANAGER_H
+#ifndef AUDIODATABASE_H
+#define AUDIODATABASE_H
+
+/**
+ * @file AudioHelperWidget.h
+ * @author Asteri5m
+ * @date 2025-02-08 0:53:17
+ * @brief AudioHelper的数据库管理器
+ */
 
 #include <QSqlDatabase>
 #include <QSqlQuery>
@@ -9,14 +16,12 @@
 #include <QDebug>
 #include "AudioCustom.h"
 
-class AudioDatabaseManager : public QObject
+class AudioDatabase : public QObject
 {
     Q_OBJECT
 public:
-    static AudioDatabaseManager* instance();
-
-    AudioDatabaseManager(const AudioDatabaseManager&) = delete;
-    AudioDatabaseManager& operator=(const AudioDatabaseManager&) = delete;
+    explicit AudioDatabase(QObject* parent = nullptr);
+    ~AudioDatabase();
 
     bool createTable();
 
@@ -24,7 +29,7 @@ public:
     bool insertItem(RelatedItem &item);
     bool updateItem(const RelatedItem &item);
     bool deleteItem(int id);
-    RelatedList queryItems(const QString &key, const QString &value);
+    void queryItems(const QString &key, const QString &value, RelatedList *relatedList);
 
     // 应用配置数据
     bool saveConfig(const QString &key, const QString &value);
@@ -34,11 +39,7 @@ public:
     QString lastError();
 
 private:
-    explicit AudioDatabaseManager();
-    ~AudioDatabaseManager();
-
-    static AudioDatabaseManager* mInstance;
     QSqlDatabase mdb;
 };
 
-#endif // AUDIODATABASEMANAGER_H
+#endif // AUDIODATABASE_H

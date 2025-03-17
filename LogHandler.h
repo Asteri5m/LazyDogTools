@@ -1,6 +1,13 @@
 #ifndef LOGHANDLER_H
 #define LOGHANDLER_H
 
+/**
+ * @file LogHandler.h
+ * @author Asteri5m
+ * @date 2025-02-07 18:09:32
+ * @brief 程序日志，通过捕获QLog进行记录
+ */
+
 #include <QFile>
 #include <QDate>
 #include <QMutex>
@@ -24,7 +31,7 @@ enum LogLevel {
 class LogHandler
 {
 public:
-    static LogHandler* instance();
+    static LogHandler &instance();
     static void messageHandler(QtMsgType type, const QMessageLogContext& context, const QString& msg);
     static LONG UnhandledExceptionFilter(EXCEPTION_POINTERS *exceptionInfo);
 
@@ -53,7 +60,6 @@ private:
     QString extractFunctionName(const QString &functionSignature);
     void bufferLog(QtMsgType type, const QString &tag, const QString &msg);
 
-    static LogHandler *mInstance;
     QDir mLogDir;
     QFile mLogFile;
     QMutex mMutex;
@@ -61,8 +67,5 @@ private:
     LogLevel mLogLevel;
     LogBuffer mLogBuffer;
 };
-
-
-// LONG WINAPI CustomUnhandledExceptionFilter(EXCEPTION_POINTERS *exceptionInfo);
 
 #endif // LOGHANDLER_H

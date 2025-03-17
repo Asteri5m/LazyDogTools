@@ -1,6 +1,13 @@
 #ifndef SELECTIONDIALOG_H
 #define SELECTIONDIALOG_H
 
+/**
+ * @file SelectionInfo.h
+ * @author Asteri5m
+ * @date 2025-02-08 0:46:13
+ * @brief 任务关联项选择窗口
+ */
+
 #include <QDialog>
 #include "CustomWidget.h"
 #include "AudioCustom.h"

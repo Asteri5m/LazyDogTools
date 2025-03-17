@@ -1,10 +1,15 @@
+/**
+ * @file LogHandler.cpp
+ * @author Asteri5m
+ * @date 2025-02-07 18:09:32
+ * @brief 程序日志，通过捕获QLog进行记录
+ */
+
 #include <QTextStream>
 #include <QDebug>
 #include <QDateTime>
 #include <QMessageBox>
 #include "LogHandler.h"
-
-LogHandler* LogHandler::mInstance = nullptr;
 
 LogHandler::LogHandler()
     :mLogDir("log")
@@ -20,33 +25,30 @@ LogHandler::~LogHandler()
 {
     // 意外终止时输出缓冲区
     if (!mLogBuffer.isEmpty()){
-        LogHandler::instance()->setLogLevel(DebugLevel);
-        LogHandler::instance()->clearBuffer();
+        rotateLogs();
+        LogHandler::instance().setLogLevel(DebugLevel);
+        LogHandler::instance().clearBuffer();
     }
-
     mLogFile.close();
 }
 
-LogHandler* LogHandler::instance()
+LogHandler& LogHandler::instance()
 {
-    if (!mInstance)
-    {
-        mInstance = new LogHandler();
-    }
-    return mInstance;
+    static LogHandler instance;
+    return instance;
 }
 
 void LogHandler::messageHandler(QtMsgType type, const QMessageLogContext& context, const QString& msg)
 {
-    QString functionName = LogHandler::instance()->extractFunctionName(QString::fromLatin1(context.function));
+    QString functionName = LogHandler::instance().extractFunctionName(QString::fromLatin1(context.function));
 
-    if (LogHandler::instance()->logLevel() == Undefined)
-        LogHandler::instance()->bufferLog(type, functionName, msg);
+    if (LogHandler::instance().logLevel() == Undefined)
+        LogHandler::instance().bufferLog(type, functionName, msg);
 
-    if (!LogHandler::instance()->enablePrint(type))
+    if (!LogHandler::instance().enablePrint(type))
         return;
 
-    LogHandler::instance()->writeLog(type, functionName, msg);
+    LogHandler::instance().writeLog(type, functionName, msg);
 }
 
 void LogHandler::writeLog(QtMsgType type, const QString& tag, const QString& msg)
@@ -138,7 +140,8 @@ void LogHandler::deleteOldLogs()
 
     QStringList logFiles = mLogDir.entryList(QStringList() << "log_*.txt", QDir::Files);
 
-    for (const QString &fileName : logFiles) {
+    for (auto it = logFiles.constBegin(); it != logFiles.constEnd(); ++it) {
+        const QString &fileName = *it;
         QString logfile = mLogDir.filePath(fileName);
         QFileInfo fileInfo(logfile);
         if (fileInfo.lastModified().date().daysTo(QDate::currentDate()) > 30) {
@@ -176,13 +179,14 @@ void LogHandler::bufferLog(QtMsgType type, const QString& tag, const QString& ms
 void LogHandler::clearBuffer()
 {
     // 输出缓冲区中的日志
-    for (const auto& logEntry : mLogBuffer) {
+    for (auto it = mLogBuffer.constBegin(); it != mLogBuffer.constEnd(); ++it) {
+        const auto &logEntry = *it;
         const QtMsgType type = logEntry.type;
         const QString& tag   = logEntry.tag;
         const QString& msg   = logEntry.msg;
 
-        if (LogHandler::instance()->enablePrint(type)) {
-            LogHandler::instance()->writeLog(type, tag, msg);
+        if (LogHandler::instance().enablePrint(type)) {
+            LogHandler::instance().writeLog(type, tag, msg);
         }
     }
 
@@ -212,7 +216,7 @@ bool LogHandler::enablePrint(QtMsgType type)
     }
 
     // 返回是否可以输出日志
-    return logLevel >= LogHandler::instance()->logLevel();
+    return logLevel >= LogHandler::instance().logLevel();
 }
 
 LONG WINAPI LogHandler::UnhandledExceptionFilter(EXCEPTION_POINTERS *exceptionInfo) {
@@ -226,7 +230,7 @@ LONG WINAPI LogHandler::UnhandledExceptionFilter(EXCEPTION_POINTERS *exceptionIn
     // 信息输出到日志
     qCritical() << "Unhandled Exception occurred!";
     qCritical() << "Exception Code:" << QString::number(exceptionCode, 16);
-    qCritical() << "Exception Address:" << reinterpret_cast<quintptr>(exceptionAddress);
+    qCritical() << "Exception Address:" << QString::number(reinterpret_cast<quintptr>(exceptionAddress), 16);
 
     // 获取线程和进程信息
     HANDLE process = GetCurrentProcess();

@@ -1,6 +1,13 @@
 #ifndef CUSTOMWIDGET_H
 #define CUSTOMWIDGET_H
 
+/**
+ * @file CustomWidget.h
+ * @author Asteri5m
+ * @date 2024-02-07 17:40:10
+ * @brief 一些自定义样式的Widget
+ */
+
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -110,7 +117,7 @@ protected:
         if (mHovering && !mIsPressed)
         {
             QPainter painter(this);
-            painter.setRenderHint(QPainter::Antialiasing); // 开启抗锯齿
+            painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::SmoothPixmapTransform); // 开启抗锯齿
             painter.setBrush(QColor(0, 0, 0, 50)); // 半透明黑色
             painter.setPen(Qt::NoPen);
 
@@ -183,8 +190,12 @@ public:
 // 工具窗口模板，可以根据该模板快生成一个具有左侧菜单栏的“TabWidget”
 class ToolWidgetModel : public QWidget
 {
+    Q_OBJECT
 public:
-    ToolWidgetModel(QWidget *parent = nullptr) : QWidget(parent) {}
+    ToolWidgetModel(QWidget *parent = nullptr) : QWidget(parent)
+    {
+        setAttribute(Qt::WA_DeleteOnClose);
+    }
 
     void setDefaultStyle(bool menuRight = false)
     {
@@ -279,6 +290,10 @@ public:
         show();
     }
 
+signals:
+    void closed();
+    void windowEvent(const QString &type, const QString &context);
+
 protected:
     QHBoxLayout *mOverLayout;   // 全局布局，可以在此基础上实现高级自定义
     QGridLayout *mMainLayout;   // 主要布局区域，可以在此基础上实现高级自定义
@@ -286,8 +301,8 @@ protected:
     //重写关闭信号
     void closeEvent(QCloseEvent *event)
     {
-        this->hide();
-        event->ignore();
+        emit closed();
+        event->accept();
     }
 
 private:
@@ -298,9 +313,9 @@ private:
 
     void resetButtonStates()
     {
-        for (auto button : mButtons)
+        for (auto button = mButtons.constBegin(); button != mButtons.constEnd(); button++)
         {
-            button->setChecked(false);
+            (*button)->setChecked(false);
         }
     }
 };
@@ -407,7 +422,7 @@ protected:
         Q_UNUSED(event);
 
         QPainter painter(this);
-        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::SmoothPixmapTransform);
 
         QColor bgColor = QColor(mChecked ? "#007AFF" : "#E5E5EA");
         QColor thumbColor = QColor(255, 255, 255);
@@ -490,6 +505,7 @@ protected:
         Q_UNUSED(event);
 
         QPainter painter(this);
+        painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::SmoothPixmapTransform);
         QStyleOptionGroupBox opt;
         initStyleOption(&opt);
 
@@ -680,7 +696,7 @@ protected:
         Q_UNUSED(event);
 
         QPainter painter(this);
-        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::SmoothPixmapTransform);
 
         QRect rect = this->rect();
         rect.setHeight(24);
@@ -709,7 +725,6 @@ protected:
         QSvgRenderer renderer(QString(":/ico/arrow_white.svg"));
         painter.setPen(Qt::NoPen);
         renderer.render(&painter, arrowRect);
-
     }
 
     void mousePressEvent(QMouseEvent *event) override
@@ -772,7 +787,7 @@ protected:
         Q_UNUSED(event);
 
         QPainter painter(this);
-        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::SmoothPixmapTransform);
 
         // 绘制复选框
         QRect checkboxRect(0, 0, 16, 16);  // 复选框的大小
@@ -843,7 +858,7 @@ protected:
         Q_UNUSED(event);
 
         QPainter painter(this);
-        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::SmoothPixmapTransform);
 
         // 绘制背景
         QRect rect = this->rect();
@@ -858,12 +873,12 @@ protected:
         QPoint iconPos((width() - iconSize.width()) / 2, (height() - iconSize.height()) / 2);  // 图标居中
 
         painter.drawPixmap(iconPos, iconPixmap.scaled(iconSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-   }
+    }
 
 private:
-   // 颜色定义
-   QColor mCheckedColor{15, 106, 235};  // #0f6aeb
-   QColor mNormalColor {0,  122, 255};
+    // 颜色定义
+    QColor mCheckedColor{15, 106, 235};  // #0f6aeb
+    QColor mNormalColor {0,  122, 255};
 };
 
 #include <QKeySequenceEdit>
@@ -949,9 +964,10 @@ protected:
             QKeySequence seq(QKeySequence::fromString(strKeySequence));
 
             // 如果输入值是单个按键且没有修饰符，则默认加上 Ctrl+Alt
-            if (seq.count() == 1 && (seq[0] & Qt::KeyboardModifierMask) == 0)
+            if (seq.count() == 1 && seq[0].keyboardModifiers() == Qt::NoModifier)
             {
-                seq = QKeySequence(Qt::CTRL | Qt::ALT | seq[0]);
+                QKeyCombination keyCombination(Qt::CTRL | Qt::ALT, seq[0].key());
+                seq = QKeySequence(keyCombination);
                 setAlert(false);
             }
 
@@ -1024,7 +1040,7 @@ protected:
     // 添加按下鼠标也能显示提示
     void mousePressEvent(QMouseEvent *event) override
     {
-        QToolTip::showText(event->globalPos(), mHint,this);
+        QToolTip::showText(event->globalPosition().toPoint(), mHint, this);
     }
 
 private:

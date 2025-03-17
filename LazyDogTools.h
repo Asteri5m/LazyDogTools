@@ -1,65 +1,34 @@
 #ifndef LAZYDOGTOOLS_H
 #define LAZYDOGTOOLS_H
 
-#include <QDialog>
-#include <QMetaObject>
-#include <QMetaMethod>
-#include "ToolManager.h"
-#include "SettingsManager.h"
+/**
+ * @file LazyDogTools.h
+ * @author Asteri5m
+ * @date 2025-02-07 15:44:32
+ * @brief 程序主类
+ */
 
-// 主页工具列表的基本元素
-struct MinToolListItem {
-    short     id;
-    QString icon;
-    QString name;
-    QString description;
-    ToolManager*   tool; //作为联系项
+#include <QObject>
+#include "Settings.h"
 
-    // MinToolListItem(short id, const QString &icon, const QString &name, const QString &description, const QMetaObject* object)
-    //     : id(id), icon(icon), name(name), description(description), type_id(std::type_index) {}
-};
-
-// 窗口列表
-typedef QVector<MinToolListItem> MinToolList;
-
-QT_BEGIN_NAMESPACE
-namespace Ui {
-class LazyDogTools;
-}
-QT_END_NAMESPACE
-
-class LazyDogTools : public QDialog {
+class LazyDogTools : public QObject
+{
     Q_OBJECT
 
 public:
-    LazyDogTools(QWidget *parent = nullptr);
+    LazyDogTools(QObject *parent = nullptr);
     ~LazyDogTools();
 
-    QString loadSetting(const QString &key);
-
 public slots:
-    void updateUI();
     void onMessageAvailable(QString);
 
-
 private:
-    Ui::LazyDogTools *ui;
+    Settings *mSettings;
 
-    ToolManagerList mToolManagerList;
-    MinToolList     mMinToolList;
-    QVBoxLayout     *mLayout;
-    QWidget         *mWidget;
+    void initTools();
+    void initTray();
 
-    void initUI();
-    void initData();
-    void updateData();
-    void minToolWidgetTest();
-    void toolWidgetModelTest();
-
-protected:
-    void closeEvent(QCloseEvent *event);
+private slots:
+    void trayUpdate();
 };
-
-
-
 #endif // LAZYDOGTOOLS_H

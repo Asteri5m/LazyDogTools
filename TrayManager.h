@@ -1,6 +1,13 @@
 #ifndef TRAYMANAGER_H
 #define TRAYMANAGER_H
 
+/**
+ * @file TrayManager.h
+ * @author Asteri5m
+ * @date 2025-02-07 15:19:20
+ * @brief 托盘单例，封装QSystemTrayIcon用于全局调用
+ */
+
 #include <QObject>
 #include <QSystemTrayIcon>
 #include <QMenu>
@@ -12,7 +19,7 @@ class TrayManager : public QObject
 
 public:
     // 获取单例实例
-    static TrayManager* instance();
+    static TrayManager &instance();
 
     // 添加托盘菜单项，支持设置图标和子菜单
     void addMenuItem(const QString& name, std::function<void()> callback = nullptr, QMenu* parentMenu = nullptr, const QIcon& icon = QIcon());
@@ -26,6 +33,9 @@ public:
     // 添加分割线
     void addSeparator(QMenu* parentMenu = nullptr);
 
+    // 清除所有子项
+    void clear();
+
 public Q_SLOTS:
     // 接口转发
     void showMessage(const QString &title, const QString &msg, const QIcon &icon, int msecs = 3000);
@@ -34,7 +44,6 @@ public Q_SLOTS:
 
 private:
     explicit TrayManager(QObject *parent = nullptr);
-    static TrayManager* mInstance;  // 静态单例实例
 
     QSystemTrayIcon* mTrayIcon;
     QMenu* mTrayMenu;

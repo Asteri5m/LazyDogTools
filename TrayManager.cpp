@@ -1,8 +1,14 @@
+/**
+ * @file TrayManager.cpp
+ * @author Asteri5m
+ * @date 2025-02-07 15:19:20
+ * @brief 托盘单例，封装QSystemTrayIcon用于全局调用
+ */
+
 #include "TrayManager.h"
 #include <QAction>
 #include <QApplication>
 
-TrayManager* TrayManager::mInstance = nullptr;
 
 TrayManager::TrayManager(QObject *parent)
     : QObject(parent),
@@ -16,13 +22,10 @@ TrayManager::TrayManager(QObject *parent)
     mTrayIcon->show();
 }
 
-TrayManager* TrayManager::instance()
+TrayManager& TrayManager::instance()
 {
-    if (!mInstance)
-    {
-        mInstance = new TrayManager();
-    }
-    return mInstance;
+    static TrayManager instance;
+    return instance;
 }
 
 void TrayManager::addMenuItem(const QString& name, std::function<void()> callback, QMenu* parentMenu, const QIcon& icon)
@@ -61,6 +64,11 @@ void TrayManager::addSeparator(QMenu* parentMenu)
 {
     QMenu* menu = parentMenu ? parentMenu : mTrayMenu;
     menu->addSeparator();
+}
+
+void TrayManager::clear()
+{
+    mTrayMenu->clear();
 }
 
 void TrayManager::showMessage(const QString &title, const QString &msg, const QIcon &icon, int msecs)

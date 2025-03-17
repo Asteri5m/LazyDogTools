@@ -11,31 +11,30 @@ LIBS += -lUser32 -lDbgHelp -lversion -lole32
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    AudioHelper/AudioDatabaseManager.cpp \
+    AudioHelper/AudioDatabase.cpp \
     AudioHelper/AudioHelper.cpp \
-    AudioHelper/AudioHelperManager.cpp \
     AudioHelper/AudioHelperServer.cpp \
+    AudioHelper/AudioHelperWidget.cpp \
     AudioHelper/AudioManager.cpp \
     AudioHelper/SelectionDialog.cpp \
     AudioHelper/TaskMonitor.cpp \
     HotkeyManager.cpp \
+    LazyDogTools.cpp \
     LogHandler.cpp \
     Settings.cpp \
-    SettingsManager.cpp \
+    SettingsWidget.cpp \
     SingleApplication.cpp \
     ToolManager.cpp \
-    TransHelper/TransHelper.cpp \
-    TransHelper/TransHelperManager.cpp \
+    ToolModel.cpp \
     TrayManager.cpp \
-    main.cpp \
-    LazyDogTools.cpp
+    main.cpp
 
 HEADERS += \
     AudioHelper/AudioCustom.h \
-    AudioHelper/AudioDatabaseManager.h \
+    AudioHelper/AudioDatabase.h \
     AudioHelper/AudioHelper.h \
-    AudioHelper/AudioHelperManager.h \
     AudioHelper/AudioHelperServer.h \
+    AudioHelper/AudioHelperWidget.h \
     AudioHelper/AudioManager.h \
     AudioHelper/PolicyConfig.h \
     AudioHelper/SelectionDialog.h \
@@ -45,18 +44,13 @@ HEADERS += \
     HotkeyManager.h \
     LazyDogTools.h \
     LogHandler.h \
-    PolicyConfig.h \
     Settings.h \
-    SettingsManager.h \
+    SettingsWidget.h \
     SingleApplication.h \
     ToolManager.h \
-    TransHelper/TransHelper.h \
-    TransHelper/TransHelperManager.h \
+    ToolModel.h \
     TrayManager.h \
     UAC.h
-
-FORMS += \
-    lazydogtools.ui
 
 #设置图标
 RC_ICONS = images\ico\favicon_32.ico \
@@ -77,7 +71,7 @@ QMAKE_PROJECT_DEPTH = 0
 DEFINES += QT_MESSAGELOGCONTEXT
 
 # 版本信息
-VERSION = 1.0.0.0
+VERSION = 0.0.1
 
 # 语言
 RC_LANG = 0x0004

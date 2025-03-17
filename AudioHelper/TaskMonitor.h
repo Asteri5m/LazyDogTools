@@ -1,6 +1,13 @@
 #ifndef TASKMONITOR_H
 #define TASKMONITOR_H
 
+/**
+ * @file TaskMonitor.cpp
+ * @author Asteri5m
+ * @date 2025-02-08 0:47:22
+ * @brief 系统任务监控器
+ */
+
 //win32 api
 #include <Windows.h>
 #include <Shlwapi.h>
@@ -14,6 +21,7 @@
 #include <QThread>
 #include <QMutex>
 #include "AudioCustom.h"
+#include <QThreadPool>
 
 typedef QList<TaskInfo> TaskInfoList;
 
@@ -71,6 +79,7 @@ private:
     QStringList *mWindowsFilter;
     FilterMode mFilterMode;
     QThread *mThread;
+    QThreadPool mThreadPool;
 };
 
 #endif // TASKMONITOR_H

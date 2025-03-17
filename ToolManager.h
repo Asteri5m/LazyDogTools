@@ -1,76 +1,67 @@
 #ifndef TOOLMANAGER_H
 #define TOOLMANAGER_H
 
+/**
+ * @file ToolManager.h
+ * @author Asteri5m
+ * @date 2025-02-07 18:09:32
+ * @brief 工具管理器，单例
+ */
+
+#include "ToolModel.h"
+#include <QMap>
 #include <QObject>
-#include <QKeySequence>
-#include "CustomWidget.h"
 
-typedef std::function<void()> Function;
 
-struct HotKey {
-    QString      Name;            // 快捷键名，会在设置中展示
-    QKeySequence Shortkeys;       // 快捷键内容
-    Function     Func;            // 回调函数
+struct ToolInfo {
+    QString Name;
+    QString IconPath;
+    QString Description;
+    QStringList HotkeyList;
+    bool enabled;
 };
 
-struct TrayItem {
-    QString     Name;            // 条目名，在菜单中显示
-    QString     Icon;            // 图标路径
-    Function    Func;            // 回调函数
-};
+template <typename ToolType>
+using ToolFactory = std::function<ToolType*()>;
 
-// 快捷键列表
-typedef QList<HotKey> HotkeyList;
-// 菜单栏条目，菜单名:关联函数
-typedef QList<TrayItem> TrayList;
+typedef QMap<QString, ToolInfo> ToolInfoMap;
+typedef QMap<QString, std::function<ToolModel*()>> ToolFactories;
+typedef QMap<QString, ToolModel*> CreatedToolsMap;  // 已创建的工具映射
 
-class ToolManager : public QObject {
-    Q_OBJECT
-
+class ToolManager
+{
 public:
-    explicit ToolManager(QObject *parent = nullptr);
+    ToolManager();
+    static ToolManager& instance();
 
-    // 获取数据接口
-    QString     getIcon();
-    QString     getName();
-    QString     getDescription();
-    HotkeyList* getHotKey();
-    TrayList*   getTray();
-    bool        getActive();
+    // 创建工具
+    ToolModel* createTool(const QString& toolID);
 
-    // 修改数据接口
-    void setIcon(QString icon);
-    void setName(QString name);
-    void setDescription(QString desc);
-    void setHotKey(HotkeyList* hotKeyList);
-    void setTray(TrayList*  tray);
-    void setActive(bool state);
+    // 获取工具信息
+    const ToolInfoMap &getAllTools() const;
+    const ToolInfo &getToolInfo(const QString &toolID);
 
-    virtual void initUI();
-    virtual void deleteUI();
-    virtual void initialize();
+    // 获取已创建的工具
+    ToolModel* getCreatedTool(const QString& toolID) const;
 
-public slots:
-    virtual void show();
-    virtual void hide();
+    // 禁用工具（销毁工具实例）
+    void disableTool(const QString& toolID);
+
+    // 启用工具
+    void enableTool(const QString& toolID);
+
+    // 注册工具
+    template <typename ToolType>
+    void registerTool(const QString& toolID, const ToolInfo& info, ToolFactory<ToolType> factoryMethod)
+    {
+        mToolInfoMap[toolID] = info;
+        mToolFactories[toolID] = [factoryMethod]() -> ToolModel* { return factoryMethod(); };
+    }
 
 private:
-    QString     mIcon;          // 图标
-    QString     mName;          // 应用名
-    QString     mDescription;   // 应用描述
-    HotkeyList* mHotKeyList;    // 快捷键列表
-    TrayList*   mTray;          // 托盘菜单项
-    bool        mActive;        // 工具启用状态
-
-    void init();
-
-protected:
-    ToolWidgetModel* mToolWidget;
-
+    ToolInfoMap mToolInfoMap;  // 工具信息
+    ToolFactories mToolFactories;  // 工厂函数
+    CreatedToolsMap mCreatedTools;  // 已创建的工具对象
 };
-
-
-// 工具表
-typedef QVector<ToolManager*> ToolManagerList;
 
 #endif // TOOLMANAGER_H

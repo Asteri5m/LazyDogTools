@@ -1,3 +1,10 @@
+/**
+ * @file TaskMonitor.cpp
+ * @author Asteri5m
+ * @date 2025-02-08 0:47:22
+ * @brief 系统任务监控器
+ */
+
 #include "TaskMonitor.h"
 #include <QDir>
 #include <QFileInfo>
@@ -93,12 +100,19 @@ void TaskMonitor::getProcessList(TaskInfoList *taskInfoList)
         TCHAR processPath[MAX_PATH];
         DWORD size = sizeof(processPath) / sizeof(TCHAR);
         if (!QueryFullProcessImageName(hProcess, 0, processPath, &size))
+        {
+            CloseHandle(hProcess);
             continue;
+        }
 
         // 获取进程的创建时间
         FILETIME creationTime, exitTime, kernelTime, userTime;
         if (!GetProcessTimes(hProcess, &creationTime, &exitTime, &kernelTime, &userTime))
+        {
+            CloseHandle(hProcess);
             continue;
+        }
+        CloseHandle(hProcess);
 
         // 将 FILETIME 转换为 Unix 时间戳
         ULARGE_INTEGER time;
@@ -123,8 +137,6 @@ void TaskMonitor::getProcessList(TaskInfoList *taskInfoList)
         TaskInfo taskInfo{friendName, drivepath, survivalTime};
         taskInfoList->append(taskInfo);
     }
-
-    return;
 }
 
 void TaskMonitor::getWindowsList(TaskInfoList *taskInfoList)
@@ -166,8 +178,6 @@ void TaskMonitor::getWindowsList(TaskInfoList *taskInfoList)
 
         return TRUE; // 继续枚举窗口
     }, reinterpret_cast<LPARAM>(taskInfoList));  // 将 taskInfoList 传递给 lParam
-
-    return;
 }
 
 
@@ -203,7 +213,8 @@ void TaskMonitor::updateProcessModel()
     processCount = cbNeeded / sizeof(DWORD);
 
     // 遍历所有进程
-    for (unsigned int i = 0; i < processCount; ++i) {
+    for (unsigned int i = 0; i < processCount; ++i) 
+    {
         DWORD processId = processes[i];
 
         // 打开进程
@@ -215,7 +226,11 @@ void TaskMonitor::updateProcessModel()
         TCHAR processPath[MAX_PATH];
         DWORD size = sizeof(processPath) / sizeof(TCHAR);
         if (!QueryFullProcessImageName(hProcess, 0, processPath, &size))
+        {
+            CloseHandle(hProcess);
             continue;
+        }
+        CloseHandle(hProcess);
 
         QString drivepath = QDir::cleanPath(QString::fromWCharArray(processPath));
 
@@ -295,7 +310,8 @@ void TaskMonitor::updateWindowsModel()
     mWindowsInfoList->clear();
 
     // 使用 lambda 表达式作为 EnumWindows 的回调
-    EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL {
+    EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL 
+    {
         TaskMonitor *monitor = reinterpret_cast<TaskMonitor *>(lParam);
         if (!IsWindowVisible(hwnd))
             return TRUE;
@@ -315,10 +331,12 @@ void TaskMonitor::updateWindowsModel()
 
         WCHAR executablePath[MAX_PATH];
         DWORD pathSize = MAX_PATH;
-        if (!QueryFullProcessImageNameW(processHandle, 0, executablePath, &pathSize)) {
+        if (!QueryFullProcessImageNameW(processHandle, 0, executablePath, &pathSize)) 
+        {
             CloseHandle(processHandle);
             return TRUE;
         }
+        CloseHandle(processHandle);
 
         QString drivepath = QDir::cleanPath(QString::fromWCharArray(executablePath));
 
@@ -333,8 +351,6 @@ void TaskMonitor::updateWindowsModel()
         QFileIconProvider iconProvider;
         QStandardItem *item = new QStandardItem(iconProvider.icon(fileInfo), title);
         monitor->mWindowsModel->insertRow(0, item);
-
-        CloseHandle(processHandle);
         return TRUE;
     }, reinterpret_cast<LPARAM>(this));
 

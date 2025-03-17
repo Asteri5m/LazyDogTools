@@ -1,21 +1,26 @@
-#include "AudioDatabaseManager.h"
+/**
+ * @file AudioHelperWidget.h
+ * @author Asteri5m
+ * @date 2025-02-08 0:53:17
+ * @brief AudioHelper的数据库管理器
+ */
+
+#include "AudioDatabase.h"
 #include "CustomWidget.h"
 
-AudioDatabaseManager* AudioDatabaseManager::mInstance = nullptr;
-
-AudioDatabaseManager *AudioDatabaseManager::instance()
+AudioDatabase::AudioDatabase(QObject *parent)
+    : QObject(parent)
 {
-    if (!mInstance)
+    QDir dir("data");
+    if (!dir.exists()) dir.mkpath(".");
+    QString dbName("AudioHelper.db");
+    if (QSqlDatabase::contains(dbName))
+        mdb = QSqlDatabase::database(dbName);
+    else
     {
-        mInstance = new AudioDatabaseManager();
+        mdb = QSqlDatabase::addDatabase("QSQLITE", dbName);
+        mdb.setDatabaseName(dir.filePath(dbName));
     }
-    return mInstance;
-}
-
-AudioDatabaseManager::AudioDatabaseManager()
-{
-    mdb = QSqlDatabase::addDatabase("QSQLITE", "AudioHelper");
-    mdb.setDatabaseName("data/AudioHelper.db");
 
     if (!mdb.open()) {
         qCritical() << "Could not connect to database.";
@@ -23,15 +28,14 @@ AudioDatabaseManager::AudioDatabaseManager()
     }
 
     createTable();
-
 }
 
-AudioDatabaseManager::~AudioDatabaseManager()
+AudioDatabase::~AudioDatabase()
 {
     mdb.close();
 }
 
-bool AudioDatabaseManager::createTable()
+bool AudioDatabase::createTable()
 {
     QSqlQuery query(mdb);
     QString createTableQuery = "CREATE TABLE IF NOT EXISTS RelatedItems ("
@@ -43,7 +47,8 @@ bool AudioDatabaseManager::createTable()
                                "deviceName TEXT, "
                                "deviceId TEXT)";
     if (!query.exec(createTableQuery)) {
-        qCritical() << "create table (RelatedItems) failed:" << query.lastError().text();
+        qCritical() << "create table (RelatedItems) failed:" << query.lastError().text()
+                    << ",Error code:" << query.lastError().nativeErrorCode();
         return false;
     }
 
@@ -52,14 +57,15 @@ bool AudioDatabaseManager::createTable()
                        "value TEXT)";
 
     if (!query.exec(createTableQuery)) {
-        qCritical() << "create table (config) failed:" << query.lastError().text();
+        qCritical() << "create table (config) failed:" << query.lastError().text()
+                    << ",Error code:" << query.lastError().nativeErrorCode();
         return false;
     }
 
     return true;
 }
 
-bool AudioDatabaseManager::insertItem(RelatedItem &item)
+bool AudioDatabase::insertItem(RelatedItem &item)
 {
     QSqlQuery query(mdb);
     query.prepare("INSERT INTO RelatedItems (taskName, taskPath, type, tag, deviceName, deviceId) "
@@ -72,7 +78,8 @@ bool AudioDatabaseManager::insertItem(RelatedItem &item)
     query.bindValue(":deviceId", item.audioDeviceInfo.id);
 
     if (!query.exec()) {
-        qWarning() << "Failed to insert item: " << query.lastError().text();
+        qWarning() << "Failed to insert item: " << query.lastError().text()
+                   << "Error code:" << query.lastError().nativeErrorCode();
         return false;
     }
 
@@ -82,7 +89,7 @@ bool AudioDatabaseManager::insertItem(RelatedItem &item)
     return true;
 }
 
-bool AudioDatabaseManager::updateItem(const RelatedItem &item)
+bool AudioDatabase::updateItem(const RelatedItem &item)
 {
     QSqlQuery query(mdb);
     query.prepare("UPDATE RelatedItems SET "
@@ -104,7 +111,7 @@ bool AudioDatabaseManager::updateItem(const RelatedItem &item)
     return query.exec();
 }
 
-bool AudioDatabaseManager::deleteItem(int id)
+bool AudioDatabase::deleteItem(int id)
 {
     QSqlQuery query(mdb);
     query.prepare("DELETE FROM RelatedItems WHERE id = :id");
@@ -113,9 +120,8 @@ bool AudioDatabaseManager::deleteItem(int id)
     return query.exec();
 }
 
-RelatedList AudioDatabaseManager::queryItems(const QString &key, const QString &value)
+void AudioDatabase::queryItems(const QString &key, const QString &value, RelatedList* relatedList)
 {
-    RelatedList items;
     QSqlQuery query(mdb);
 
     // 根据是否有查询条件来决定 SQL 语句
@@ -127,8 +133,9 @@ RelatedList AudioDatabaseManager::queryItems(const QString &key, const QString &
     }
 
     if (!query.exec()) {
-        qWarning() << "Error: " << query.lastError().text();
-        return items;
+        qWarning() << "Error: " << query.lastError().text()
+                   << ",Error code:" << query.lastError().nativeErrorCode();
+        return;
     }
 
     while (query.next()) {
@@ -140,12 +147,12 @@ RelatedList AudioDatabaseManager::queryItems(const QString &key, const QString &
         item.audioDeviceInfo.name = query.value("deviceName").toString();
         item.audioDeviceInfo.id = query.value("deviceId").toString();
         item.id = query.value("id").toUInt();
-        items.append(item);
+        relatedList->append(item);
     }
-    return items;
+    return;
 }
 
-bool AudioDatabaseManager::saveConfig(const QString &key, const QString &value)
+bool AudioDatabase::saveConfig(const QString &key, const QString &value)
 {
     QSqlQuery query(mdb);
     query.prepare("INSERT OR REPLACE INTO config (key, value) VALUES (:key, :value)");
@@ -155,14 +162,15 @@ bool AudioDatabaseManager::saveConfig(const QString &key, const QString &value)
     return query.exec();
 }
 
-QString AudioDatabaseManager::queryConfig(const QString &key, const QString &defaultValue)
+QString AudioDatabase::queryConfig(const QString &key, const QString &defaultValue)
 {
     QSqlQuery query(mdb);
     query.prepare("SELECT value FROM config WHERE key = :key");
     query.bindValue(":key", key);
 
     if (!query.exec()) {
-        qCritical() << "Load config failed:" << query.lastError().text();
+        qCritical() << "Load config failed:" << query.lastError().text()
+                    << ",Error code:" << query.lastError().nativeErrorCode();
         return defaultValue;
     }
 
@@ -178,7 +186,7 @@ QString AudioDatabaseManager::queryConfig(const QString &key, const QString &def
 
 
 
-QString AudioDatabaseManager::lastError()
+QString AudioDatabase::lastError()
 {
     QSqlQuery query(mdb);
     return query.lastError().text();

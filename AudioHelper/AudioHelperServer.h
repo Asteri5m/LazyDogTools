@@ -1,6 +1,13 @@
 #ifndef AUDIOHELPERSERVER_H
 #define AUDIOHELPERSERVER_H
 
+/**
+ * @file AudioHelperServer.h
+ * @author Asteri5m
+ * @date 2025-02-10 22:20:10
+ * @brief 音频助手后台服务，核心功能实现
+ */
+
 #include <QObject>
 #include <QTimer>
 #include <QThread>
@@ -8,6 +15,7 @@
 
 #include "TaskMonitor.h"
 #include "AudioManager.h"
+#include "Custom.h"
 
 inline QMutex audioServerMutex;
 
@@ -23,21 +31,26 @@ public:
         Windows,
         Smart
     };
+    Q_ENUM(Mode)
 
     enum Scene {
         Normal,
         Entertainment,
         Audiovisual
     };
+    Q_ENUM(Scene)
 
     explicit AudioHelperServer(RelatedList *relatedList, QObject *parent = nullptr);
     ~AudioHelperServer();
 
     void setMode(const Mode mode);
     void setScene(const Scene scene);
+    void setNotify(const bool notify);
 
     Mode mode() const;
     Scene scene() const;
+    bool notify() const;
+    bool state() const;
 
     void setTimer(const uint msec);
 
@@ -51,11 +64,14 @@ private slots:
 private:
     Mode mMode;
     Scene mScene;
+    bool mNotify;
+    bool mState;
     QTimer *mTimer;
     QThread *mThread;
     AudioManager *mAudioManager;
     RelatedList *mRelatedList;
     WeightList *mTargetList;
+    QMutex mMutex;
 
     void calculateProcessWeight();
     void calculateWindowsWeight();

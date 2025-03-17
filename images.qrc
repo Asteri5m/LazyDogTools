@@ -1,29 +1,30 @@
 <RCC>
     <qresource prefix="/ico">
-        <file alias="arrow_white.svg">images/ico/arrow_white.svg</file>
+        <file alias="apps.svg">images/ico/apps.svg</file>
         <file alias="arrow_black.svg">images/ico/arrow_black.svg</file>
+        <file alias="arrow_white.svg">images/ico/arrow_white.svg</file>
+        <file alias="audiohelper.svg">images/ico/audiohelper.svg</file>
         <file alias="check_black.svg">images/ico/check_black.svg</file>
         <file alias="check_white.svg">images/ico/check_white.svg</file>
+        <file alias="close.svg">images/ico/close.svg</file>
+        <file alias="dashboard.svg">images/ico/dashboard.svg</file>
+        <file alias="LD.ico">images/ico/favicon.ico</file>
+        <file>images/ico/favicon_32.ico</file>
+        <file>images/ico/favicon_64.ico</file>
+        <file alias="gamepad.svg">images/ico/gamepad.svg</file>
+        <file alias="headphone.svg">images/ico/headphone.svg</file>
+        <file alias="home.svg">images/ico/home.svg</file>
         <file alias="jump_black.svg">images/ico/jump_black.svg</file>
         <file alias="jump_white.svg">images/ico/jump_white.svg</file>
-        <file alias="apps.svg">images/ico/apps.svg</file>
-        <file alias="headphone.svg">images/ico/headphone.svg</file>
         <file alias="keyboard.svg">images/ico/keyboard.svg</file>
         <file alias="list-settings.svg">images/ico/list-settings.svg</file>
+        <file alias="loop.svg">images/ico/loop.svg</file>
+        <file alias="pushpin.svg">images/ico/pushpin.svg</file>
         <file alias="settings.svg">images/ico/settings.svg</file>
+        <file alias="settings2.svg">images/ico/settings2.svg</file>
+        <file alias="terminal.svg">images/ico/terminal.svg</file>
         <file alias="todo.svg">images/ico/todo.svg</file>
         <file alias="translate.svg">images/ico/translate.svg</file>
         <file alias="user-settings.svg">images/ico/user-settings.svg</file>
-        <file alias="dashboard.svg">images/ico/dashboard.svg</file>
-        <file alias="gamepad.svg">images/ico/gamepad.svg</file>
-        <file alias="close.svg">images/ico/close.svg</file>
-        <file alias="loop.svg">images/ico/loop.svg</file>
-        <file alias="home.svg">images/ico/home.svg</file>
-        <file alias="pushpin.svg">images/ico/pushpin.svg</file>
-        <file alias="terminal.svg">images/ico/terminal.svg</file>
-        <file alias="settings2.svg">images/ico/settings2.svg</file>
-        <file alias="LD.ico">images/ico/favicon.ico</file>
-        <file>images/ico/favicon_64.ico</file>
-        <file>images/ico/favicon_32.ico</file>
     </qresource>
 </RCC>

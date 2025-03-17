@@ -1,6 +1,13 @@
 #ifndef HOTKEYMANAGER_H
 #define HOTKEYMANAGER_H
 
+/**
+ * @file HotkeyManager.cpp
+ * @author Asteri5m
+ * @date 2025-02-07 20:33:02
+ * @brief 热键管理器
+ */
+
 #include <QObject>
 #include <QDebug>
 #include <QMap>
@@ -18,7 +25,7 @@ public:
     bool registerHotkey(int id, const QKeySequence &keySequence);
     void unregisterHotkey(int id);
 
-    UINT MapQtKeyToVk(int key);
+    UINT mapQtKeyToVk(int key);
 signals:
     void hotkeyPressed(int id);
 

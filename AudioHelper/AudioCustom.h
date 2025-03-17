@@ -1,10 +1,18 @@
 #ifndef AUDIOCUSTOM_H
 #define AUDIOCUSTOM_H
 
+/**
+ * @file AudioCustom.h
+ * @author Asteri5m
+ * @date 2025-02-08 0:20:14
+ * @brief AudioHelper的一些自定义小组件
+ */
+
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QResizeEvent>
+#include <QPainter>
 
 #define TAG_DEFAULT_WIDTH 120
 
@@ -37,8 +45,8 @@ public:
 
     QString generateStyleSheet(Theme theme)
     {
-        QString back_color = "#fffbce";
-        QString text_color = "#fdaf32";
+        QString back_color;
+        QString text_color;
 
         switch (theme) {
         case Pink:
@@ -65,6 +73,9 @@ public:
             back_color = "#FFE5E0";
             text_color = "#FF6347";
             break;
+        default:
+            back_color = "#FFFBCE";
+            text_color = "#FDAF32";
         }
 
         return QString(
@@ -86,6 +97,19 @@ public:
         return text;
     }
 
+protected:
+    void paintEvent(QPaintEvent *event) override
+    {
+        Q_UNUSED(event);
+
+        QPainter painter(this);
+        painter.setPen(Qt::NoPen);
+        painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::SmoothPixmapTransform);
+
+        painter.setBrush(Qt::transparent);
+        painter.drawRect(this->rect());
+    }
+
 private:
     QLabel *mLabel;
 
@@ -98,7 +122,7 @@ inline QMap<QString, TagLabel::Theme> TagTheme =  {
     {"文件", TagLabel::Purple},
     {"游戏", TagLabel::Pink},
     {"影音", TagLabel::Orange},
-};
+    };
 
 
 struct TaskInfo {
@@ -369,8 +393,8 @@ public:
         // 创建 QComboBox 并添加选项
         mComboBox = new MacStyleComboBox(this);
         mDeviceList = AudioManager::getAudioOutDeviceList();
-        foreach (QString name, mDeviceList.keys()) {
-            mComboBox->addItem(name);
+        for (auto it = mDeviceList.constBegin(); it != mDeviceList.constEnd(); ++it) {
+            mComboBox->addItem(it.key());
         }
 
         // 创建按钮框，包含 "确定" 和 "取消" 按钮
@@ -459,67 +483,6 @@ public:
 
 private:
     QComboBox* mComboBox;
-};
-
-
-template<typename K, typename V>
-class OrderedMap {
-public:
-    void insert(const K &key, const V &value) {
-        if (!hash.contains(key)) { // 确保唯一性
-            hash[key] = value;
-            order.append(key);
-        }
-    }
-
-    bool contains(const K &key) const {
-        return hash.contains(key);
-    }
-
-    V value(const K &key) const {
-        return hash.value(key);
-    }
-
-    V& operator[](const K &key) {
-        return hash[key]; // 返回引用以允许修改
-    }
-
-    void remove(const K &key) {
-        if (hash.remove(key)) {
-            order.removeAll(key);
-        }
-    }
-
-    void clear() {
-        hash.clear();
-        order.clear();
-    }
-
-    QList<K> keys() const {
-        return order;
-    }
-
-    QList<V> values() const {
-        QList<V> vals;
-        for (const K &key : order) {
-            vals.append(hash.value(key));
-        }
-        return vals;
-    }
-
-    // 提供迭代器支持
-    using iterator = typename QList<K>::iterator;
-    using const_iterator = typename QList<K>::const_iterator;
-
-    iterator begin() { return order.begin(); }
-    iterator end() { return order.end(); }
-    const_iterator begin() const { return order.begin(); }
-    const_iterator end() const { return order.end(); }
-
-
-private:
-    QHash<K, V> hash;    // 存储键值对
-    QList<K> order;      // 存储插入顺序
 };
 
 #endif // AUDIOCUSTOM_H

@@ -1,5 +1,12 @@
+/**
+ * @file SelectionInfo.cpp
+ * @author Asteri5m
+ * @date 2025-02-08 0:46:13
+ * @brief 任务关联项选择窗口
+ */
+
 #include "SelectionDialog.h"
-#include "AudioHelper.h"
+#include "AudioHelperWidget.h"
 #include <QThread>
 
 
@@ -78,7 +85,7 @@ SelectionDialog::SelectionDialog(QWidget *parent)
 
 
     // 设置过滤器并刷新
-    AudioHelper *audoiHelper = qobject_cast<AudioHelper*>(parent);
+    AudioHelperWidget *audoiHelper = qobject_cast<AudioHelperWidget*>(parent);
     QStringList filter;
     filter << "C:/Windows/" << "C:/Program Files/WindowsApps/";
 

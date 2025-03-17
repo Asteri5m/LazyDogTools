@@ -1,45 +1,42 @@
 #ifndef AUDIOHELPER_H
 #define AUDIOHELPER_H
 
-#include "CustomWidget.h"
-#include "AudioCustom.h"
+/**
+ * @file AudioHelper.h
+ * @author Asteri5m
+ * @date 2025-02-08 0:11:12
+ * @brief 音频助手，主要功能为根据预设切换音频设备
+ */
+
+#include "ToolModel.h"
+#include "AudioHelperWidget.h"
 #include "AudioHelperServer.h"
-#include "Custom.h"
+#include "AudioDatabase.h"
 
-
-class AudioHelper : public ToolWidgetModel {
+class AudioHelper : public ToolModel
+{
     Q_OBJECT
 public:
-    explicit AudioHelper(QWidget *parent = nullptr);
+    AudioHelper(QObject *parent=nullptr);
     ~AudioHelper();
-    QString queryConfig(const QString& key);
 
-signals:
+    RelatedList *mRelatedList;
 
-private slots:
-    void onItemClicked(QTableWidgetItem *item);
-    void buttonClicked();
-    void checkBoxChecked(bool);
-    void comboBoxChanged(QString);
+public slots:
+    void showWindow();
+    void saveConfig(const QString &key, const QString &value);
+    void hotKeyEvent(const QString &event);
 
 private:
-    QWidget *mHomePage;
-    QWidget *mPrefsPage;
-    TableWidget *mTaskTab;
-    RelatedList *mRelatedList;
-    QMap<QString, QString> mConfig;
     AudioHelperServer *mServer;
+    AudioDatabase *mDatabase;
+    Config *mConfig;
+    QMap<QString, AudioHelperServer::Mode> *mModeMap;
+    QMap<QString, AudioHelperServer::Scene> *mSceneMap;
 
-    MacStyleButton *mTagButton;
-
-    void initHomePage();
-    void initPrefsPage();
-    void addRelatedItem();
-    void delRelatedItem();
-    void changeRelatedItem();
-    void setSceneTag(bool isAdd);
-    template <typename T>
-    void loadConfigHandler(T* widget, const QString& defaultValue = QString());
+    void nextMode();
+    void nextScene();
+    void lockDevice();
 };
 
 #endif // AUDIOHELPER_H

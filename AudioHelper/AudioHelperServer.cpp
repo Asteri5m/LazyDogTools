@@ -1,5 +1,11 @@
+/**
+ * @file AudioHelperServer.cpp
+ * @author Asteri5m
+ * @date 2025-02-10 22:20:10
+ * @brief 音频助手后台服务，核心功能实现
+ */
 #include "AudioHelperServer.h"
-#include "AudioDatabaseManager.h"
+#include "AudioDatabase.h"
 #include "TrayManager.h"
 #include <QFileInfo>
 #include <QFileIconProvider>
@@ -10,6 +16,8 @@ AudioHelperServer::AudioHelperServer(RelatedList *relatedList, QObject *parent)
     , mRelatedList(relatedList)
     , mMode(Mode::Smart)
     , mScene(Scene::Normal)
+    , mNotify(true)
+    , mState(false)
     , mTimer(new QTimer)
     , mThread(new QThread)
     , mAudioManager(new AudioManager)
@@ -20,13 +28,16 @@ AudioHelperServer::AudioHelperServer(RelatedList *relatedList, QObject *parent)
     mThread->start();
 
     // 服务的轮训的间隔默认为半秒
-    mTimer->setInterval(500);
+    mTimer->setInterval(1000);
 }
 
 AudioHelperServer::~AudioHelperServer()
 {
     mThread->quit();
     mThread->wait();
+    delete mTimer;
+    delete mAudioManager;
+    delete mTargetList;
 }
 
 void AudioHelperServer::setMode(const Mode mode)
@@ -39,6 +50,11 @@ void AudioHelperServer::setScene(const Scene scene)
     mScene = scene;
 }
 
+void AudioHelperServer::setNotify(const bool notify)
+{
+    mNotify = notify;
+}
+
 AudioHelperServer::Mode AudioHelperServer::mode() const
 {
     return mMode;
@@ -49,14 +65,26 @@ AudioHelperServer::Scene AudioHelperServer::scene() const
     return mScene;
 }
 
+bool AudioHelperServer::notify() const
+{
+    return mNotify;
+}
+
+bool AudioHelperServer::state() const
+{
+    return mState;
+}
+
 void AudioHelperServer::start()
 {
     mTimer->start();
+    mState = true;
 }
 
 void AudioHelperServer::stop()
 {
     mTimer->stop();
+    mState = false;
 }
 
 void AudioHelperServer::setTimer(const uint msec)
@@ -134,29 +162,26 @@ void AudioHelperServer::server()
     }
 
     qInfo() << QString("任务触发: id:%1, weight:%2, name:%3, device:%4")
-                    .arg(targetId)
-                    .arg((short)targetWeight)
-                    .arg(target->taskInfo.name)
-                    .arg(target->audioDeviceInfo.name)
-                    .toUtf8().constData();
+                   .arg(targetId)
+                   .arg((short)targetWeight)
+                   .arg(target->taskInfo.name)
+                   .arg(target->audioDeviceInfo.name)
+                   .toUtf8().constData();
 
     if (mAudioManager->setAudioOutDevice(target->audioDeviceInfo.id))
     {
-        qDebug() << "执行完成";
-        if (AudioDatabaseManager::instance()->queryConfig("切换时通知") == "true")
+        if (mNotify)
         {
             QFileIconProvider iconProvider;
             QFileInfo fileInfo(target->taskInfo.path);
-            TrayManager::instance()->showMessage("设备已切换", QString("任务触发: %1\n切换设备:%2")
-                                                                   .arg(target->taskInfo.name)
-                                                                   .arg(target->audioDeviceInfo.name)
+            QString name(target->taskInfo.name);
+            QString device(target->audioDeviceInfo.name);
+            TrayManager::instance().showMessage("设备已切换", QString("任务触发: %1\n切换设备:%2").arg(name).arg(device)
                                                  , iconProvider.icon(fileInfo).pixmap(64, 64).scaled(64, 64, Qt::KeepAspectRatio, Qt::SmoothTransformation));
         }
     }
     else
-    {
         qWarning() << "任务执行执行失败了...";
-    }
 
     audioServerMutex.unlock();
 }
@@ -176,7 +201,7 @@ void AudioHelperServer::calculateProcessWeight()
 
     // 对应刚打开的游戏，初始化需要一段时间，
     // 但是此时没有窗口，无法得到加权，导致部分程序初始化了错误的音频设备，
-    // 并且该程序无法切换音频设备，那么此时就需要“预处理”，提取准备好音频设备
+    // 并且该程序无法切换音频设备，那么此时就需要"预处理"，提取准备好音频设备
     QVector<uint> targetBuffer;
     for (auto it = taskInfoList.rbegin(); it != taskInfoList.rend(); ++it) {
         TaskInfo task = *it;
@@ -206,6 +231,7 @@ void AudioHelperServer::calculateProcessWeight()
 
 void AudioHelperServer::calculateWindowsWeight()
 {
+    QMutexLocker locker(&mMutex);
     TaskInfoList taskInfoList;
     TaskMonitor::getWindowsList(&taskInfoList);
     if (taskInfoList.isEmpty())
@@ -277,20 +303,20 @@ void AudioHelperServer::calculateSceneWeight()
 QVector<uint> AudioHelperServer::searchRelateds(const QString path) const
 {
     QVector<uint> reslut;
-    for (const RelatedItem &item : *mRelatedList) {
-        if (path.startsWith(item.taskInfo.path))
-            reslut.append(item.id);
+    for (auto item = mRelatedList->constBegin(); item != mRelatedList->constEnd(); ++item)
+    {
+        if (path.startsWith(item->taskInfo.path))
+            reslut.append(item->id);
     }
     return reslut;
 }
 
 const RelatedItem *AudioHelperServer::getRelated(const uint id) const
 {
-    for (const RelatedItem &item : *mRelatedList) {
-        if (item.id == id)
-            return &item;
+    for (auto item = mRelatedList->constBegin(); item != mRelatedList->constEnd(); ++item)
+    {
+        if (item->id == id)
+            return &(*item);
     }
     return nullptr;
 }
-
-

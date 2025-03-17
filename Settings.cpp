@@ -1,432 +1,184 @@
+/**
+ * @file Settings.cpp
+ * @author Asteri5m
+ * @date 2025-02-07 20:23:46
+ * @brief 全局设置
+ */
+
+#include "Settings.h"
+#include "SettingsWidget.h"
+#include "LogHandler.h"
+#include "Custom.h"
+#include "TrayManager.h"
 #include <QSqlQuery>
 #include <QSqlError>
-#include <QDesktopServices>
-#include <shlobj.h>
-#include "LogHandler.h"
-#include "Settings.h"
-#include "Custom.h"
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QNetworkReply>
+#include <QNetworkRequest>
+#include <QProcess>
 
-Settings::Settings(QWidget *parent)
-    : ToolWidgetModel{parent}
+
+Settings::Settings(QObject *parent)
+    : ToolModel{ parent }
     , mHotkeyManager{new HotkeyManager(this)}
     , mdbDir(QDir("data"))
     , mdbName("Settings.db")
+    , mConfig(new Config)
+    , mHotkeyMap(new HotkeyMap)
+    , mHotkeyIdMap(new HotkeyIdMap)
+    , mNetworkManager(new QNetworkAccessManager(this))
 {
-    setFixedSize(630, 425);
-    // 取消其他按钮，只保留关闭按钮
-    setWindowFlags(Qt::Window | Qt::WindowCloseButtonHint | Qt::CustomizeWindowHint);
-
-    // 使用默认模板样式
-    setDefaultStyle();
-
-    // 初始化数据库
     initializeDatabase();
-
-    if (parent == nullptr)
-        return;
-
-    mBasePage      = new QWidget(this);
-    mAppPage       = new QWidget(this);
-    mShortcutsPage = new QWidget(this);
-
-    addTab(mBasePage,      QIcon(":/ico/settings.svg"), "基础");
-    addTab(mAppPage,       QIcon(":/ico/apps.svg"), "应用");
-    addTab(mShortcutsPage, QIcon(":/ico/keyboard.svg"), "热键");
-
-    initBasePage();
-
-    // 检查并显示第一个页面
-    finalizeSetup();
 
     // 安装全局的事件过滤器
     qApp->installNativeEventFilter(mHotkeyManager);
 
     // 连接热键按下信号
     connect(mHotkeyManager, SIGNAL(hotkeyPressed(int)), this, SLOT(onHotkeyPressed(int)));
+
+    // 默认配置
+    mConfig->insert("开机自启动",    "true");
+    mConfig->insert("管理员模式启动", "false");
+    mConfig->insert("自动更新",      "true");
+    mConfig->insert("debug日志",    "false");
+
+    for (auto it = mConfig->begin(); it != mConfig->end(); ++it)
+    {
+        (*mConfig)[it.key()] = loadConfigFromDB(it.key(),it.value());
+    }
+
+    if (parent == nullptr) return;
+
+    // 日志等级
+    LogHandler::instance().setLogLevel((*mConfig)["debug日志"] == "true" ? DebugLevel : InfoLevel);
+    LogHandler::instance().clearBuffer();
+
+    // 注册开机自启
+    if ((*mConfig)["开机自启动"] == "true")
+    {
+        if (!UAC::setApplicationStartup(true))
+        {
+            saveConfigToDB("开机自启动", "false");
+            (*mConfig)["开机自启动"] = "false";
+        }
+    }
+
+    // 加载tool的配置：启用状态、热键等等
+    ToolManager& toolManager = ToolManager::instance();
+    const ToolInfoMap& allToolsInfo = toolManager.getAllTools();
+    for (auto it = allToolsInfo.begin(); it != allToolsInfo.end(); ++it)
+    {
+        // 启用状态
+        bool enabled = loadConfigFromDB("enable:" + it->Name, "true") == "true" ? true : false;
+        mConfig->insert("enable:" + it->Name, enabled ? "true" : "false");
+        if (enabled)
+            toolManager.createTool(it.key());
+        else
+            toolManager.disableTool(it->Name);
+
+        // 热键
+        for (const auto& key : it->HotkeyList)
+        {
+            QString name = QString("hotkey:%1:%2").arg(it->Name).arg(key);
+            QString hotkey = loadConfigFromDB(name, "");
+            HotkeyInfo hotkeyInfo{hotkey, false, 0};
+            mConfig->insert(name, hotkey);
+            mHotkeyMap->insert(name, hotkeyInfo);
+            if (enabled && !hotkey.isEmpty())
+                registerHotkey(name, QKeySequence(hotkey));
+        }
+    }
 }
 
 Settings::~Settings()
 {
+    delete mHotkeyManager;
+    delete mHotkeyIdMap;
+    delete mHotkeyMap;
+    delete mConfig;
+    delete mNetworkManager;
     mdb.close();
-}
 
-// 设置ToolManager列表，通过设置可以修改ToolManager的部分属性，例如是否启用
-void Settings::setToolManagerList(ToolManagerList *toolManagerList)
-{
-    mToolManagerList = toolManagerList;
-
-    // 这两个页面依赖于主页面传过来的数据
-    initAppPage();
-    initShortcutsPage();
-}
-
-// 初始化“基础”页面
-void Settings::initBasePage()
-{
-    // 使用滑动区域，内容过多时可以滑动
-    QVBoxLayout *layout = new QVBoxLayout(mBasePage);
-    SmoothScrollArea *scrollArea = new SmoothScrollArea();
-    QWidget *containerWidget = new QWidget(scrollArea);
-    QVBoxLayout *mainLayout = new QVBoxLayout(containerWidget);
-    layout->addWidget(scrollArea);
-    scrollArea->setWidgetResizable(true); // 使内容区域可以自动调整大小
-    scrollArea->setWidget(containerWidget);
-
-    layout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setContentsMargins(20, 10, 10, 10);
-
-    // 创建启动区域
-    NoBorderGroupBox *startupGroupBox = new NoBorderGroupBox("启动");
-    QGridLayout *startupLayout = new QGridLayout(startupGroupBox);
-
-    MacStyleCheckBox *startCheckBox      = new MacStyleCheckBox("开机自启动");
-    MacStyleCheckBox *adminStartCheckBox = new MacStyleCheckBox("管理员模式启动");
-    MacStyleCheckBox *startHideCheckBox  = new MacStyleCheckBox("启动后自动隐藏");
-
-    startupLayout->addWidget(startCheckBox,      0, 0);
-    startupLayout->addWidget(adminStartCheckBox, 0, 1);
-    startupLayout->addWidget(startHideCheckBox,  1, 0);
-
-
-    // 创建更新区域
-    NoBorderGroupBox *updateGroupBox = new NoBorderGroupBox("更新");
-    QGridLayout *updateLayout = new QGridLayout(updateGroupBox);
-
-    MacStyleCheckBox *updateCheckBox = new MacStyleCheckBox("自动更新");
-    MacStyleButton   *checkNewButton = new MacStyleButton("检查更新");
-
-    updateLayout->addWidget(updateCheckBox, 0, 0);
-    updateLayout->addWidget(checkNewButton, 0, 1);
-    updateLayout->setColumnStretch(2, 1);   // 添加填充
-
-
-    // 创建最小化设置区域
-    NoBorderGroupBox *minimizeGroupBox = new NoBorderGroupBox("最小化设置");
-    QGridLayout *minimizeLayout = new QGridLayout(minimizeGroupBox);
-    minimizeLayout->addWidget(new QLabel("程序最小化显示在："), 0, 0);
-
-    // 最小化选项
-    MacStyleComboBox *minimizeComBox = new MacStyleComboBox("最小化设置");
-    minimizeComBox->addItem("托盘");
-    minimizeComBox->addItem("任务栏");
-    minimizeLayout->addWidget(minimizeComBox, 0, 1);
-    minimizeLayout->setColumnStretch(0, 1);
-    minimizeLayout->setColumnStretch(1, 1);
-    minimizeLayout->setColumnStretch(2, 2);
-
-
-    // 创建关闭设置区域
-    NoBorderGroupBox *closeGroupBox = new NoBorderGroupBox("关闭设置");
-    QGridLayout *closeLayout = new QGridLayout(closeGroupBox);
-    closeLayout->addWidget(new QLabel("当点击关闭按钮后："), 0, 0);
-
-    MacStyleComboBox *closeComBox = new MacStyleComboBox("关闭设置");
-    closeComBox->addItem("最小化托盘");
-    closeComBox->addItem("退出");
-    closeLayout->addWidget(closeComBox, 0, 1);
-    closeLayout->setColumnStretch(0, 1);
-    closeLayout->setColumnStretch(1, 1);
-    closeLayout->setColumnStretch(2, 2);
-
-
-    // 创建日志区域
-    NoBorderGroupBox *logGroupBox = new NoBorderGroupBox("日志");
-    QGridLayout *logLayout = new QGridLayout(logGroupBox);
-
-    MacStyleCheckBox *debugCheckBox   = new MacStyleCheckBox("debug日志");
-    MacStyleButton   *exportLogButton = new MacStyleButton("查看日志");
-
-    logLayout->addWidget(debugCheckBox,   0, 0);
-    logLayout->addWidget(exportLogButton, 0, 1);
-    logLayout->setColumnStretch(2, 1); // 设置第 3 列的弹簧
-
-
-    // 添加各个区域到mainLayout
-    mainLayout->addWidget(startupGroupBox);
-    mainLayout->addWidget(updateGroupBox);
-    mainLayout->addWidget(minimizeGroupBox);
-    mainLayout->addWidget(closeGroupBox);
-    mainLayout->addWidget(logGroupBox);
-
-    // 添加一个弹簧，用于撑起空白区域
-    mainLayout->addStretch();
-
-
-    // 加载配置
-    loadSettingsHandler(startCheckBox,      "true");
-    loadSettingsHandler(adminStartCheckBox, "false");
-    loadSettingsHandler(startHideCheckBox,  "true");
-    loadSettingsHandler(updateCheckBox,     "true");
-    loadSettingsHandler(debugCheckBox,      "false");
-
-    loadSettingsHandler(minimizeComBox, "托盘");
-    loadSettingsHandler(closeComBox,    "最小化托盘");
-
-
-    // 连接槽 - 按钮
-    connect(checkNewButton,  SIGNAL(clicked()), this, SLOT(buttonClicked()));
-    connect(exportLogButton, SIGNAL(clicked()), this, SLOT(buttonClicked()));
-
-    // 连接槽 - 选择框
-    connect(startCheckBox,      SIGNAL(clicked(bool)), this, SLOT(checkBoxChecked(bool)));
-    connect(adminStartCheckBox, SIGNAL(clicked(bool)), this, SLOT(checkBoxChecked(bool)));
-    connect(startHideCheckBox,  SIGNAL(clicked(bool)), this, SLOT(checkBoxChecked(bool)));
-    connect(updateCheckBox,     SIGNAL(clicked(bool)), this, SLOT(checkBoxChecked(bool)));
-    connect(debugCheckBox,      SIGNAL(clicked(bool)), this, SLOT(checkBoxChecked(bool)));
-
-    // 连接槽 - 下拉框
-    connect(minimizeComBox, SIGNAL(currentTextChanged(QString)), this, SLOT(comboBoxChanged(QString)));
-    connect(closeComBox,    SIGNAL(currentTextChanged(QString)), this, SLOT(comboBoxChanged(QString)));
-}
-
-// 初始化“应用”页面
-void Settings::initAppPage()
-{
-    QVBoxLayout *mainLayout = new QVBoxLayout(mAppPage);
-    mainLayout->setContentsMargins(0, 10, 0, 10);   // 取消左右边距
-    mainLayout->setSpacing(0);
-
-
-    // 标题
-    QHBoxLayout *titleLazyout = new QHBoxLayout();
-    QLabel *nameLable   = new QLabel("应用");
-    QLabel *enableLable = new QLabel("启用");
-    QLabel *jumpLable   = new QLabel("跳转");
-
-    // 使用样式表设置字体加粗并加大一号
-    nameLable  ->setStyleSheet("QLabel { font-weight: bold; font-size: 14px; }");
-    enableLable->setStyleSheet("QLabel { font-weight: bold; font-size: 14px; }");
-    jumpLable  ->setStyleSheet("QLabel { font-weight: bold; font-size: 14px; }");
-
-    titleLazyout->addWidget(nameLable,   4, Qt::AlignCenter);
-    titleLazyout->addWidget(enableLable, 1, Qt::AlignCenter);
-    titleLazyout->addWidget(jumpLable,   1, Qt::AlignCenter);
-    mainLayout->addLayout(titleLazyout);
-
-
-    // 添加横线---标题与内容的分割线
-    mainLayout->addSpacerItem(new QSpacerItem(1, 5, QSizePolicy::Minimum, QSizePolicy::Minimum));
-    QFrame *line = new QFrame();
-    line->setFrameShape(QFrame::HLine);
-    line->setStyleSheet("border:none; border-bottom: 1px solid gray");
-    mainLayout->addWidget(line);
-
-
-    // 内容区域，虽然大概率用不到，但还是用滚动组件包起来吧
-    SmoothScrollArea *appListArea = new SmoothScrollArea();
-    QWidget *applistWidget = new QWidget();
-    QVBoxLayout *appListLayout = new QVBoxLayout(applistWidget);
-
-    appListLayout->setContentsMargins(0, 0, 0, 0);
-    appListArea->setContentsMargins(0, 0, 0, 0);
-    appListLayout->setSpacing(0);
-    appListArea->setWidgetResizable(true);
-    appListArea->setWidget(applistWidget);
-
-    // 设置字体、分割线
-    applistWidget->setStyleSheet("font-weight: bold; font-size: 14px;"
-                                 "border-bottom: 1px solid #DADADA;");
-
-    // 隐藏滚动条
-    appListArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    appListArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-
-    // 绘制内容:从第二个开始，避免对“设置”进行操作
-    for (int i=1; i<mToolManagerList->length(); i++)
+    if (mUpdate)
     {
-        QHBoxLayout *appItemLazyout = new QHBoxLayout();
-
-        QWidget *nameWidget   = new QWidget();
-        QWidget *enableWidget = new QWidget();
-        QWidget *jumpWidget   = new QWidget();
-
-        // 保持比例和标题一致
-        appItemLazyout->addWidget(nameWidget,   4);
-        appItemLazyout->addWidget(enableWidget, 1);
-        appItemLazyout->addWidget(jumpWidget,   1);
-
-        QHBoxLayout *nameLayout   = new QHBoxLayout(nameWidget);
-        QHBoxLayout *enableLayout = new QHBoxLayout(enableWidget);
-        QHBoxLayout *jumpLayout   = new QHBoxLayout(jumpWidget);
-
-        auto toolManager = mToolManagerList->at(i);
-        // 设置图标&应用名
-        QIcon *icon = new QIcon(toolManager->getIcon());
-        QLabel *iconLabel = new QLabel();
-        iconLabel->setPixmap(icon->pixmap(20, 20));
-        iconLabel->setAlignment(Qt::AlignCenter);
-        nameLayout->addWidget(iconLabel);
-        nameLayout->addWidget(new QLabel(toolManager->getName()), 4);
-
-        // 添加开关按钮
-        MacSwitchButton *enableButton = new MacSwitchButton("active:" + toolManager->getName());
-        enableLayout->addWidget(enableButton);
-        loadSettingsHandler(enableButton, "true");
-        connect(enableButton, SIGNAL(checkedChanged(bool)), this, SLOT(switchButtonChanged(bool)));
-
-        // // 添加跳转按钮
-        JumpButton *jumpButton = new JumpButton("jump:" + toolManager->getName());
-        jumpLayout->addWidget(jumpButton);
-        connect(jumpButton, SIGNAL(clicked()), this, SLOT(buttonClicked()));
-
-        appListLayout->addLayout(appItemLazyout);
+        QDir tempDirObj(UPDATE_DIR);
+        QString appPath = QDir::toNativeSeparators(tempDirObj.filePath(APPLICATION_NAME));
+        UAC::runArguments("-update", true, appPath);
     }
-
-    appListLayout->addStretch();
-    mainLayout->addWidget(appListArea);
-
 }
 
-// 初始化“快捷键”页面
-void Settings::initShortcutsPage()
+QString Settings::loadConfig(const QString &key) const
 {
-    // 使用滑动区域，内容过多时可以滑动
-    QVBoxLayout *layout = new QVBoxLayout(mShortcutsPage);
-    SmoothScrollArea *scrollArea = new SmoothScrollArea();
-    QWidget *containerWidget = new QWidget(scrollArea);
-    QVBoxLayout *mainLayout = new QVBoxLayout(containerWidget);
-    layout->addWidget(scrollArea);
-    scrollArea->setWidgetResizable(true); // 使内容区域可以自动调整大小
-    scrollArea->setWidget(containerWidget);
+    return mConfig->value(key, QString());
+}
 
-    layout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setContentsMargins(20, 10, 10, 10);
-
-    mHotkeyMap  = new HotkeyMap();
-    mHotkeyIdMap = new HotkeyIdMap();
-
-    // 添加热键编辑区域
-    for (int i=1; i<mToolManagerList->length(); i++)
+bool Settings::saveConfig(const QString &key, const QString &value) const
+{
+    if (saveConfigToDB(key, value))
     {
-        auto toolManager = mToolManagerList->at(i);
-        auto hotKeyList = toolManager->getHotKey();
+        mConfig->insert(key, value);
+        return true;
+    }
+    return false;
+}
 
-        if (hotKeyList->isEmpty())
+bool Settings::registerHotkey(const QString &key, const QKeySequence &keySequence)
+{
+    for (int id=1; id <= mHotkeyMap->size()+1; id++)
+    {   // 找一个未使用的id
+        if (mHotkeyIdMap->contains(id))
             continue;
 
-        NoBorderGroupBox *toolGroupBox = new NoBorderGroupBox(toolManager->getName());
-        QGridLayout *toolLayout = new QGridLayout(toolGroupBox);
-
-        for (int index=0; index<hotKeyList->length(); index++)
-        {
-            // 两列排布，QLabel+keyEdit+间距+QLabel+keyEdit
-            int row     = index / 2;
-            int column  = (index % 2) * 3;
-            auto hotkey = hotKeyList->at(index);
-
-            // 名字用应用名+热键名，形成唯一值
-            CustomKeySequenceEdit *keyEdit = new CustomKeySequenceEdit("hotkey:" + toolManager->getName() + ":" + hotkey.Name);
-            toolLayout->addWidget(new QLabel(hotkey.Name), row, column);
-            toolLayout->addWidget(keyEdit, row, column + 1);
-
-            // 先加载配置后绑定槽
-            loadSettingsHandler(keyEdit, hotkey.Shortkeys.toString(QKeySequence::NativeText));
-            connect(keyEdit, SIGNAL(keySequenceChanged(QKeySequence)), this, SLOT(keySequenceChanged(QKeySequence)));
-        }
-
-        // 比较美观的间距
-        toolLayout->setColumnStretch(0, 3);
-        toolLayout->setColumnStretch(1, 8);
-        toolLayout->setColumnStretch(2, 2);
-        toolLayout->setColumnStretch(3, 3);
-        toolLayout->setColumnStretch(4, 8);
-
-        mainLayout->addWidget(toolGroupBox);
+        qInfo() << "注册快捷键:" << key.mid(7) << keySequence.toString();
+        qDebug() << "操作id:" << keySequence.toString() << id;
+        bool res = mHotkeyManager->registerHotkey(id, keySequence);
+        mHotkeyIdMap->insert(id, key);
+        (*mHotkeyMap)[key].id = id;
+        (*mHotkeyMap)[key].sign = res;
+        (*mHotkeyMap)[key].key = QString(keySequence.toString());
+        return res;
     }
-    mainLayout->addStretch();
+    return false;
 }
 
-// 打开特定应用
-void Settings::jumpTool(QString toolName)
+void Settings::unregisterHotkey(const QString &key)
 {
-    for (auto toolManager : *mToolManagerList)
-    {
-        if (toolName == toolManager->getName()
-            && toolManager->getActive())
-        {
-            toolManager->show();
-            return;
-        }
-    }
+    if (!mHotkeyMap->contains(key))
+        return;
+
+    int id = mHotkeyMap->value(key).id;
+    mHotkeyManager->unregisterHotkey(id);
+    (*mHotkeyMap)[key].id = 0;
+    (*mHotkeyMap)[key].sign = false;
+    (*mHotkeyMap)[key].key = "";
+    mHotkeyIdMap->remove(id);
 }
 
-bool Settings::setStartup(bool add)
+bool Settings::queryHotkeyState(const QString &key)
 {
-    PWSTR path = nullptr;
-    // 获取所有用户的启动项目录
-    HRESULT result = SHGetKnownFolderPath(FOLDERID_CommonStartup, 0, nullptr, &path);
-    QString startupPath;
-    if (SUCCEEDED(result)) {
-        startupPath = QString::fromWCharArray(path);
-        CoTaskMemFree(path);  // 释放内存
-    }
-    else
+    if (!mHotkeyMap->contains(key))
         return false;
-
-    QString appPath = QCoreApplication::applicationFilePath();  // 获取应用程序的路径
-    QDir startupDir(startupPath);
-    QString lnkFilePath = startupDir.filePath("LazyDogTools.lnk");
-
-    if (add) {
-        if (QFile::exists(lnkFilePath))
-            return true;
-        if (!QFile::link(appPath, lnkFilePath))
-            // 失败尝试用批处理
-            return runBatchAsAdmin(R"(
-                @echo off
-                :: 创建全局启动目录的快捷方式路径
-                set "shortcutPath=%ProgramData%\Microsoft\Windows\Start Menu\Programs\StartUp\LazyDogTools.lnk"
-
-                :: 通过powershell创建指向myApp.exe的快捷方式
-                powershell -Command "$s=(New-Object -COM WScript.Shell).CreateShortcut('%shortcutPath%');$s.TargetPath='%~dp0LazyDogTools.exe';$s.Save() ")");
-        return true;
-    } else {
-        if (!QFile::exists(lnkFilePath))
-            return true;
-        return QFile::remove(lnkFilePath);
-    }
+    return mHotkeyMap->value(key).sign;
 }
 
-bool Settings::runBatchAsAdmin(const QString &batchCommands)
-{
-    QString batchFile = QCoreApplication::applicationDirPath() + "/LazyDogTask.bat";
-
-    QFile file(batchFile);
-    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QTextStream out(&file);
-        out << batchCommands;
-        file.close();
-    }
-
-    // 使用 ShellExecute 以管理员权限运行批处理文件
-    SHELLEXECUTEINFO sei = { sizeof(SHELLEXECUTEINFO) };
-    sei.lpVerb = L"runas";  // 确保以管理员权限运行
-    sei.lpFile = batchFile.toStdWString().c_str();
-    sei.nShow = SW_HIDE;   // 隐藏窗口执行
-    sei.hInstApp = NULL;
-
-    if (ShellExecuteEx(&sei)) {
-        return (int)(sei.hInstApp) > 32;
-    } else {
-        return false; // 失败时返回false
-    }
-
-}
 
 // 初始化数据库配置
 bool Settings::initializeDatabase()
 {
-    if (!mdbDir.exists())
-        mdbDir.mkpath(".");
+    if (!mdbDir.exists()) mdbDir.mkpath(".");
 
-    if (QSqlDatabase::contains(mdbName)) {
+    if (QSqlDatabase::contains(mdbName))
         mdb = QSqlDatabase::database(mdbName);
-    } else {
+    else
+    {
         mdb = QSqlDatabase::addDatabase("QSQLITE", mdbName);
         mdb.setDatabaseName(mdbDir.filePath(mdbName));
     }
 
-    if (!mdb.open()) {
+    if (!mdb.open())
+    {
         qCritical() << "Failed to open the database:" << mdb.lastError().text();
         return false;
     }
@@ -437,8 +189,9 @@ bool Settings::initializeDatabase()
                       "value TEXT)");
 }
 
+
 // 保存配置
-bool Settings::saveSetting(const QString &key, const QString &value) const
+bool Settings::saveConfigToDB(const QString &key, const QString &value) const
 {
     if (!mdb.isOpen()) {
         qWarning() << "Database is not open, save data failed";
@@ -461,7 +214,7 @@ bool Settings::saveSetting(const QString &key, const QString &value) const
 }
 
 // 加载配置
-QString Settings::loadSetting(const QString &key, const QString &defaultValue) const
+QString Settings::loadConfigFromDB(const QString &key, const QString &defaultValue) const
 {
     if (!mdb.isOpen()) {
         qWarning() << "Database is not open, load data failed";
@@ -480,208 +233,488 @@ QString Settings::loadSetting(const QString &key, const QString &defaultValue) c
     if (!query.next()) {
         qDebug() << "Load setting failed: select result is null of " + key;
         if (!defaultValue.isNull())
-            saveSetting(key, defaultValue);
+            saveConfigToDB(key, defaultValue);
         return defaultValue;
     }
 
     return query.value(0).toString();
 }
 
-// 对所有的按钮点击事件进行处理
-void Settings::buttonClicked()
+void Settings::showWindow()
 {
-    QPushButton *button = qobject_cast<QPushButton *>(sender());
-    qDebug() << "点击按钮: " << button->text();
-
-    if (button->text().startsWith("jump:"))
-        return jumpTool(button->text().split(":")[1]);
-
-    if (button->text() == "查看日志") {
-        QUrl fileUrl = QUrl::fromLocalFile("log/log.txt");
-        // 使用默认程序打开日志文件
-        if (!QDesktopServices::openUrl(fileUrl)) {
-            qWarning() << "Failed to open log file with default application.";
-            showMessage(this, "程序出错了",
-                        "打开文件失败了，程序遇到了一些问题……您可以：\n\n"
-                        "重启程序或等待一段时间后重试；\n"
-                        "手动打开文件：位于安装目录log文件夹下。\n",
-                        MessageType::Critical);
-        }
-    }
-
-}
-
-// 对所有的下拉列表的事件进行处理
-void Settings::comboBoxChanged(const QString currentText)
-{
-    MacStyleComboBox *comboBox = qobject_cast<MacStyleComboBox *>(sender());
-    qDebug() << comboBox->text() << "切换选项:" << comboBox->currentIndex() << currentText;
-    saveSetting(comboBox->text(), currentText);
-}
-
-// 对所有的选项框事件进行处理
-void Settings::checkBoxChecked(bool checked)
-{
-    QCheckBox *checkBox = qobject_cast<QCheckBox *>(sender());
-    qDebug() << (checked ? "勾选:" : "取消勾选:") << checkBox->text();
-
-    if (checkBox->text() == "debug日志") {
-        LogHandler::instance()->setLogLevel(checked ? DebugLevel : InfoLevel);
-        qInfo() << (checked ? "开启" : "关闭") << "debug日志";
-    } else if(checkBox->text() == "开机自启动") {
-        bool res = setStartup(checked);
-        qInfo() << (checked ? "开启" : "关闭") << "开机自启动:" << (res ? "成功" : "失败");
-        if (!res) {
-            checkBox->setChecked(!checked);
-            return;
-        }
-    }
-
-    saveSetting(checkBox->text(), checked ? "true" : "false");
-}
-
-// 对所有开关的事件进行处理
-void Settings::switchButtonChanged(bool checked)
-{
-    MacSwitchButton *switchButton = qobject_cast<MacSwitchButton *>(sender());
-    qDebug() << switchButton->text().mid(7) << "选中: " << checked;
-
-    for (auto toolManager : *mToolManagerList)
+    if (mToolWidget == nullptr)
     {
-        if (switchButton->text().mid(7) == toolManager->getName())
-        {
-            toolManager->setActive(checked);
-            saveSetting(switchButton->text(), checked ? "true" : "false");
-            emit appActiveChanged();
-            return;
-        }
+        mToolWidget = new SettingsWidget(this);
+        connect(mToolWidget, SIGNAL(closed()), this, SLOT(toolWindowClosed()));
+        connect(mToolWidget, SIGNAL(windowEvent(const QString&,const QString&)), this, SLOT(toolWindowEvent(const QString&,const QString&)));
+        connect(mToolWidget, SIGNAL(toolActiveChanged()), this, SLOT(onToolActiveChanged()));
     }
+    mToolWidget->show();
+    mToolWidget->activateWindow();
 }
 
-// 热键的处理事件
 void Settings::onHotkeyPressed(int id)
 {
-    qDebug() << id << mHotkeyIdMap->value(id);
-
+    QStringList infos = mHotkeyIdMap->value(id).split(":");
+    qDebug() << QString("id: %1, tool: %2, enevt: %3").arg(infos[0]).arg(infos[1]).arg(infos[2]).toUtf8().constData();
+    ToolModel *tool = ToolManager::instance().getCreatedTool(infos[1]);
+    if (tool != nullptr)
+        tool->hotKeyEvent(infos[2]);
 }
 
-// 快捷键输入框的处理事件
-void Settings::keySequenceChanged(QKeySequence keySequence)
+void Settings::onToolActiveChanged()
 {
-    CustomKeySequenceEdit* keySequenceEdit = qobject_cast<CustomKeySequenceEdit *>(sender());
-    QString name = keySequenceEdit->text();
-
-    // 快捷键未变化时，不处理
-    if (mHotkeyMap->value(name) == keySequence)
-        return;
-
-    // 第一步：注销
-    for (auto it = mHotkeyIdMap->begin(); it != mHotkeyIdMap->end(); ++it)
-    {
-        if (it.value() == name)
-        {
-            qInfo() << "注销快捷键:" << name.mid(7) << mHotkeyMap->value(name).toString();
-            qDebug() << "操作id:" << mHotkeyMap->value(name).toString() << it.key();
-            mHotkeyManager->unregisterHotkey(it.key());
-            mHotkeyIdMap->remove(it.key());
-            mHotkeyMap->remove(name);
-            keySequenceEdit->setAlert(false); // 如果有提示，则清除
-            break;
-        }
-    }
-
-    // 快捷键为空时，不注册
-    if (keySequence.isEmpty())
-    {
-        saveSetting(name, "");
-        return;
-    }
-
-    // 第二步：注册，id自增
-    for (int id=1; id <= mHotkeyMap->size()+1; id++)
-    {
-        if (!mHotkeyIdMap->contains(id)) // 找一个未使用的id
-        {
-            mHotkeyIdMap->insert(id, name);
-            mHotkeyMap->insert(name, keySequence);
-            qInfo() << "注册快捷键:" << name.mid(7) << keySequence.toString();
-            qDebug() << "操作id:" << keySequence.toString() << id;
-            if (!mHotkeyManager->registerHotkey(id, keySequence))
-                keySequenceEdit->setAlert(true, "快捷键被占用，请重新设置");
-            else
-                keySequenceEdit->setAlert(false),
-                saveSetting(name, keySequence.toString());
-            break;
-        }
-    }
+    emit toolActiveChanged();
 }
 
-template<typename T>
-void Settings::loadSettingsHandler(T *widget, const QString &defaultValue)
+void Settings::checkForUpdates()
 {
-    QString value;
-    QString typeName = QString(typeid(widget).name()).split(' ')[1];
+    QString apiUrl = mUsingGiteeAPI ? GITEE_API_URL : GITHUB_API_URL;
+    QNetworkRequest request(apiUrl);
+    
+    // 设置 User-Agent（GitHub API 需要）
+    request.setHeader(QNetworkRequest::UserAgentHeader, "LazyDogTools");
+    
+    if (!mUsingGiteeAPI) {
+        // GitHub API 可能需要设置 Accept 头
+        request.setHeader(QNetworkRequest::ContentTypeHeader, 
+                         "application/vnd.github.v3+json");
+    }
+    
+    QNetworkReply *reply = mNetworkManager->get(request);
+    connect(reply, SIGNAL(finished()), this, SLOT(onUpdateReplyed()));
+}
 
-    if (typeName == "MacStyleCheckBox") {
-        MacStyleCheckBox* checkbox = qobject_cast<MacStyleCheckBox*>(widget);
-        if (checkbox) {
-            value = loadSetting(checkbox->text(), defaultValue);
-            checkbox->setChecked(value == "true" ? true : false);
-
-            if (checkbox->text() == "debug日志"){
-                LogHandler::instance()->setLogLevel(value == "true" ? DebugLevel : InfoLevel);
-                LogHandler::instance()->clearBuffer();
-            } else if (checkbox->text() == "开机自启动" && value == "true") {
-                if (!setStartup(true)) {
-                    checkbox->setChecked(false);
-                    saveSetting("开机自启动", "false");
-                }
-            }
+void Settings::onUpdateReplyed()
+{
+    QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
+    if (!reply) return;
+    
+    reply->deleteLater();
+    
+    if (reply->error() != QNetworkReply::NoError) {
+        qWarning() << "更新检查失败:" << reply->errorString();
+        
+        if (!mUsingGiteeAPI) {
+            // GitHub API 失败，切换到 Gitee API 重试
+            mUsingGiteeAPI = true;
+            qInfo() << "切换到 Gitee API 重试";
+            checkForUpdates();
             return;
         }
-    } else if (typeName == "MacSwitchButton") {
-        MacSwitchButton* switchButton = qobject_cast<MacSwitchButton*>(widget);
-        if (switchButton) {
-            value = loadSetting(switchButton->text(), defaultValue);
-            switchButton->setChecked(value == "true" ? true : false);
+        
+        // 两个 API 都失败了
+        mUsingGiteeAPI = false;  // 重置为默认使用 GitHub
+        TrayManager::instance().showMessage("检查更新", "检查更新失败, 请检查网络然后稍后重试。");
+        return;
+    }
+    
+    // 读取响应数据
+    QByteArray data = reply->readAll();
+    QJsonDocument doc = QJsonDocument::fromJson(data);
+    
+    if (doc.isNull()) 
+    {
+        if (mUsingGiteeAPI)
+        {
+            qWarning() << "Gitee API - 更新检查失败: 无效的更新信息格式";
+            TrayManager::instance().showMessage("检查更新", "更新检查失败: 无有效的更新信息");
+            mUsingGiteeAPI = false;
             return;
         }
-    } else if (typeName == "MacStyleComboBox") {
-        MacStyleComboBox* comboBox = qobject_cast<MacStyleComboBox*>(widget);
-        if (comboBox) {
-            value = loadSetting(comboBox->text(), defaultValue);
-            comboBox->setCurrentText(value);
+        else
+        {
+            qWarning() << "GitHub API - 更新检查失败: 无效的更新信息格式";
+            mUsingGiteeAPI = true;
+            checkForUpdates();
             return;
         }
-    } else if (typeName == "CustomKeySequenceEdit") {
-        CustomKeySequenceEdit* keyEdit = qobject_cast<CustomKeySequenceEdit*>(widget);
-        if (keyEdit) {
-            QString name(keyEdit->text());
-            value = loadSetting(name, defaultValue);
-
-            QKeySequence keySequence(value);
-            keyEdit->setKeySequence(QKeySequence(value));
-
-            if (keySequence.isEmpty())
-                return;
-
-            for (int id=1; id <= mHotkeyMap->size()+1; id++) {
-                if (!mHotkeyIdMap->contains(id)) {  // 找一个未使用的id
-                    mHotkeyIdMap->insert(id, name);
-                    mHotkeyMap->insert(name, keySequence);
-                    qInfo() << "注册快捷键:" << name.mid(7) << keySequence.toString();
-                    qDebug() << "操作id:" << keySequence.toString() << id;
-                    if (!mHotkeyManager->registerHotkey(id, keySequence))
-                        keyEdit->setAlert(true, "快捷键被占用，请重新设置");
-                    else
-                        keyEdit->setAlert(false);
+    }
+    
+    QJsonObject obj = doc.object();
+    QString latestVersion;
+    QString downloadUrl;
+    QString changelog;
+    
+    if (!mUsingGiteeAPI)
+    {
+        // 解析 GitHub API 响应
+        latestVersion = obj["tag_name"].toString().replace("v", "");
+        // 优先获取 assets 中的 zip 文件下载链接
+        const QJsonValue assetsValue = obj.value("assets");
+        if (assetsValue.isArray()) {
+            const QJsonArray assets = assetsValue.toArray();
+            for (int i = 0; i < assets.size(); ++i) {
+                const QJsonObject asset = assets.at(i).toObject();
+                const QString name = asset.value("name").toString();
+                if (name.endsWith(".zip")) {
+                    downloadUrl = asset.value("browser_download_url").toString();
                     break;
                 }
             }
-
+        }
+        changelog = obj.value("body").toString();
+    } else {
+        // 解析 Gitee API 响应
+        latestVersion = obj.value("tag_name").toString().replace("v", "");
+        
+        // 获取 assets 数组
+        const QJsonValue assetsValue = obj.value("assets");
+        if (assetsValue.isArray()) {
+            const QJsonArray assets = assetsValue.toArray();
+            for (int i = 0; i < assets.size(); ++i) {
+                const QJsonObject asset = assets.at(i).toObject();
+                const QString name = asset.value("name").toString();
+                const QString url = asset.value("browser_download_url").toString();
+                // 检查是否是压缩包
+                if (name.endsWith(".zip")) {
+                    downloadUrl = url;
+                    // 如果找到第一个zip包就使用
+                    break;
+                }
+            }
+        }
+        
+        if (downloadUrl.isEmpty()) 
+        {
+            qWarning() << "未在 assets 中找到 zip 包";
             return;
+        }
+        
+        changelog = obj.value("body").toString();
+    }
+
+    qDebug() << (mUsingGiteeAPI ? "Gitee" : "GitHub") << "更新信息:";
+    qDebug() << "版本:" << latestVersion;
+    qDebug() << "下载链接:" << downloadUrl;
+    
+    // 比较版本号
+    if (checkVersion(latestVersion))
+    {
+        qInfo() << "发现新版本:" << latestVersion;
+        if (showMessage(mToolWidget == nullptr ? nullptr : mToolWidget, 
+            QString("发现新版本-v%1").arg(latestVersion), changelog, MessageType::Info, "立即更新", "稍后更新" ) == QMessageBox::Accepted)
+            return downloadUpPack(downloadUrl);
+        qInfo() << "更新已取消";
+    } 
+    else 
+    {
+        qInfo() << "当前已是最新版本。";
+        if (mNotify) TrayManager::instance().showMessage("检查更新", "当前已是最新版本。");
+        mNotify = true;
+    }
+    
+    // 重置为默认使用 GitHub
+    mUsingGiteeAPI = false;
+}
+
+bool Settings::checkVersion(const QString &remoteVersion)
+{
+    qDebug() << "当前版本:" << CURRENT_VERSION << "远程版本:" << remoteVersion;
+    QStringList currentParts = CURRENT_VERSION.split('.');
+    QStringList remoteParts = remoteVersion.split('.');
+    
+    // 确保至少有3个部分
+    while (currentParts.size() < 3) currentParts << "0";
+    while (remoteParts.size() < 3) remoteParts << "0";
+    
+    for (int i = 0; i < 3; ++i) 
+    {
+        int current = currentParts[i].toInt();
+        int remote = remoteParts[i].toInt();
+        
+        if (remote > current) return true;
+        if (remote < current) return false;
+    }
+    
+    return false;
+}
+
+// 更新程序，将当前目录下所有文件和文件夹copy到父目录
+bool Settings::updateApp()
+{
+    Sleep(1000);
+    QDir currentDir(QCoreApplication::applicationDirPath());
+    QDir parentDir = currentDir;
+    if (!parentDir.cdUp()) {
+        qWarning() << "无法访问父目录";
+        return false;
+    }
+
+    // 确保父目录存在
+    if (!parentDir.exists()) {
+        qWarning() << "父目录不存在:" << parentDir.absolutePath();
+        return false;
+    }
+
+    // 获取父目录路径
+    QString parentDirPath = parentDir.absolutePath();
+    QString currentDirPath = currentDir.absolutePath();
+
+    if (copyDirectory(currentDirPath, parentDirPath))
+    {
+        qInfo() << "更新成功!";
+        QString appPath = QDir::toNativeSeparators(parentDir.absoluteFilePath(APPLICATION_NAME));
+        UAC::runArguments("-clear", true, appPath);
+        return true;
+    }
+    else
+    {
+        qWarning() << "更新失败!";
+        return false;
+    }
+}
+
+bool Settings::copyDirectory(const QString &sourceDirPath, const QString &targetDirPath)
+{
+    QDir sourceDir(sourceDirPath);
+    if (!sourceDir.exists())
+        return false;
+
+    QDir targetDir(targetDirPath);
+    if (!targetDir.exists() && !QDir().mkpath(targetDirPath))
+            return false;
+
+    QFileInfoList fileList = sourceDir.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot);
+    for (auto it = fileList.constBegin(); it != fileList.constEnd(); ++it) {
+        const QFileInfo &fileInfo = *it;
+        QString sourcePath = fileInfo.absoluteFilePath();
+        QString targetPath = targetDir.filePath(fileInfo.fileName());
+
+        if (fileInfo.isDir()) {
+            if (!copyDirectory(sourcePath, targetPath)) {
+                qWarning() << "更新目录失败:" << sourcePath;
+                return false;
+            }
+        } else {
+            // 如果目标文件存在，先删除它
+            if (QFile::exists(targetPath)) {
+                QFile targetFile(targetPath);
+                if (!targetFile.remove()) {
+                    qWarning() << "无法删除目标文件:" << targetPath;
+                    return false;
+                }
+            }
+
+            if (!QFile::copy(sourcePath, targetPath)) {
+                qWarning() << "更新文件失败:" << sourcePath;
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+void Settings::clearUpdate()
+{
+    QDir tempDirObj(UPDATE_DIR);
+    if (tempDirObj.exists()) {
+        tempDirObj.removeRecursively();
+    }
+    
+    qInfo() << "更新完成,当前版本:" << CURRENT_VERSION;
+}
+
+void Settings::downloadUpPack(const QString &downloadUrl)
+{
+    qInfo() << "开始下载更新包";
+    TrayManager::instance().showMessage("检查更新", "开始下载更新包,在更新就绪后会通知您。");
+    QNetworkRequest request(downloadUrl);
+    QNetworkReply *reply = mNetworkManager->get(request);
+    connect(reply, SIGNAL(finished()), this, SLOT(onDownloadFinished()));
+}
+
+void Settings::onDownloadFinished()
+{
+    QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
+    if (!reply) return;
+
+    reply->deleteLater();
+
+    if (reply->error() != QNetworkReply::NoError)
+    {
+        qWarning() << "下载更新包失败:" << reply->errorString();
+        TrayManager::instance().showMessage("检查更新", "下载更新包失败, 请检查网络然后稍后重试。");
+        return;
+    }
+
+    QString filePath = QCoreApplication::applicationDirPath() + "/update.zip";
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly))
+    {
+        qWarning() << "无法打开文件:" << filePath;
+        TrayManager::instance().showMessage("检查更新", "无法打开文件:" + filePath);
+        return;
+    }
+
+    file.write(reply->readAll());
+    file.close();
+
+    qInfo() << "更新包下载完成:" << filePath;   
+    installUpdate(filePath);
+}
+
+bool Settings::inflateData(const QByteArray &compressedData, QByteArray &uncompressedData)
+{
+    if (compressedData.isEmpty()) {
+        return false;
+    }
+
+    z_stream strm;
+    static const int CHUNK_SIZE = 1024;
+    char out[CHUNK_SIZE];
+    
+    // 初始化 zlib
+    strm.zalloc = Z_NULL;
+    strm.zfree = Z_NULL;
+    strm.opaque = Z_NULL;
+    strm.avail_in = compressedData.size();
+    strm.next_in = (Bytef*)compressedData.data();
+
+    int ret = inflateInit2(&strm, -MAX_WBITS);
+    if (ret != Z_OK) {
+        return false;
+    }
+
+    // 解压数据
+    do {
+        strm.avail_out = CHUNK_SIZE;
+        strm.next_out = (Bytef*)out;
+
+        ret = inflate(&strm, Z_NO_FLUSH);
+        if (ret < 0) {
+            inflateEnd(&strm);
+            return false;
+        }
+
+        uncompressedData.append(out, CHUNK_SIZE - strm.avail_out);
+    } while (strm.avail_out == 0);
+
+    inflateEnd(&strm);
+    return true;
+}
+
+bool Settings::extractZip(const QString &zipFile, const QString &targetDir)
+{
+    QFile file(zipFile);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning() << "无法打开更新包文件";
+        return false;
+    }
+
+    QByteArray data = file.readAll();
+    file.close();
+
+    QBuffer buffer(&data);
+    buffer.open(QIODevice::ReadOnly);
+
+    // 读取 ZIP 文件头
+    while (buffer.pos() < buffer.size()) {
+        // ZIP 文件头标识
+        char signature[4];
+        if (buffer.read(signature, 4) != 4) break;
+
+        // 检查是否是文件头标识 (0x04034b50)
+        if (signature[0] != 0x50 || signature[1] != 0x4B || 
+            signature[2] != 0x03 || signature[3] != 0x04) {
+            break;
+        }
+
+        // 读取文件头信息
+        quint16 version, flags, method, modTime, modDate;
+        quint32 crc, compSize, uncompSize;
+        quint16 nameLen, extraLen;
+
+        buffer.read((char*)&version, 2);
+        buffer.read((char*)&flags, 2);
+        buffer.read((char*)&method, 2);
+        buffer.read((char*)&modTime, 2);
+        buffer.read((char*)&modDate, 2);
+        buffer.read((char*)&crc, 4);
+        buffer.read((char*)&compSize, 4);
+        buffer.read((char*)&uncompSize, 4);
+        buffer.read((char*)&nameLen, 2);
+        buffer.read((char*)&extraLen, 2);
+
+        // 读取文件名
+        QByteArray nameData = buffer.read(nameLen);
+        QString fileName = QString::fromLocal8Bit(nameData);
+        
+        // 跳过额外字段
+        buffer.skip(extraLen);
+
+        // 读取压缩数据
+        QByteArray compressedData = buffer.read(compSize);
+        QByteArray uncompressedData;
+
+        // 解压文件
+        if (method == 0) {  // 存储
+            uncompressedData = compressedData;
+        } else if (method == 8) {  // DEFLATE
+            if (!inflateData(compressedData, uncompressedData)) {
+                qWarning() << "解压文件失败:" << fileName;
+                continue;
+            }
+        } else {
+            qWarning() << "不支持的压缩方法:" << method;
+            continue;
+        }
+
+        // 创建目标文件
+        QString filePath = targetDir + "/" + fileName;
+        QFileInfo fileInfo(filePath);
+        
+        // 创建目录
+        if (fileName.endsWith('/')) {
+            QDir().mkpath(filePath);
+            continue;
+        }
+
+        // 确保目标目录存在
+        QDir().mkpath(fileInfo.absolutePath());
+
+        // 写入文件
+        QFile outFile(filePath);
+        if (outFile.open(QIODevice::WriteOnly)) {
+            outFile.write(uncompressedData);
+            outFile.close();
+        } else {
+            qWarning() << "无法写入文件:" << filePath;
         }
     }
 
-    qCritical() << "无法识别的类型:" << typeName << defaultValue;
+    return true;
 }
+
+void Settings::installUpdate(const QString &zipFilePath)
+{
+    qInfo() << "准备安装更新";
+    QDir tempDirObj(UPDATE_DIR);
+    if (tempDirObj.exists()) {
+        tempDirObj.removeRecursively();
+    }
+    QDir().mkpath(UPDATE_DIR);
+
+    // 解压更新包到临时目录
+    if (!extractZip(zipFilePath, UPDATE_DIR)) {
+        qWarning() << "解压更新包失败";
+        return;
+    }
+    qInfo() << "解压更新包完成";
+
+    // 删除更新包
+    QFile::remove(zipFilePath);
+
+    // 向用户确认重启
+    if (showMessage(mToolWidget == nullptr ? nullptr : mToolWidget, 
+        "更新完成", "更新完成，是否立即重启？", MessageType::Info, "立即重启", "稍后重启" ) == QMessageBox::Accepted)
+    {
+        // 运行tmp目录下的程序，使用绝对路径
+        QString appPath = QDir::toNativeSeparators(tempDirObj.absoluteFilePath(APPLICATION_NAME));
+        UAC::runArguments("-update", true, appPath);
+        QCoreApplication::quit();
+    }
+    else
+        mUpdate = true;
+}
+    

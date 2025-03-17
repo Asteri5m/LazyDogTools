@@ -1,128 +1,71 @@
+/**
+ * @file ToolManager.cpp
+ * @author Asteri5m
+ * @date 2025-02-07 18:09:32
+ * @brief 工具管理器，单例
+ */
+
 #include "ToolManager.h"
 
+ToolManager::ToolManager() {}
 
-ToolManager::ToolManager(QObject *parent)
+ToolManager& ToolManager::instance()
 {
-    Q_UNUSED(parent);
-    init();
+    static ToolManager instance;
+    return instance;
 }
 
-QString ToolManager::getIcon()
+ToolModel* ToolManager::createTool(const QString& toolID) 
 {
-    return mIcon;
+    // 如果工具已经创建，则直接返回已有的实例
+    if (mCreatedTools.contains(toolID)) 
+        return mCreatedTools[toolID];
+
+    // 否则，通过工厂函数创建新的工具实例
+    if (mToolInfoMap.contains(toolID) && mToolInfoMap[toolID].enabled && mToolFactories.contains(toolID)) 
+    {
+        qDebug() << "初始化工具:" << toolID;
+        ToolModel* tool = mToolFactories[toolID]();
+        mCreatedTools[toolID] = tool;
+        return tool;
+    }
+
+    // 如果找不到对应的工具，返回 nullptr
+    return nullptr;
 }
 
-QString ToolManager::getName()
+const ToolInfo &ToolManager::getToolInfo(const QString &toolID)
 {
-    return mName;
+    static ToolInfo defaultToolInfo;  // 用于返回时的默认 ToolInfo
+    return mToolInfoMap.contains(toolID) ? mToolInfoMap[toolID] : defaultToolInfo;
 }
 
-QString ToolManager::getDescription()
+const ToolInfoMap &ToolManager::getAllTools() const 
 {
-    return mDescription;
+    return mToolInfoMap;
 }
 
-HotkeyList *ToolManager::getHotKey()
+ToolModel* ToolManager::getCreatedTool(const QString& toolID) const 
 {
-    return mHotKeyList;
+    // 返回已创建的工具实例，如果没有找到则返回 nullptr
+    return mCreatedTools.value(toolID, nullptr);
 }
 
-TrayList *ToolManager::getTray()
+void ToolManager::disableTool(const QString& toolID) 
 {
-    return mTray;
+    qInfo() << "禁用工具:" << toolID;
+    // 检查是否存在该工具的实例
+    if (mCreatedTools.contains(toolID)) 
+    {
+        delete mCreatedTools[toolID];  // 销毁工具实例
+        mCreatedTools.remove(toolID);  // 从映射中移除
+    }
+    mToolInfoMap[toolID].enabled = false;
 }
 
-bool ToolManager::getActive()
+void ToolManager::enableTool(const QString &toolID)
 {
-    return mActive;
-}
-
-void ToolManager::setIcon(QString icon)
-{
-    mIcon = icon;
-}
-
-void ToolManager::setName(QString name)
-{
-    mName = name;
-}
-
-void ToolManager::setDescription(QString desc)
-{
-    mDescription = desc;
-}
-
-void ToolManager::setHotKey(HotkeyList *hotKeyList)
-{
-    mHotKeyList = hotKeyList;
-}
-
-void ToolManager::setTray(TrayList *tray)
-{
-    mTray = tray;
-}
-
-void ToolManager::setActive(bool state)
-{
-    mActive = state;
-    if (!state)
-        deleteUI();
-}
-
-void ToolManager::initUI()
-{
-    // 避免多次创建
-    if (mToolWidget != nullptr)
-        return;
-
-    qInfo() << "加载应用: " << getName();
-    mToolWidget = new ToolWidgetModel();
-}
-
-void ToolManager::show()
-{
-    // 避免对空指针进行操作
-    if (mToolWidget == nullptr)
-        return;
-
-    if (mToolWidget->isHidden())
-        mToolWidget->showFirstPage();
-    else if (mToolWidget->isMinimized())
-        mToolWidget->showNormal();
-    else
-        mToolWidget->activateWindow();
-}
-
-void ToolManager::hide()
-{
-    // 避免对空指针进行操作
-    if (mToolWidget == nullptr)
-        return;
-    mToolWidget->hide();
-}
-
-void ToolManager::init()
-{
-    initialize();
-}
-
-void ToolManager::deleteUI()
-{
-    // 避免多次释放
-    if (mToolWidget == nullptr)
-        return;
-
-    qInfo() << "停用应用: " << getName();
-    delete(mToolWidget);
-    mToolWidget = nullptr;
-}
-
-void ToolManager::initialize()
-{
-    setName("示例");
-    setIcon(":/ico/LD.ico");
-    setDescription("使用setXXX方法设置您的相关参数");
-    setTray(nullptr);
-    setHotKey(nullptr);
-    setActive(true);
+    qInfo() << "启用工具:" << toolID;
+    mToolInfoMap[toolID].enabled = true;
+    createTool(toolID);
 }
