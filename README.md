@@ -1,6 +1,11 @@
-# LazyDogTools
+<h1 align="center">LazyDogTools</h1>
 
-![Static Badge](https://img.shields.io/badge/Qt-6.8.1-green) ![Static Badge](https://img.shields.io/badge/MSVC-2022%20x86__x64-blue) ![Static Badge](https://img.shields.io/badge/Version-v0.0.1-red)
+<div align="center">
+    <img src="https://img.shields.io/badge/Qt-6.8.1-green" alt="Qt 6.8.1" />
+    <img src="https://img.shields.io/badge/MSVC-2022%20x86__x64-blue" alt="MSVC 2022 x86_x64" />
+    <img src="https://img.shields.io/badge/Version-v0.0.1-red" alt="Version v0.0.1" />
+    <img src="https://img.shields.io/badge/License-MIT-Green" alt="License MIT" />
+</div>
 
 # 背景 or 目的 ？
 
