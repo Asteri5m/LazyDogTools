@@ -1,6 +1,6 @@
 # LazyDogTools
 
-![Static Badge](https://img.shields.io/badge/Qt-6.8.1-green)![Static Badge](https://img.shields.io/badge/MSVC-2022%20x86__x64-blue)![Static Badge](https://img.shields.io/badge/Version-v0.0.1-red)
+![Static Badge](https://img.shields.io/badge/Qt-6.8.1-green) ![Static Badge](https://img.shields.io/badge/MSVC-2022%20x86__x64-blue) ![Static Badge](https://img.shields.io/badge/Version-v0.0.1-red)
 
 # 背景 or 目的 ？
 
