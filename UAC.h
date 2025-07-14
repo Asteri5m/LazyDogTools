@@ -138,14 +138,12 @@ public:
             // 如果快捷方式已存在，说明已经设置了开机启动
             if (QFile::exists(lnkFilePath))
             {
-                qDebug() << "开机启动已设置";
                 return true;
             }
 
             // 尝试创建快捷方式
             if (QFile::link(appPath, lnkFilePath))
             {
-                qDebug() << "成功创建开机启动快捷方式";
                 return true;
             }
 
