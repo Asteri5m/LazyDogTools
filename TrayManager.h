@@ -25,7 +25,7 @@ public:
     void addMenuItem(const QString& name, std::function<void()> callback = nullptr, QMenu* parentMenu = nullptr, const QIcon& icon = QIcon());
 
     // 设置托盘的双击事件
-    void setTriggered(std::function<void()> callback);
+    void setMainAction(std::function<void()> callback);
 
     // 添加子菜单
     QMenu* addSubMenu(const QString& name, QMenu* parentMenu = nullptr, const QIcon& icon = QIcon());

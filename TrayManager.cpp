@@ -42,10 +42,17 @@ void TrayManager::addMenuItem(const QString& name, std::function<void()> callbac
     menu->addAction(action);
 }
 
-void TrayManager::setTriggered(std::function<void ()> callback)
+/**
+ * @brief 设置托盘图标的主操作（左键双击回调）
+ * @param callback 当用户左键双击托盘图标时执行的回调函数
+ */
+void TrayManager::setMainAction(std::function<void ()> callback)
 {
+    // 确保只有一个连接
+    disconnect(mTrayIcon, &QSystemTrayIcon::activated, this, nullptr);
+
     connect(mTrayIcon, &QSystemTrayIcon::activated, this, [callback](QSystemTrayIcon::ActivationReason reason) {
-        if (reason == QSystemTrayIcon::Trigger) {
+        if (reason == QSystemTrayIcon::DoubleClick) {
             callback();
         }
     });

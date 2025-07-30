@@ -75,7 +75,7 @@ void LazyDogTools::initTray()
     Settings *settings = mSettings;
     // 添加托盘菜单项
     TrayManager &trayManager = TrayManager::instance();
-    trayManager.setTriggered([]() { } );
+    trayManager.setMainAction([settings]() { settings->showWindow(); });
     trayManager.addMenuItem("首选项", [settings]() { settings->showWindow(); }, nullptr, QIcon(":/ico/settings2.svg"));
     trayManager.addSeparator();
 
