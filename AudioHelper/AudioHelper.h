@@ -21,6 +21,7 @@ public:
     ~AudioHelper();
 
     RelatedList *mRelatedList;
+    IgnoreMap *mIgnoreMap;
 
 public slots:
     void showWindow();
@@ -37,6 +38,7 @@ private:
     void nextMode();
     void nextScene();
     void lockDevice();
+    void checkRelateds();
 };
 
 #endif // AUDIOHELPER_H

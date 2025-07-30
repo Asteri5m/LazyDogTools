@@ -22,6 +22,9 @@ inline QMutex audioServerMutex;
 // key:RelatedItem->id, value:Weight
 typedef OrderedMap<UINT, CHAR> WeightList;
 
+// key: device->id, value: times. ignore Related when value > 3
+typedef QMap<QString, byte> IgnoreMap;
+
 class AudioHelperServer : public QObject
 {
     Q_OBJECT
@@ -40,7 +43,7 @@ public:
     };
     Q_ENUM(Scene)
 
-    explicit AudioHelperServer(RelatedList *relatedList, QObject *parent = nullptr);
+    explicit AudioHelperServer(RelatedList *relatedList, IgnoreMap *ignoreMap, QObject *parent = nullptr);
     ~AudioHelperServer();
 
     void setMode(const Mode mode);
@@ -71,6 +74,7 @@ private:
     AudioManager *mAudioManager;
     RelatedList *mRelatedList;
     WeightList *mTargetList;
+    IgnoreMap *mIgnoreMap;
     QMutex mMutex;
 
     void calculateProcessWeight();

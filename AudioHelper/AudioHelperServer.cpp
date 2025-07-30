@@ -11,9 +11,10 @@
 #include <QFileIconProvider>
 
 
-AudioHelperServer::AudioHelperServer(RelatedList *relatedList, QObject *parent)
+AudioHelperServer::AudioHelperServer(RelatedList *relatedList, IgnoreMap *ignoreMap, QObject *parent)
     : QObject{parent}
     , mRelatedList(relatedList)
+    , mIgnoreMap(ignoreMap)
     , mMode(Mode::Smart)
     , mScene(Scene::Normal)
     , mNotify(true)
@@ -28,7 +29,7 @@ AudioHelperServer::AudioHelperServer(RelatedList *relatedList, QObject *parent)
     mThread->start();
 
     // 服务的轮训的间隔默认为半秒
-    mTimer->setInterval(1000);
+    mTimer->setInterval(500);
 }
 
 AudioHelperServer::~AudioHelperServer()
@@ -128,6 +129,11 @@ void AudioHelperServer::server()
         uint key = *it;
         CHAR value = mTargetList->value(key);
         const RelatedItem *related = getRelated(key);
+
+        // 跳过排除项
+        if (mIgnoreMap->value(related->audioDeviceInfo.id, 0) >= 3)
+            continue;
+
         if (value > targetWeight)
         {
             targetId = key;
@@ -181,7 +187,11 @@ void AudioHelperServer::server()
         }
     }
     else
+    {
         qWarning() << "任务执行执行失败了...";
+        // 3次试错机会
+        (*mIgnoreMap)[target->audioDeviceInfo.id] += mIgnoreMap->value(target->audioDeviceInfo.id, 0) + 1;
+    }
 
     audioServerMutex.unlock();
 }
