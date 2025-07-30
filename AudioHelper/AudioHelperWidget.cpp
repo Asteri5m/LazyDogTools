@@ -262,7 +262,7 @@ void AudioHelperWidget::addRelatedItem()
     }
 
     // 再选任务关联项
-    AudioChoiceDialog choiceDialog(this);
+    AudioChoiceDialog choiceDialog(QString(), this);
     if (choiceDialog.exec() != QDialog::Accepted)
     {
         qDebug() << "任务关联项: 取消选择";
@@ -334,7 +334,7 @@ void AudioHelperWidget::changeRelatedItem()
     if (!item)
         return;
 
-    AudioChoiceDialog choiceDialog(this);
+    AudioChoiceDialog choiceDialog(QString(), this);
     if (choiceDialog.exec() != QDialog::Accepted) {
         qInfo() << "任务" << item->text() << "更改关联项: 取消选择";
         return;

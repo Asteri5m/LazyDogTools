@@ -21,16 +21,15 @@ AudioManager::AudioManager()
     mCurrentOutDeviceId = getDefaultAudioOutDevice();
 }
 
-AudioDeviceList AudioManager::getAudioOutDeviceList()
+void AudioManager::getAudioOutDeviceList(AudioDeviceList *audioDeviceList)
 {
-    AudioDeviceList audioOutDeviceDist;
     qDebug("Audio Output Devices:");
     // 初始化COM接口
     HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
     if (FAILED(hr))
     {
         qDebug("Failed to initialize COM.");
-        return audioOutDeviceDist;
+        return;
     }
 
     IMMDeviceEnumerator* pEnumerator = NULL;
@@ -39,7 +38,7 @@ AudioDeviceList AudioManager::getAudioOutDeviceList()
     {
         qDebug("Failed to create device enumerator.");
         CoUninitialize();
-        return audioOutDeviceDist;
+        return;
     }
 
     // 获取设备集合
@@ -48,7 +47,7 @@ AudioDeviceList AudioManager::getAudioOutDeviceList()
     if (FAILED(hr)) 
     {
         qDebug("Failed to enumerate audio endpoints.");
-        return audioOutDeviceDist;
+        return;
     }
 
     UINT deviceCount;
@@ -76,7 +75,7 @@ AudioDeviceList AudioManager::getAudioOutDeviceList()
                 QString deviceID = QString::fromWCharArray(pwszID);
                 qDebug() << "Device" << i + 1 << ":" << deviceID << "|" << deviceName;
                 PropVariantClear(&varName);
-                audioOutDeviceDist.insert(deviceName, deviceID);
+                audioDeviceList->insert(deviceName, deviceID);
             }
 
             pProps->Release();
@@ -85,7 +84,7 @@ AudioDeviceList AudioManager::getAudioOutDeviceList()
         pDevice->Release();
     }
     pDeviceCollection->Release();
-    return audioOutDeviceDist;
+    return;
 }
 
 QString AudioManager::getDefaultAudioOutDevice()

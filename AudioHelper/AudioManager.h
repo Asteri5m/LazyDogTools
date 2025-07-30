@@ -17,7 +17,7 @@ class AudioManager
 {
 public:
     AudioManager();
-    static AudioDeviceList getAudioOutDeviceList();
+    static void getAudioOutDeviceList(AudioDeviceList* audioDeviceList);
     static QString getDefaultAudioOutDevice();
     bool setAudioOutDevice(const QString &deviceId);
     QString getCurrentAudioOutDevice();

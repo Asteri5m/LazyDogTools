@@ -383,17 +383,22 @@ class AudioChoiceDialog : public QDialog {
     Q_OBJECT
 
 public:
-    explicit AudioChoiceDialog(QWidget *parent = nullptr) : QDialog(parent) {
+    explicit AudioChoiceDialog(const QString &text=QString(), QWidget *parent = nullptr) : QDialog(parent) {
         // 设置对话框标题
         setWindowTitle("请选择音频设备");
 
         // 创建一个 QLabel 来描述下拉框的用途
-        QLabel* label = new QLabel("请选择需要关联的音频设备:", this);
+        QLabel* label;
+        if (text.isEmpty())
+            label = new QLabel("请选择需要关联的音频设备:", this);
+        else
+            label = new QLabel(text, this);
 
         // 创建 QComboBox 并添加选项
         mComboBox = new MacStyleComboBox(this);
-        mDeviceList = AudioManager::getAudioOutDeviceList();
-        for (auto it = mDeviceList.constBegin(); it != mDeviceList.constEnd(); ++it) {
+        mDeviceList = new AudioDeviceList();
+        AudioManager::getAudioOutDeviceList(mDeviceList);
+        for (auto it = mDeviceList->constBegin(); it != mDeviceList->constEnd(); ++it) {
             mComboBox->addItem(it.key());
         }
 
@@ -425,14 +430,14 @@ public:
     // 返回 QComboBox 的当前选择
     AudioDeviceInfo* selectedOption() const {
         QString name = mComboBox->currentText();
-        QString id = mDeviceList.value(name);
+        QString id = (*mDeviceList).value(name);
 
         return new AudioDeviceInfo{name, id};
     }
 
 private:
     QComboBox* mComboBox;
-    AudioDeviceList mDeviceList;
+    AudioDeviceList *mDeviceList;
 };
 
 class TagSwitchDialog : public QDialog {
