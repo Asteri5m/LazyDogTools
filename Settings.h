@@ -26,7 +26,7 @@ struct HotkeyInfo
 typedef QMap<QString, HotkeyInfo> HotkeyMap;
 typedef QMap<int, QString> HotkeyIdMap;
 
-inline const QString CURRENT_VERSION = "0.0.0";  // 当前版本号
+inline const QString CURRENT_VERSION = "0.0.2";  // 当前版本号
 inline const QString GITHUB_API_URL = "https://api.github.com/repos/Asteri5m/LazyDogTools/releases/latest";
 inline const QString GITEE_API_URL = "https://gitee.com/api/v5/repos/Asteri5m/LazyDogTools/releases/latest";
 inline const QString UPDATE_DIR = "update";
