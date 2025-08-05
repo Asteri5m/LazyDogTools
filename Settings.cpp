@@ -256,7 +256,7 @@ void Settings::showWindow()
 void Settings::onHotkeyPressed(int id)
 {
     QStringList infos = mHotkeyIdMap->value(id).split(":");
-    qDebug() << QString("id: %1, tool: %2, enevt: %3").arg(infos[0]).arg(infos[1]).arg(infos[2]).toUtf8().constData();
+    qDebug() << QString("id: %1, tool: %2, enevt: %3").arg(id).arg(infos[1]).arg(infos[2]).toUtf8().constData();
     ToolModel *tool = ToolManager::instance().getCreatedTool(infos[1]);
     if (tool != nullptr)
         tool->hotKeyEvent(infos[2]);
