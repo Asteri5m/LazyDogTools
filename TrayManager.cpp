@@ -48,8 +48,6 @@ void TrayManager::addMenuItem(const QString& name, std::function<void()> callbac
  */
 void TrayManager::setMainAction(std::function<void ()> callback)
 {
-    // 确保只有一个连接
-    disconnect(mTrayIcon, &QSystemTrayIcon::activated, this, nullptr);
 
     connect(mTrayIcon, &QSystemTrayIcon::activated, this, [callback](QSystemTrayIcon::ActivationReason reason) {
         if (reason == QSystemTrayIcon::DoubleClick) {
