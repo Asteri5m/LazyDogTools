@@ -104,7 +104,7 @@ Settings::~Settings()
     if (mUpdate)
     {
         QDir tempDirObj(UPDATE_DIR);
-        QString appPath = QDir::toNativeSeparators(tempDirObj.filePath(APPLICATION_NAME));
+        QString appPath = QDir::toNativeSeparators(tempDirObj.absoluteFilePath(APPLICATION_NAME));
         UAC::runArguments("-update", true, appPath);
     }
 }
