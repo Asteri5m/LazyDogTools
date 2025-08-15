@@ -12,6 +12,8 @@
 #include "AudioCustom.h"
 #include "Custom.h"
 #include "AudioDatabase.h"
+#include <QTreeWidget>
+#include <QHeaderView>
 
 
 class AudioHelperWidget : public ToolWidgetModel {
@@ -25,7 +27,7 @@ signals:
     void configChanged(const QString &key, const QString &value);
 
 private slots:
-    void onItemClicked(QTableWidgetItem *item);
+    void onTaskTabItemClicked(QTreeWidgetItem *item, int);
     void buttonClicked();
     void checkBoxChecked(bool);
     void comboBoxChanged(QString);
@@ -33,7 +35,7 @@ private slots:
 private:
     QWidget *mHomePage;
     QWidget *mPrefsPage;
-    TableWidget *mTaskTab;
+    QTreeWidget *mTaskTab;
     RelatedList *mRelatedList;
     QMap<QString, QString> *mConfig;
     AudioDatabase *mDatabase;

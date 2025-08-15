@@ -29,72 +29,35 @@ public:
         Default
     };
 
-    explicit TagLabel(const QString &text=QString(),Theme theme=Blue, QWidget *parent = nullptr)
-        : QWidget(parent), mLabel(new QLabel(text))
+    explicit TagLabel(const QString &text = QString(), Theme theme = Blue, QWidget *parent = nullptr)
+        : QWidget(parent), mText(text), mTheme(theme)
     {
-
-        QVBoxLayout *mainLayout = new QVBoxLayout(this);
-        mainLayout->setContentsMargins(0, 0, 0, 0);
-        mainLayout->setAlignment(Qt::AlignCenter);
-
-        mLabel->setFixedSize(60, 20);
-        mLabel->setStyleSheet(generateStyleSheet(theme));
-        mLabel->setAlignment(Qt::AlignCenter);
-        mainLayout->addWidget(mLabel);
-    }
-
-    QString generateStyleSheet(Theme theme)
-    {
-        QString back_color;
-        QString text_color;
-
-        switch (theme) {
-        case Pink:
-            back_color = "#FFDDFF";
-            text_color = "#FF00FF";
-            break;
-        case Blue:
-            back_color = "#CEFDFF";
-            text_color = "#128DE2";
-            break;
-        case Green:
-            back_color = "#E3F9E9";
-            text_color = "#2BA471";
-            break;
-        case Yellow:
-            back_color = "#FFFAD5";
-            text_color = "#746C3D";
-            break;
-        case Purple:
-            back_color = "#EFE3FC";
-            text_color = "#9933FF";
-            break;
-        case Orange:
-            back_color = "#FFE5E0";
-            text_color = "#FF6347";
-            break;
-        default:
-            back_color = "#FFFBCE";
-            text_color = "#FDAF32";
-        }
-
-        return QString(
-                   "background-color: %1;"
-                   "border-radius: 5px;"
-                   "border: 1px solid %2;"
-                   "color: %2;"
-                   ).arg(back_color).arg(text_color);
+        // 设置最小尺寸为62x22
+        setMinimumSize(62, 22);
+        // 设置固定尺寸策略，但允许在需要时扩展
+        setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     }
 
     void setTheme(Theme theme)
     {
-        mLabel->setStyleSheet(generateStyleSheet(theme));
+        mTheme = theme;
+        update(); // 触发重绘
     }
 
     QString text() const {
-        QString text = mLabel->text();
+        QString text = mText;
         text.remove(" ");
         return text;
+    }
+
+    void setText(const QString &text) {
+        mText = text;
+        update(); // 触发重绘
+    }
+
+    QSize sizeHint() const override
+    {
+        return QSize(62, 22); // 返回建议尺寸
     }
 
 protected:
@@ -103,16 +66,94 @@ protected:
         Q_UNUSED(event);
 
         QPainter painter(this);
-        painter.setPen(Qt::NoPen);
         painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::SmoothPixmapTransform);
 
-        painter.setBrush(Qt::transparent);
-        painter.drawRect(this->rect());
+        // 计算中心区域 (60x20)
+        QRect tagRect = rect();
+        tagRect.setWidth(60);
+        tagRect.setHeight(20);
+        tagRect.moveCenter(rect().center());
+
+        // 绘制背景
+        drawBackground(painter, tagRect);
+
+        // 绘制文本
+        drawText(painter, tagRect);
     }
 
 private:
-    QLabel *mLabel;
+    void drawBackground(QPainter &painter, const QRect &rect)
+    {
+        QColor bgColor, borderColor;
 
+        // 根据主题设置颜色
+        switch (mTheme) {
+        case Pink:
+            bgColor = QColor("#FFDDFF");
+            borderColor = QColor("#FF00FF");
+            break;
+        case Blue:
+            bgColor = QColor("#CEFDFF");
+            borderColor = QColor("#128DE2");
+            break;
+        case Green:
+            bgColor = QColor("#E3F9E9");
+            borderColor = QColor("#2BA471");
+            break;
+        case Yellow:
+            bgColor = QColor("#FFFAD5");
+            borderColor = QColor("#746C3D");
+            break;
+        case Purple:
+            bgColor = QColor("#EFE3FC");
+            borderColor = QColor("#9933FF");
+            break;
+        case Orange:
+            bgColor = QColor("#FFE5E0");
+            borderColor = QColor("#FF6347");
+            break;
+        default:
+            bgColor = QColor("#FFFBCE");
+            borderColor = QColor("#FDAF32");
+        }
+
+        // 绘制圆角矩形背景
+        painter.setPen(QPen(borderColor, 1)); // 1px边框
+        painter.setBrush(bgColor);
+        painter.drawRoundedRect(rect, 5, 5); // 5px圆角
+    }
+
+    void drawText(QPainter &painter, const QRect &rect)
+    {
+        // 设置文本颜色（与边框相同）
+        QColor textColor = borderColorForTheme(mTheme);
+        painter.setPen(textColor);
+
+        // 设置字体
+        QFont font = painter.font();
+        font.setPointSizeF(9); // 固定字体大小
+        painter.setFont(font);
+
+        // 绘制居中文本
+        painter.drawText(rect, Qt::AlignCenter, mText);
+    }
+
+    QColor borderColorForTheme(Theme theme) const
+    {
+        switch (theme) {
+        case Pink: return QColor("#FF00FF");
+        case Blue: return QColor("#128DE2");
+        case Green: return QColor("#2BA471");
+        case Yellow: return QColor("#746C3D");
+        case Purple: return QColor("#9933FF");
+        case Orange: return QColor("#FF6347");
+        default: return QColor("#FDAF32");
+        }
+    }
+
+private:
+    QString mText;
+    Theme mTheme;
 };
 
 inline QMap<QString, TagLabel::Theme> TagTheme =  {
@@ -436,7 +477,7 @@ public:
     }
 
 private:
-    QComboBox* mComboBox;
+    MacStyleComboBox* mComboBox;
     AudioDeviceList *mDeviceList;
 };
 
@@ -487,7 +528,7 @@ public:
     }
 
 private:
-    QComboBox* mComboBox;
+    MacStyleComboBox* mComboBox;
 };
 
 #endif // AUDIOCUSTOM_H

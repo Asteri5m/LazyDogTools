@@ -13,7 +13,7 @@ AudioHelperWidget::AudioHelperWidget(RelatedList *relatedList, QMap<QString, QSt
     : ToolWidgetModel{parent}
     , mHomePage(new QWidget(this))
     , mPrefsPage(new QWidget(this))
-    , mTaskTab(new TableWidget())
+    , mTaskTab(new QTreeWidget())
     , mRelatedList(relatedList)
     , mConfig(config)
     , mDatabase(database)
@@ -33,7 +33,7 @@ AudioHelperWidget::AudioHelperWidget(RelatedList *relatedList, QMap<QString, QSt
     initHomePage();
     initPrefsPage();
 
-    connect(mTaskTab, SIGNAL(itemClicked(QTableWidgetItem*)), this, SLOT(onItemClicked(QTableWidgetItem*)));
+    connect(mTaskTab, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(onTaskTabItemClicked(QTreeWidgetItem*, int)));
 
     finalizeSetup();  // 检查并显示第一个页面
 }
@@ -52,43 +52,90 @@ QString AudioHelperWidget::queryConfig(const QString &key)
 void AudioHelperWidget::initHomePage()
 {
     QVBoxLayout *mainLayout = new QVBoxLayout(mHomePage);
-    QHBoxLayout *headerLayout = new QHBoxLayout();
     QHBoxLayout *footLayout = new QHBoxLayout();
-    headerLayout->setContentsMargins(6, 0, 13, 0);
 
-    mainLayout->addLayout(headerLayout);
-    mainLayout->addWidget(mTaskTab);
+    // 表格的父窗口，用于轻松修改边框
+    QWidget *tabWidget = new QWidget();
+    QHBoxLayout *tabLayout = new QHBoxLayout(tabWidget);
+    tabLayout->addWidget(mTaskTab);
+
+    mainLayout->addWidget(tabWidget);
     mainLayout->addLayout(footLayout);
 
-    // 设置委托
-    TableRowDelegate *delegate = new TableRowDelegate(mTaskTab);
-    mTaskTab->setItemDelegate(delegate);
+    tabLayout->setContentsMargins(3, 3, 3, 3);
+    tabWidget->setObjectName("tabWidget");
+    tabWidget->setStyleSheet(
+        "QWidget#tabWidget {"
+        "   border-radius: 6px;"
+        "   border: 1px solid white;"
+        "   background-color: white;"
+        "}");
 
-    // 设置表头
+    // 设置样式
+    mTaskTab->setSelectionMode(QAbstractItemView::SingleSelection); // 单选
+    mTaskTab->setSelectionBehavior(QAbstractItemView::SelectRows);  // 选择整行
+    mTaskTab->setEditTriggers(QAbstractItemView::NoEditTriggers);   // 不可编辑
+    mTaskTab->header()->setDefaultAlignment(Qt::AlignCenter);       // 表头居中
+    mTaskTab->header()->setSectionResizeMode(QHeaderView::Stretch); // 自适应列宽
+    mTaskTab->header()->setSectionsMovable(false);  // 禁止拖动列
+
+    mTaskTab->setFrameShape(QFrame::NoFrame);       // 无边框
+    mTaskTab->setRootIsDecorated(false);            // 去掉树的展开箭头
+    mTaskTab->setAlternatingRowColors(true);        // 是否交替行颜色
+    mTaskTab->setFocusPolicy(Qt::NoFocus);          // 去除虚线框
+    mTaskTab->setWordWrap(false);                   // 禁用换行
+
+    mTaskTab->setStyleSheet(
+        "QTreeWidget::item {"
+        "   height: 32px;"
+        "   color: black;"
+        "}"
+        "QTreeWidget::item:hover {"
+        "   background-color: #DEF2FB;"
+        "}"
+        "QTreeWidget::item:selected {"
+        "   background-color: #2c8bff;"
+        "   color: white;"
+        "}"
+        "QHeaderView::section {"
+        "   font-weight: bold;"
+        "   font-size: 14px;"
+        "}"
+        );
+
+    // 设置列和表头
     mTaskTab->setColumnCount(3);
-    mTaskTab->setHorizontalHeaderLabels({"关联项", "关联类型", "关联设备"});
-    mTaskTab->setRowCount(mRelatedList->length());
-    mTaskTab->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
+    mTaskTab->setHeaderLabels({"关联项", "关联类型", "关联设备"});
+    mTaskTab->header()->setSectionResizeMode(1, QHeaderView::Fixed);
     mTaskTab->setColumnWidth(1, TAG_DEFAULT_WIDTH);
 
+    // 遍历数据列表
     for (int i = 0; i < mRelatedList->length(); i++) {
         const RelatedItem *relatedItem = &mRelatedList->at(i);
-        // 第一列：图标+名称
+
+        // 创建一行（Tree Widget Item）
+        QTreeWidgetItem *treeItem = new QTreeWidgetItem(mTaskTab);
+
+        // 第一列：图标 + 名称
         QFileIconProvider iconProvider;
         QIcon icon = iconProvider.icon(QFileInfo(relatedItem->taskInfo.path));
-        QTableWidgetItem *item = new QTableWidgetItem(relatedItem->taskInfo.name);
-        item->setIcon(icon);  // 设置图标
-        mTaskTab->setItem(i, 0, item);
-        // 第二列：标签
-        mTaskTab->setItem(i, 1, new QTableWidgetItem());
-        QString tag = relatedItem->typeInfo.tag  == "" ? relatedItem->typeInfo.type : relatedItem->typeInfo.tag;
+        treeItem->setText(0, relatedItem->taskInfo.name);
+        treeItem->setIcon(0, icon);
+
+        // 第二列：标签（用自定义 TagLabel 代替文字）
+        QString tag = relatedItem->typeInfo.tag.isEmpty() ? relatedItem->typeInfo.type : relatedItem->typeInfo.tag;
         TagLabel *tagLabel = new TagLabel(tag.length() > 2 ? tag : QString(tag).insert(1, "   "));
         tagLabel->setFixedWidth(TAG_DEFAULT_WIDTH);
         tagLabel->setTheme(TagTheme.value(tag, TagLabel::Theme::Default));
-        mTaskTab->setIndexWidget(mTaskTab->model()->index(i, 1), tagLabel);
+        mTaskTab->setItemWidget(treeItem, 1, tagLabel);
+
         // 第三列：设备名
-        mTaskTab->setItem(i, 2, new QTableWidgetItem(relatedItem->audioDeviceInfo.name));
+        treeItem->setText(2, relatedItem->audioDeviceInfo.name);
+
+        // 把行添加到 TreeWidget
+        mTaskTab->addTopLevelItem(treeItem);
     }
+
 
     // 添加底部按钮
     footLayout->setContentsMargins(5, 5, 5, 0);
@@ -110,7 +157,6 @@ void AudioHelperWidget::initHomePage()
     connect(delButton,   SIGNAL(clicked()), this, SLOT(buttonClicked()));
     connect(chgButton,   SIGNAL(clicked()), this, SLOT(buttonClicked()));
     connect(mTagButton, SIGNAL(clicked()), this, SLOT(buttonClicked()));
-
 }
 
 void AudioHelperWidget::initPrefsPage()
@@ -209,13 +255,13 @@ void AudioHelperWidget::initPrefsPage()
     connect(sceneComBox,  SIGNAL(currentTextChanged(QString)), this, SLOT(comboBoxChanged(QString)));
 }
 
-void AudioHelperWidget::onItemClicked(QTableWidgetItem *item)
+void AudioHelperWidget::onTaskTabItemClicked(QTreeWidgetItem *item, int)
 {
     // 获取被点击的行
-    int row = item->row();
+    // int row = item->;
 
     // 获取该行第二列的 widget
-    QWidget *widget = mTaskTab->cellWidget(row, 1);  // 第二列的索引为1
+    QWidget *widget = mTaskTab->itemWidget(item, 1);
 
     if (widget)
     {
@@ -285,119 +331,125 @@ void AudioHelperWidget::addRelatedItem()
 
     mRelatedList->append(relatedItem);
 
-    // 获取当前表格的行数
-    int rowCount = mTaskTab->rowCount();
-    // 插入新行
-    mTaskTab->insertRow(rowCount);  // 在最后插入一行
+    // 创建顶层节点
+    QTreeWidgetItem *item = new QTreeWidgetItem(mTaskTab);
+
     // 第一列：图标+名称
     QFileIconProvider iconProvider;
     QIcon icon = iconProvider.icon(QFileInfo(relatedItem.taskInfo.path));
-    QTableWidgetItem *item = new QTableWidgetItem(relatedItem.taskInfo.name);
-    item->setIcon(icon);  // 设置图标
-    mTaskTab->setItem(rowCount, 0, item);
+    item->setText(0, relatedItem.taskInfo.name);
+    item->setIcon(0, icon);
     // 第二列：标签
-    mTaskTab->setItem(rowCount, 1, new QTableWidgetItem());
-    QString tag = relatedItem.typeInfo.tag  == "" ? relatedItem.typeInfo.type : relatedItem.typeInfo.tag;
+    QString tag = relatedItem.typeInfo.tag.isEmpty() ? relatedItem.typeInfo.type : relatedItem.typeInfo.tag;
     TagLabel *tagLabel = new TagLabel(tag.length() > 2 ? tag : QString(tag).insert(1, "   "));
     tagLabel->setFixedWidth(TAG_DEFAULT_WIDTH);
     tagLabel->setTheme(TagTheme.value(tag, TagLabel::Theme::Default));
-    mTaskTab->setIndexWidget(mTaskTab->model()->index(rowCount, 1), tagLabel);
+    mTaskTab->setItemWidget(item, 1, tagLabel);
     // 第三列：设备名
-    mTaskTab->setItem(rowCount, 2, new QTableWidgetItem(relatedItem.audioDeviceInfo.name));
+    item->setText(2, relatedItem.audioDeviceInfo.name);
+    // 添加到 QTreeWidget
+    mTaskTab->addTopLevelItem(item);
 }
 
 void AudioHelperWidget::delRelatedItem()
 {
-    QTableWidgetItem *item = mTaskTab->currentItem();
-
+    QTreeWidgetItem *item = mTaskTab->currentItem();
     if (!item)
         return;
 
-    const RelatedItem *relatedItem = &mRelatedList->at(mTaskTab->currentRow());
+    // 获取对应的 RelatedItem
+    int row = mTaskTab->indexOfTopLevelItem(item);
+    const RelatedItem *relatedItem = &mRelatedList->at(row);
     qInfo() << "delete item:" << relatedItem->taskInfo.name << "-" << relatedItem->audioDeviceInfo.name;
-    if (!mDatabase->deleteItem(relatedItem->id))
-    {
+
+    // 删除数据库记录
+    if (!mDatabase->deleteItem(relatedItem->id)) {
         qCritical() << "Failed to delete item:" << mDatabase->lastError();
         return;
     }
 
-    mRelatedList->removeAt(mTaskTab->currentRow());
-    mTaskTab->removeRow(mTaskTab->currentRow());
+    // 删除数据和界面
+    mRelatedList->removeAt(row);
+    delete mTaskTab->takeTopLevelItem(row);  // 释放 QTreeWidgetItem
     mTaskTab->clearSelection();
     mTaskTab->setCurrentItem(nullptr);
 }
 
 void AudioHelperWidget::changeRelatedItem()
 {
-    QTableWidgetItem *item = mTaskTab->currentItem();
-
+    QTreeWidgetItem *item = mTaskTab->currentItem();
     if (!item)
         return;
 
+    // 弹出选择对话框
     AudioChoiceDialog choiceDialog(QString(), this);
     if (choiceDialog.exec() != QDialog::Accepted) {
-        qInfo() << "任务" << item->text() << "更改关联项: 取消选择";
+        qInfo() << "任务" << item->text(0) << "更改关联项: 取消选择";
         return;
     }
 
     AudioDeviceInfo* deviceInfo = choiceDialog.selectedOption();
-    qInfo() << "任务"  << item->text() << "更改关联项: " <<  deviceInfo->name;
+    qInfo() << "任务" << item->text(0) << "更改关联项: " << deviceInfo->name;
 
-    RelatedItem &relatedItem = (*mRelatedList)[mTaskTab->currentRow()];
+    // 更新数据
+    int row = mTaskTab->indexOfTopLevelItem(item);
+    RelatedItem &relatedItem = (*mRelatedList)[row];
     relatedItem.audioDeviceInfo = *deviceInfo;
-    if (!mDatabase->updateItem(relatedItem))
-    {
+
+    if (!mDatabase->updateItem(relatedItem)) {
         qCritical() << "Failed to update item:" << mDatabase->lastError();
         return;
     }
 
-    // 修改UI为新的值
-    mTaskTab->setItem(item->row(), 2, new QTableWidgetItem(relatedItem.audioDeviceInfo.name));
+    // 修改 UI 显示为新的值
+    item->setText(2, relatedItem.audioDeviceInfo.name);
+
+    // 清除选择
     mTaskTab->clearSelection();
-    mTaskTab->setCurrentItem(nullptr);
 }
 
 void AudioHelperWidget::setSceneTag(bool isAdd)
 {
-    QTableWidgetItem *item = mTaskTab->currentItem();
-
+    QTreeWidgetItem *item = mTaskTab->currentItem();
     if (!item)
         return;
 
-    int current_row = mTaskTab->currentRow();
+    int current_row = mTaskTab->indexOfTopLevelItem(item);
     RelatedItem &relatedItem = (*mRelatedList)[current_row];
-    if (isAdd)
-    {
-        TagSwitchDialog tagSwitchDialog(this);
 
+    if (isAdd) {
+        TagSwitchDialog tagSwitchDialog(this);
         if (tagSwitchDialog.exec() != QDialog::Accepted) {
             qDebug() << "场景关联: 取消选择";
             return;
         }
-
         relatedItem.typeInfo.tag = tagSwitchDialog.selectedOption();
-    }
-    else
+    } else {
         relatedItem.typeInfo.tag = "";
-
+    }
 
     // 保存到数据库
-    if (!mDatabase->updateItem(relatedItem))
-    {
+    if (!mDatabase->updateItem(relatedItem)) {
         qCritical() << "Failed to update item:" << mDatabase->lastError();
         return;
     }
 
-    // 删除旧的
-    mTaskTab->removeCellWidget(current_row, 1);
+    // 删除旧的 widget
+    QWidget *oldWidget = mTaskTab->itemWidget(item, 1);
+    if (oldWidget) {
+        oldWidget->deleteLater();
+    }
 
-    // 创建新的并关联
-    QString tag = relatedItem.typeInfo.tag  == "" ? relatedItem.typeInfo.type : relatedItem.typeInfo.tag;
+    // 创建新的 TagLabel 并设置到第二列
+    QString tag = relatedItem.typeInfo.tag == "" ? relatedItem.typeInfo.type : relatedItem.typeInfo.tag;
     TagLabel *tagLabel = new TagLabel(tag.length() > 2 ? tag : QString(tag).insert(1, "   "));
     tagLabel->setFixedWidth(TAG_DEFAULT_WIDTH);
     tagLabel->setTheme(TagTheme.value(tag, TagLabel::Theme::Default));
-    mTaskTab->setIndexWidget(mTaskTab->model()->index(current_row, 1), tagLabel);
+    mTaskTab->setItemWidget(item, 1, tagLabel);
+
     qDebug() << "场景关联:" << relatedItem.taskInfo.name << "|" << relatedItem.typeInfo.tag;
+
+    // 更新按钮文本
     mTagButton->setText(isAdd ? "取消标记" : "标记场景");
 }
 
