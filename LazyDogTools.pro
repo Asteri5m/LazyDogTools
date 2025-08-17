@@ -64,7 +64,8 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 
 RESOURCES += \
-    images.qrc
+    images.qrc \
+    text.qrc
 
 QMAKE_PROJECT_DEPTH = 0
 

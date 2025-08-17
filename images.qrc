@@ -26,5 +26,7 @@
         <file alias="todo.svg">images/ico/todo.svg</file>
         <file alias="translate.svg">images/ico/translate.svg</file>
         <file alias="user-settings.svg">images/ico/user-settings.svg</file>
+        <file alias="at.svg">images/ico/at.svg</file>
     </qresource>
+    <qresource prefix="/shields"/>
 </RCC>

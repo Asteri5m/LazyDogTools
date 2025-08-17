@@ -25,12 +25,14 @@ signals:
 private:
     QWidget *mBasePage;
     QWidget *mAppPage;
-    QWidget *mShortcutsPage;
+    QWidget *mHotkeyPage;
+    QWidget *mAboutPage;
     Settings *mSettings;
 
     void initBasePage();
     void initAppPage();
-    void initShortcutsPage();
+    void initHotkeyPage();
+    void initAboutPage();
 
     void jumpTool(QString toolName);
     template<typename T>
@@ -39,6 +41,7 @@ private:
     void onCheckUpdateClicked();
     void onUpdateAvailable(const QString &newVersion, const QString &changelog);
     void onNoUpdateAvailable();
+    void showRichText(const QString &title, const QString &fileName);
 
 private slots:
     void buttonClicked();

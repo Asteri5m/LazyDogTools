@@ -11,6 +11,7 @@
 #include "TrayManager.h"
 #include <QDesktopServices>
 #include <QMessageBox>
+#include <QTextBrowser>
 
 SettingsWidget::SettingsWidget(Settings *settings, QWidget *parent)
     : ToolWidgetModel{parent}
@@ -25,17 +26,20 @@ SettingsWidget::SettingsWidget(Settings *settings, QWidget *parent)
     // 使用默认模板样式
     setDefaultStyle();
 
-    mBasePage      = new QWidget(this);
-    mAppPage       = new QWidget(this);
-    mShortcutsPage = new QWidget(this);
+    mBasePage   = new QWidget(this);
+    mAppPage    = new QWidget(this);
+    mHotkeyPage = new QWidget(this);
+    mAboutPage  = new QWidget(this);
 
-    addTab(mBasePage,      QIcon(":/ico/settings.svg"), "基础");
-    addTab(mAppPage,       QIcon(":/ico/apps.svg"), "应用");
-    addTab(mShortcutsPage, QIcon(":/ico/keyboard.svg"), "热键");
+    addTab(mAppPage,    QIcon(":/ico/apps.svg"), "应用");
+    addTab(mBasePage,   QIcon(":/ico/settings.svg"), "基础");
+    addTab(mHotkeyPage, QIcon(":/ico/keyboard.svg"), "热键");
+    addTab(mAboutPage,  QIcon(":/ico/at.svg"), "关于");
 
     initBasePage();
     initAppPage();
-    initShortcutsPage();
+    initHotkeyPage();
+    initAboutPage();
 
     // 检查并显示第一个页面
     finalizeSetup();
@@ -45,7 +49,7 @@ SettingsWidget::~SettingsWidget()
 {
     mBasePage->deleteLater();
     mAppPage->deleteLater();
-    mShortcutsPage->deleteLater();
+    mHotkeyPage->deleteLater();
 }
 
 // 初始化"基础"页面
@@ -221,10 +225,10 @@ void SettingsWidget::initAppPage()
 }
 
 // 初始化"快捷键"页面
-void SettingsWidget::initShortcutsPage()
+void SettingsWidget::initHotkeyPage()
 {
     // 使用滑动区域，内容过多时可以滑动
-    QVBoxLayout *layout = new QVBoxLayout(mShortcutsPage);
+    QVBoxLayout *layout = new QVBoxLayout(mHotkeyPage);
     SmoothScrollArea *scrollArea = new SmoothScrollArea();
     QWidget *containerWidget = new QWidget(scrollArea);
     QVBoxLayout *mainLayout = new QVBoxLayout(containerWidget);
@@ -278,12 +282,161 @@ void SettingsWidget::initShortcutsPage()
     mainLayout->addStretch();
 }
 
+void SettingsWidget::initAboutPage()
+{
+    QGridLayout *mainLayout = new QGridLayout(mAboutPage);
+
+    // 上半部分：版本相关信息
+    QWidget *headWidget = new QWidget();
+    mainLayout->addWidget(headWidget, 0, 0);
+
+    // 添加富文本区域
+    QWidget *richWidget = new QWidget();
+    mainLayout->addWidget(richWidget, 1, 0);
+
+
+    // 上半
+    QGridLayout *headLayout = new QGridLayout(headWidget);
+    headLayout->setContentsMargins(5, 5, 5, 5);
+    // 添加图标
+    QIcon icon(":/ico/LD.ico");
+    QLabel *iconLabel = new QLabel;
+    iconLabel->setPixmap(icon.pixmap(32, 32));
+    iconLabel->setAlignment(Qt::AlignCenter);
+
+    // 名称
+    QLabel *nameLabel = new QLabel("LazyDogTools");
+    QFont font = nameLabel->font();
+    font.setPointSize(14);
+    nameLabel->setFont(font);
+
+    // 创建水平布局
+    QHBoxLayout *hLayout = new QHBoxLayout;
+    hLayout->addWidget(iconLabel);
+    hLayout->addWidget(nameLabel);
+    hLayout->addStretch(1);
+    hLayout->setContentsMargins(0,0,0,0);
+
+    // 图标+名称 第一行，
+    QWidget *container = new QWidget;
+    container->setLayout(hLayout);
+    headLayout->addWidget(container, 0, 0);
+
+    // 版本信息 第二行
+    MacStyleButton *checkNewButton = new MacStyleButton("更新历史");
+    QLabel *versionLabel = new QLabel(QString("版本 %1 (%2)").arg(CURRENT_VERSION).arg(BUILD_DATE));
+    headLayout->addWidget(versionLabel, 1, 0);
+    headLayout->addWidget(checkNewButton, 1, 2);
+
+    // 版权信息 第三行
+    QString lastYear = BUILD_DATE.split('.').first();
+    MacStyleButton *licenseButton = new MacStyleButton("开源协议");
+    headLayout->addWidget(new QLabel(QString("版权所有 © 2024-%1 Asteri5m").arg(lastYear)), 2, 0);
+    headLayout->addWidget(licenseButton, 2, 2);
+    headLayout->setColumnStretch(1, 1);
+
+    // 连接槽 - 按钮
+    connect(checkNewButton, SIGNAL(clicked()), this, SLOT(buttonClicked()));
+    connect(licenseButton,  SIGNAL(clicked()), this, SLOT(buttonClicked()));
+
+
+    // 下半
+    // 设置平滑滚动
+    QVBoxLayout *richWidgetLayout = new QVBoxLayout(richWidget);
+    SmoothScrollArea *scrollArea = new SmoothScrollArea();
+    QWidget *containerWidget = new QWidget(scrollArea);
+    QVBoxLayout *richLayout = new QVBoxLayout(containerWidget);
+    richWidgetLayout->addWidget(scrollArea);
+    scrollArea->setWidgetResizable(true); // 使内容区域可以自动调整大小
+    scrollArea->setWidget(containerWidget);
+
+    // 设置样式，圆角-白底
+    richLayout->setContentsMargins(0, 0, 0, 0);
+    richWidgetLayout->setContentsMargins(10, 10, 0, 10);
+    containerWidget->setObjectName("containerWidget");
+    containerWidget->setStyleSheet(
+        "QWidget#containerWidget {"
+        "   background-color: #FCFCFC;"
+        "}");
+    richWidget->setObjectName("richWidget");
+    richWidget->setStyleSheet(
+        "QWidget#richWidget {"
+        "   border-radius: 6px;"
+        "   border: 1px solid #F0F0F0;"
+        "   background-color: #FCFCFC;"
+        "}");
+
+    QLabel *label = new QLabel(this);
+    richLayout->addWidget(label);
+    label->setWordWrap(true); // 开启自动换行
+    label->setTextFormat(Qt::RichText); // 开启富文本
+    label->setTextInteractionFlags(Qt::TextBrowserInteraction); // 支持点击链接
+    label->setOpenExternalLinks(true); // 点击超链接用浏览器打开
+    QFont richFont("Microsoft YaHei", 10); // 字体名 + 字号，可调整
+    label->setFont(richFont);
+
+    // 加载数据
+    QFile file(":/text/about.html");
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QString html = QString::fromUtf8(file.readAll());
+        label->setText(html);
+        file.close();
+    } else {
+        label->setText(R"(
+            <p align="center">
+             <strong>程序出现错误，读取配置信息失败！</strong>
+             <a href='https://github.com/Asteri5m/LazyDogTools/issues' style='color:#2d8cff;'>反馈问题</a>
+            </p>)");
+        qCritical() << "程序出现错误，读取配置信息失败:" << file.fileName();
+    }
+}
+
 // 打开特定应用
 void SettingsWidget::jumpTool(QString toolName)
 {
     ToolModel* tool = ToolManager::instance().getCreatedTool(toolName);
     if (tool != nullptr)
         tool->showWindow();
+}
+
+void SettingsWidget::showRichText(const QString &title, const QString &fileName)
+{
+    QDialog *dialog = new QDialog(this);
+    dialog->setWindowTitle(title);
+    dialog->resize(640, 400);
+    dialog->setFixedWidth(640);
+
+    // 主垂直布局
+    QVBoxLayout *mainLayout = new QVBoxLayout(dialog);
+
+    // QTextBrowser 显示富文本
+    QTextBrowser *textBrowser = new QTextBrowser;
+    QFile file(fileName);
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        textBrowser->setHtml(file.readAll());
+        file.close();
+    } else {
+        textBrowser->setHtml(R"(
+            <p align="center">
+             <strong>程序出现错误，读取配置信息失败！</strong>
+             <a href='https://github.com/Asteri5m/LazyDogTools/issues' style='color:#2d8cff;'>反馈问题</a>
+            </p>)");
+        qCritical() << "程序出现错误，读取配置信息失败:" << file.fileName();
+    }
+    mainLayout->addWidget(textBrowser); // 占用上方空间
+
+    // 底部水平布局放按钮
+    QHBoxLayout *buttonLayout = new QHBoxLayout;
+    buttonLayout->addStretch(); // 弹性空白推到右边
+    MacStyleButton *okButton = new MacStyleButton("确认");
+    okButton->setNormalColorBlue(true);
+    QObject::connect(okButton, &QPushButton::clicked, dialog, &QDialog::accept);
+    buttonLayout->addStretch(1);
+    buttonLayout->addWidget(okButton);
+
+    mainLayout->addLayout(buttonLayout);
+    dialog->exec();
+    dialog->deleteLater();
 }
 
 // 对所有的按钮点击事件进行处理
@@ -308,12 +461,18 @@ void SettingsWidget::buttonClicked()
                         "手动打开文件：位于安装目录log文件夹下。\n",
                         MessageType::Critical);
         }
-    }
-    else if (button->text() == "检查更新")
+    } else if (button->text() == "检查更新")
     {
         qInfo() << "检查更新...";
         mSettings->checkForUpdates();
-    }
+    } else if (button->text() == "更新历史")
+    {
+        showRichText("更新历史", ":/text/update_log.html");
+    } else if (button->text() == "开源协议")
+    {
+        showRichText("license", ":/text/license.txt");
+    } else
+        qWarning() << "未处理的按钮事件: " << button->text();
 
 }
 
