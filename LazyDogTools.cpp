@@ -41,6 +41,9 @@ LazyDogTools::LazyDogTools(QObject *parent)
     if (mSettings->loadConfig("自动更新") == "true")
     {
         mSettings->checkForUpdates();
+    } else
+    {   // 如果没有开启自动更新，就会导致第一次“手动检查更新”没有通知
+        mSettings->setUpNotify(true);
     }
 }
 

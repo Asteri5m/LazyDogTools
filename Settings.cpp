@@ -163,6 +163,11 @@ bool Settings::queryHotkeyState(const QString &key)
     return mHotkeyMap->value(key).sign;
 }
 
+void Settings::setUpNotify(bool enable)
+{
+    mNotify = enable;
+}
+
 
 // 初始化数据库配置
 bool Settings::initializeDatabase()
@@ -246,7 +251,8 @@ void Settings::showWindow()
     {
         mToolWidget = new SettingsWidget(this);
         connect(mToolWidget, SIGNAL(closed()), this, SLOT(toolWindowClosed()));
-        connect(mToolWidget, SIGNAL(windowEvent(const QString&,const QString&)), this, SLOT(toolWindowEvent(const QString&,const QString&)));
+        // connect(mToolWidget, SIGNAL(windowEvent(const QString&,const QString&)), this, SLOT(toolWindowEvent(const QString&,const QString&)));
+        connect(mToolWidget, SIGNAL(windowEvent(QString,QString)), this, SLOT(toolWindowEvent(QString,QString)));
         connect(mToolWidget, SIGNAL(toolActiveChanged()), this, SLOT(onToolActiveChanged()));
     }
     mToolWidget->show();

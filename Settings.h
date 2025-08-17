@@ -47,6 +47,7 @@ public:
     bool queryHotkeyState(const QString& key);
 
     // 更新相关
+    void setUpNotify(bool enable);
     void checkForUpdates();
     bool checkVersion(const QString &remoteVersion);
     static bool updateApp();
