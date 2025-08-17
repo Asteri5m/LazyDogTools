@@ -302,7 +302,7 @@ void AudioHelperWidget::addRelatedItem()
     if (!queryList.isEmpty())
     {
         qWarning() << "任务已存在: Name:" << queryList.at(0).taskInfo.name << "; TypeInfo:" << queryList.at(0).typeInfo.type;
-        if (showMessage(this, "重复添加", "该选项已经在任务列表中，无法重复添加！\n\n是否继续添加其它项?\n", MessageType::Warning, "继续", "返回") == QMessageBox::Accepted)
+        if (showMessage(this, "重复添加", "该选项已经在任务列表中，无法重复添加！\n\n是否继续添加其它项?\n", MessageType::Warning, Qt::PlainText, "继续", "返回") == QMessageBox::Accepted)
             return addRelatedItem();
         return;
     }

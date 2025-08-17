@@ -19,7 +19,7 @@ enum MessageType {
 
 // 通用的显示消息框方法
 inline int showMessage(QWidget *parent, const QString &title, const QString &message,
-                       MessageType messageType = Info,
+                       MessageType messageType = Info, Qt::TextFormat textFormat = Qt::AutoText,
                        const QString &button1Text = "确定", const QString &button2Text = "")
 {
     // 创建消息框
@@ -40,6 +40,7 @@ inline int showMessage(QWidget *parent, const QString &title, const QString &mes
 
     msgBox.setWindowTitle(title);      // 设置窗口标题
     msgBox.setText(message);           // 设置提示消息内容
+    msgBox.setTextFormat(textFormat);  // 设置文本格式
 
     // 添加按钮
     MacStyleButton *button1 = new MacStyleButton(button1Text, &msgBox);
