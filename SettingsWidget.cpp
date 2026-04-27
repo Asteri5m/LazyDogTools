@@ -31,10 +31,10 @@ SettingsWidget::SettingsWidget(Settings *settings, QWidget *parent)
     mHotkeyPage = new QWidget(this);
     mAboutPage  = new QWidget(this);
 
-    addTab(mAppPage,    QIcon(":/ico/apps.svg"), "应用");
-    addTab(mBasePage,   QIcon(":/ico/settings.svg"), "基础");
-    addTab(mHotkeyPage, QIcon(":/ico/keyboard.svg"), "热键");
-    addTab(mAboutPage,  QIcon(":/ico/at.svg"), "关于");
+    addTab(mAppPage,    ":/ico/apps", "应用");
+    addTab(mBasePage,   ":/ico/settings", "基础");
+    addTab(mHotkeyPage, ":/ico/keyboard", "热键");
+    addTab(mAboutPage,  ":/ico/at", "关于");
 
     initBasePage();
     initAppPage();
@@ -155,7 +155,8 @@ void SettingsWidget::initAppPage()
     mainLayout->addSpacerItem(new QSpacerItem(1, 5, QSizePolicy::Minimum, QSizePolicy::Minimum));
     QFrame *line = new QFrame();
     line->setFrameShape(QFrame::HLine);
-    line->setStyleSheet("border:none; border-bottom: 1px solid gray");
+    line->setStyleSheet("border:none; background-color: #D0D0D0; height: 1px;");
+    line->setFixedHeight(1);
     mainLayout->addWidget(line);
 
 
@@ -170,9 +171,8 @@ void SettingsWidget::initAppPage()
     appListArea->setWidgetResizable(true);
     appListArea->setWidget(applistWidget);
 
-    // 设置字体、分割线
-    applistWidget->setStyleSheet("font-weight: bold; font-size: 14px;"
-                                 "border-bottom: 1px solid #DADADA;");
+    // 设置字体
+    applistWidget->setStyleSheet("font-weight: bold; font-size: 14px; border: none;");
 
     // 隐藏滚动条
     appListArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -218,6 +218,13 @@ void SettingsWidget::initAppPage()
         connect(jumpButton, SIGNAL(clicked()), this, SLOT(buttonClicked()));
 
         appListLayout->addLayout(appItemLazyout);
+
+        // 添加间隔线
+        QFrame *line = new QFrame();
+        line->setFrameShape(QFrame::HLine);
+        line->setStyleSheet("border:none; background-color: #DADADA; height: 1px;");
+        line->setFixedHeight(1);
+        appListLayout->addWidget(line);
     }
 
     appListLayout->addStretch();
@@ -397,6 +404,8 @@ void SettingsWidget::jumpTool(QString toolName)
     ToolModel* tool = ToolManager::instance().getCreatedTool(toolName);
     if (tool != nullptr)
         tool->showWindow();
+    else
+        qWarning() << "工具未启用,无法打开:" << toolName;
 }
 
 void SettingsWidget::showRichText(const QString &title, const QString &fileName)

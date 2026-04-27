@@ -27,8 +27,8 @@ AudioHelperWidget::AudioHelperWidget(RelatedList *relatedList, QMap<QString, QSt
     // 使用模版样式, 如果不使用直接添加Tab，程序会崩溃
     setDefaultStyle();
 
-    addTab(mHomePage,  QIcon(":/ico/todo.svg"), "任务");
-    addTab(mPrefsPage, QIcon(":/ico/user-settings.svg"), "偏好");
+    addTab(mHomePage,  ":/ico/todo", "任务");
+    addTab(mPrefsPage, ":/ico/user-settings", "偏好");
 
     initHomePage();
     initPrefsPage();

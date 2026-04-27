@@ -27,6 +27,12 @@
         <file alias="translate.svg">images/ico/translate.svg</file>
         <file alias="user-settings.svg">images/ico/user-settings.svg</file>
         <file alias="at.svg">images/ico/at.svg</file>
+        <file alias="keyboard_check.svg">images/ico/keyboard_check.svg</file>
+        <file alias="settings_check.svg">images/ico/settings_check.svg</file>
+        <file alias="apps_check.svg">images/ico/apps_check.svg</file>
+        <file alias="at_check.svg">images/ico/at_check.svg</file>
+        <file alias="todo_check.svg">images/ico/todo_check.svg</file>
+        <file alias="user-settings_check.svg">images/ico/user-settings_check.svg</file>
     </qresource>
     <qresource prefix="/shields"/>
 </RCC>

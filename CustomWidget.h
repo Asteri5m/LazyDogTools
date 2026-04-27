@@ -24,32 +24,31 @@
 #include <QTimer>
 #include <stdexcept>
 
+
 // ToolWidgetModel的菜单栏按钮
 class LeftMenuButton : public QPushButton
 {
     Q_OBJECT
-public:
-    explicit LeftMenuButton(const QIcon &icon, const QString &name, QWidget *parent = nullptr)
-        : QPushButton(parent) {
-        setCheckable(true);
-        // 使用栈分配
-        QSize buttonSize(56, 56);
-        QSize iconSize(24, 24);
 
-        if (name.isNull() && icon.isNull())
-        {
+public:
+    explicit LeftMenuButton(const QString &iconPath, const QString &name, QWidget *parent = nullptr)
+        : QPushButton(parent), mIconPath(iconPath), mName(name)
+    {
+        setCheckable(true);
+
+        QSize buttonSize(56, 56);
+        mIconSize = QSize(24, 24);
+
+        if (name.isNull() && iconPath.isNull()) {
             throw std::logic_error("名字和图标至少需要一个");
         }
 
-        // 根据内容适配大小
-        if (icon.isNull())
-        {
-            buttonSize.setHeight(28);
-        }
-        else if (name.isNull())
-        {
-            iconSize.setHeight(32);
-            iconSize.setWidth(32);
+        // 根据内容适配按钮大小和图标大小
+        if (iconPath.isNull()) {
+            buttonSize.setHeight(28);  // 只有文本时，按钮高度变小
+        } else if (name.isNull()) {
+            mIconSize.setHeight(32);
+            mIconSize.setWidth(32);  // 只有图标时，图标大小设为32x32
         }
 
         // 设置按钮大小
@@ -60,22 +59,61 @@ public:
         layout->setAlignment(Qt::AlignCenter);
         layout->setContentsMargins(0, 0, 0, 0);
 
-        if (!icon.isNull())
-        {
-            QLabel *iconLabel = new QLabel(this);
-            iconLabel->setPixmap(icon.pixmap(iconSize));
-            iconLabel->setAlignment(Qt::AlignCenter);
-            layout->addWidget(iconLabel);
+        // 设置图标
+        if (!iconPath.isNull()) {
+            mNormalIcon  = new QIcon(iconPath + ".svg");
+            mCheckedIcon = new QIcon(iconPath + "_check.svg");
+            mIconLabel = new QLabel(this);
+            mIconLabel->setPixmap(mNormalIcon->pixmap(mIconSize));
+            mIconLabel->setAlignment(Qt::AlignCenter);
+            layout->addWidget(mIconLabel);
         }
 
-        if (!name.isNull())
-        {
-            QLabel *textLabel = new QLabel(name, this);
-            textLabel->setAlignment(Qt::AlignCenter);
-            layout->addWidget(textLabel);
+        // 设置文本
+        if (!name.isNull()) {
+            mTextLabel = new QLabel(name, this);
+            mTextLabel->setAlignment(Qt::AlignCenter);
+            mTextLabel->setStyleSheet(QString("color: %1;").arg(mNormalColor));
+            layout->addWidget(mTextLabel);
+        }
+
+        // 按钮点击时切换图标
+        connect(this, &QPushButton::clicked, this, &LeftMenuButton::toggleIcon);
+    }
+
+public slots:
+    // 按钮点击时切换图标
+    void toggleIcon()
+    {
+        if (isChecked()) {
+            // 当按钮被按下时，切换到另一个图标
+            if(!mIconPath.isNull()) mIconLabel->setPixmap(mCheckedIcon->pixmap(mIconSize));
+            if(!mName.isNull()) mTextLabel->setStyleSheet(QString("color: %1;").arg(mCheckedColor));
+        } else {
+            // 恢复原始图标
+            if(!mIconPath.isNull()) mIconLabel->setPixmap(mNormalIcon->pixmap(mIconSize));
+            if(!mName.isNull()) mTextLabel->setStyleSheet(QString("color: %1;").arg(mNormalColor));
         }
     }
+
+    void setChecked(bool checked)
+    {
+        QPushButton::setChecked(checked);
+        toggleIcon();
+    }
+
+private:
+    QString mIconPath;
+    QString mName;
+    QSize mIconSize;
+    QLabel *mIconLabel = nullptr;
+    QLabel *mTextLabel = nullptr;
+    QIcon *mNormalIcon  = nullptr;
+    QIcon *mCheckedIcon = nullptr;
+    QString mNormalColor  = "#666";
+    QString mCheckedColor = "white";
 };
+
 
 // 工具窗口模板，可以根据该模板快生成一个具有左侧菜单栏的“TabWidget”
 class ToolWidgetModel : public QWidget
@@ -96,57 +134,60 @@ public:
         mMainLayout->setContentsMargins(0, 0, 0, 0);
 
         mMenuWidget = new QWidget();
-        mMenuWidget->setFixedWidth(64);
+        mMenuWidget->setFixedWidth(72);
 
         // 设置菜单的基本样式
         mMenuLayout = new QVBoxLayout(mMenuWidget);
         mMenuLayout->addStretch();
-        mMenuLayout->setContentsMargins(0, 0, 0, 0);
+        mMenuLayout->setContentsMargins(0, 10, 0, 10);
         mMenuLayout->setAlignment(Qt::AlignCenter);
         mMenuLayout->setSpacing(15);
 
         mStackedWidget = new QStackedWidget();
         mMainLayout->addWidget(mStackedWidget);
 
-        QString menuStyle;
+        // 分隔线
+        QFrame *separator = new QFrame();
+        separator->setFrameShape(QFrame::VLine);
+        separator->setStyleSheet("background-color: #EEEEEE; width: 1px; border: none;");
+        separator->setFixedWidth(1);
+
         if (menuRight)
         {
-            // 设置边框线为1像素宽，灰色
-            menuStyle = "QWidget { "
-                        "   border-left: 1px solid gray;"
-                        "   background-color: white;"
-                        "}";
             mOverLayout->addLayout(mMainLayout);
+            mOverLayout->addWidget(separator);
             mOverLayout->addWidget(mMenuWidget);
         }
         else
         {
-            menuStyle = "QWidget { "
-                        "   border-right: 1px solid gray;"
-                        "   background-color: white;"
-                        "}";
             mOverLayout->addWidget(mMenuWidget);
+            mOverLayout->addWidget(separator);
             mOverLayout->addLayout(mMainLayout);
         }
 
-        menuStyle += "QPushButton, QPushButton * {"
-                     "    background-color: none;"
-                     "    border: none;"
-                     "}"
-                     "QPushButton:hover {"
-                     "    background-color: #f0f0f0; "
-                     "    border-radius: 6px;"
-                     "    border: none;"
-                     "}"
-                     "QPushButton:checked {"
-                     "    background-color: #d0d0d0;"
-                     "    border-radius: 6px;"
-                     "    border: none;"
-                     "}";
-        mMenuWidget->setStyleSheet(menuStyle);
+        mMenuWidget->setStyleSheet("QWidget {"
+                                   "    background-color: #E6EFFA;"
+                                   "    border: none;"
+                                   "}"
+                                   "QPushButton, QPushButton * {"
+                                   "    background-color: none;"
+                                   "    border: none;"
+                                   "}"
+                                   "QPushButton:hover {"
+                                   "    background-color: #CCE0F5; "
+                                   "    border-radius: 6px;"
+                                   "}"
+                                   "QPushButton:checked {"
+                                   "    background-color: #007AFF;"
+                                   "    border-radius: 6px;"
+                                   "}"
+                                   "QPushButton:checked:hover {"
+                                   "    background-color: #1987FF;"
+                                   "    border-radius: 6px;"
+                                   "}");
     }
 
-    void addTab(QWidget* page, const QIcon &icon=QIcon(), const QString &name=nullptr)
+    void addTab(QWidget* page, const QString &icon=nullptr, const QString &name=nullptr)
     {
         // 添加按钮
         LeftMenuButton *button = new LeftMenuButton(icon, name);
@@ -327,9 +368,9 @@ protected:
         QPainter painter(this);
         painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::SmoothPixmapTransform);
 
-        QColor bgColor = QColor(mChecked ? "#007AFF" : "#E5E5EA");
-        QColor thumbColor = QColor(mChecked ? "#FFFFFF" : "#5E5E5E");
-        QColor borderColor = QColor(mChecked ? "#007AFF" : "#5E5E5E"); // 关闭状态边框色为 #5E5E5E
+        QColor bgColor = QColor(mChecked ? "#007AFF" : "#BFBFBF");
+        QColor thumbColor = QColor(mChecked ? "#FFFFFF" : "#FFFFFF");
+        QColor borderColor = QColor(mChecked ? "#007AFF" : "#BFBFBF"); // 关闭状态边框色为 #5E5E5E
 
         // 绘制背景
         painter.setPen(QPen(borderColor, 1.5));
