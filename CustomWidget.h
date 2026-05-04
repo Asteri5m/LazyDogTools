@@ -261,44 +261,84 @@ public:
     explicit MacStyleButton(const QString &text, QWidget *parent = nullptr)
         : QPushButton(text, parent)
     {
-        // 设置按钮的样式表
-        setStyleSheet(generateStyleSheet(false));  // 默认使用白色样式
-        setFixedHeight(24);
+        setFixedHeight(25);
         setMinimumWidth(90);
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        // 去掉系统默认绘制
+        setFlat(true);
     }
 
-    // 切换蓝色或白色样式
     void setNormalColorBlue(bool isBlue)
     {
-        // 重新设置样式表
-        setStyleSheet(generateStyleSheet(isBlue));
+        mIsBlue = isBlue;
+        update();
+    }
+
+protected:
+    void paintEvent(QPaintEvent *event) override
+    {
+        Q_UNUSED(event);
+
+        QPainter painter(this);
+        painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::SmoothPixmapTransform);
+
+        QRectF rect = this->rect();
+        rect.adjust(1, 1, -1, -1); // 避免边缘模糊
+
+        // 颜色定义
+        QColor bgStart, bgEnd, borderColor, textColor;
+
+        if (mIsBlue)
+        {
+            bgStart = QColor("#2d8cff");
+            bgEnd   = QColor("#0c75ff");
+            borderColor = Qt::transparent;
+            textColor = Qt::white;
+        }
+        else
+        {
+            bgStart = QColor("#ffffff");
+            bgEnd   = QColor("#ffffff");
+            borderColor = QColor("#cdcdcd");
+            textColor = Qt::black;
+        }
+
+        if (isDown())
+        {
+            bgStart = QColor("#0f6aeb");
+            bgEnd   = QColor("#0f6aeb");
+            textColor = Qt::white;
+        }
+
+        // 绘制圆角背景
+        QPainterPath path;
+        path.addRoundedRect(rect, 6, 6);
+
+        // 渐变
+        QLinearGradient gradient(rect.topLeft(), rect.bottomLeft());
+        gradient.setColorAt(0, bgStart);
+        gradient.setColorAt(1, bgEnd);
+
+        painter.fillPath(path, gradient);
+
+        // 边框（1px 精准绘制）
+        if (borderColor != Qt::transparent)
+        {
+            QPen pen(borderColor);
+            pen.setWidthF(1.0);
+            painter.setPen(pen);
+            painter.drawPath(path);
+        }
+
+        // 文本
+        painter.setPen(textColor);
+        painter.setFont(font());
+
+        painter.drawText(rect, Qt::AlignCenter, text());
     }
 
 private:
-    // 生成QSS样式表
-    QString generateStyleSheet(bool isBlue) const
-    {
-        // 定义蓝色渐变的线性渐变背景
-        QString backgroundColor = isBlue ? "qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #2d8cff, stop:1 #0c75ff)" : "#FFFFFF";
-        QString borderColor = isBlue ? "#007AFF" : "#C8C8C8";
-        QString fontColor = isBlue ? "white" : "black";
-        // QString hoverColor = isBlue ? "#0066CC" : "#0f6aeb";
-        QString pressedColor = isBlue ? "#0f6aeb" : "#0f6aeb";
-
-        return QString(
-                   "QPushButton {"
-                   "   background-color: %1;"
-                   "   border: 1px solid %2;"
-                   "   border-radius: 6px;"
-                   "   color: %3;"
-                   "}"
-                   "QPushButton:pressed {"
-                   "   background-color: %4;"
-                   "   color: white;"  // 按下时文本变为白色
-                   "}"
-                   ).arg(backgroundColor, borderColor, fontColor, pressedColor);
-    }
+    bool mIsBlue = false;
 };
 
 // Mac样式开关
@@ -454,38 +494,51 @@ private:
 
 #include <QGroupBox>
 // 自定义GroupBox
-class NoBorderGroupBox : public QGroupBox
+class CustomGroupBox : public QGroupBox
 {
     Q_OBJECT
 
 public:
-    explicit NoBorderGroupBox(const QString &title, QWidget *parent = nullptr)
+    explicit CustomGroupBox(const QString &title, QWidget *parent = nullptr)
         : QGroupBox(title, parent)
     {
-
+        setContentsMargins(12, 24, 12, 0); // 内容 padding
     }
 
 protected:
-    // 确保没有绘制边框
     void paintEvent(QPaintEvent *event) override
     {
         Q_UNUSED(event);
 
         QPainter painter(this);
         painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::SmoothPixmapTransform);
-        QStyleOptionGroupBox opt;
-        initStyleOption(&opt);
 
-        // 绘制没有边框的标题
-        QFont titleFont;
+        QRectF rect = this->rect();
+        rect.adjust(0.5, 0.5, -0.5, -0.5); // 防止边缘虚化
+
+        const qreal radius = 8.0;
+
+        // 绘制白色圆角背景
+        QPainterPath bgPath;
+        bgPath.addRoundedRect(rect, radius, radius);
+        painter.fillPath(bgPath, QColor("#fafdff"));
+
+        // 边框
+        QPen borderPen(QColor("#F0F0F0"));
+        borderPen.setWidthF(1.0);
+        painter.setPen(borderPen);
+        painter.drawPath(bgPath);
+
+        //绘制标题
+        QFont titleFont = font();
         titleFont.setBold(true);
         titleFont.setPointSize(10);
         painter.setFont(titleFont);
-        painter.drawText(QRect(0, 0, width(), 30), Qt::AlignLeft | Qt::AlignVCenter, this->title());
 
-        // 绘制内容区域
-        painter.setPen(Qt::NoPen);
-        painter.drawRect(0, 30, width(), height() - 30);
+        painter.setPen(QColor("#333333"));
+
+        QRect titleRect(12, 8, width() - 24, 20);
+        painter.drawText(titleRect, Qt::AlignLeft | Qt::AlignVCenter, title());
     }
 };
 
@@ -639,7 +692,7 @@ protected:
 
         QColor uncheckedColor = QColor(255, 255, 255);
         QColor checkedColor = QColor(0, 122, 255);
-        QColor borderColor = QColor(94, 94, 94);
+        QColor borderColor = QColor(174, 174, 174);
 
         // 根据选中状态设置边框颜色
         painter.setPen(isChecked() ? checkedColor : borderColor);
@@ -706,14 +759,14 @@ protected:
         QColor backgroundColor = isDown()? mCheckedColor: mNormalColor;
         painter.setBrush(backgroundColor);
         painter.setPen(Qt::NoPen); // 无边框
-        painter.drawRoundedRect(rect, 5, 5); // 绘制圆角矩形，圆角半径为6px
+        painter.drawRoundedRect(rect, 6, 6); // 绘制圆角矩形，圆角半径为6px
 
         // 绘制图标
-        QPixmap iconPixmap(":/ico/jump_white.svg");
+        QIcon icon(":/ico/jump_white.svg");
         QSize iconSize(20, 20);
         QPoint iconPos((width() - iconSize.width()) / 2, (height() - iconSize.height()) / 2);  // 图标居中
 
-        painter.drawPixmap(iconPos, iconPixmap.scaled(iconSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        painter.drawPixmap(iconPos, icon.pixmap(iconSize));
     }
 
 private:

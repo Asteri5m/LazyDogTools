@@ -66,7 +66,7 @@ void AudioHelperWidget::initHomePage()
     tabWidget->setObjectName("tabWidget");
     tabWidget->setStyleSheet(
         "QWidget#tabWidget {"
-        "   border-radius: 6px;"
+        "   border-radius: 8px;"
         "   border: 1px solid white;"
         "   background-color: white;"
         "}");
@@ -171,10 +171,11 @@ void AudioHelperWidget::initPrefsPage()
     scrollArea->setWidget(containerWidget);
 
     layout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setContentsMargins(20, 10, 10, 10);
+    mainLayout->setContentsMargins(10, 10, 10, 10);
+    mainLayout->setSpacing(10);
 
     // 模式
-    NoBorderGroupBox *modeGroupBox = new NoBorderGroupBox("模式");
+    CustomGroupBox *modeGroupBox = new CustomGroupBox("模式");
     QGridLayout *modeLayout = new QGridLayout(modeGroupBox);
     modeLayout->addWidget(new QLabel("选择触发任务的算法模式："), 0, 0);
 
@@ -183,12 +184,12 @@ void AudioHelperWidget::initPrefsPage()
     modeComBox->addItem("进程模式");
     modeComBox->addItem("窗口模式");
     modeComBox->addItem("智能模式");
-    modeLayout->addWidget(modeComBox, 0, 1);
-    modeLayout->setColumnStretch(2, 1);
+    modeLayout->addWidget(modeComBox, 0, 2);
+    modeLayout->setColumnStretch(1, 1);
 
 
     // 场景识别
-    NoBorderGroupBox *sceneGroupBox = new NoBorderGroupBox("场景");
+    CustomGroupBox *sceneGroupBox = new CustomGroupBox("场景");
     QGridLayout *sceneLayout = new QGridLayout(sceneGroupBox);
     sceneLayout->addWidget(new QLabel("多条关联规则命中时的场景选择："), 0, 0);
 
@@ -197,19 +198,19 @@ void AudioHelperWidget::initPrefsPage()
     sceneComBox->addItem("游戏场景");
     sceneComBox->addItem("影音场景");
     sceneComBox->addItem("普通场景");
-    sceneLayout->addWidget(sceneComBox, 0, 1);
-    sceneLayout->setColumnStretch(2, 1);
+    sceneLayout->addWidget(sceneComBox, 0, 2);
+    sceneLayout->setColumnStretch(1, 1);
 
 
     // 通知
-    NoBorderGroupBox *notifyGroupBox = new NoBorderGroupBox("通知");
+    CustomGroupBox *notifyGroupBox = new CustomGroupBox("通知");
     QGridLayout *notifyLayout = new QGridLayout(notifyGroupBox);
     MacStyleCheckBox *notifyCheckBox = new MacStyleCheckBox("切换时通知");
     notifyLayout->addWidget(notifyCheckBox, 0, 0);
 
 
     // 过滤
-    NoBorderGroupBox *filterGroupBox = new NoBorderGroupBox("过滤");
+    CustomGroupBox *filterGroupBox = new CustomGroupBox("过滤");
     QGridLayout *filterLayout = new QGridLayout(filterGroupBox);
     MacStyleCheckBox *filterProcessCheckBox    = new MacStyleCheckBox("过滤系统项");
     MacStyleCheckBox *filterRepetitionCheckBox = new MacStyleCheckBox("过滤重复项");

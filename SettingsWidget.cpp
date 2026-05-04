@@ -65,10 +65,11 @@ void SettingsWidget::initBasePage()
     scrollArea->setWidget(containerWidget);
 
     layout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setContentsMargins(20, 10, 10, 10);
+    mainLayout->setContentsMargins(10, 10, 10, 10);
+    mainLayout->setSpacing(10);
 
     // 创建启动区域
-    NoBorderGroupBox *startupGroupBox = new NoBorderGroupBox("启动");
+    CustomGroupBox *startupGroupBox = new CustomGroupBox("启动");
     QGridLayout *startupLayout = new QGridLayout(startupGroupBox);
 
     MacStyleCheckBox *startCheckBox      = new MacStyleCheckBox("开机自启动");
@@ -79,27 +80,29 @@ void SettingsWidget::initBasePage()
 
 
     // 创建更新区域
-    NoBorderGroupBox *updateGroupBox = new NoBorderGroupBox("更新");
+    CustomGroupBox *updateGroupBox = new CustomGroupBox("更新");
     QGridLayout *updateLayout = new QGridLayout(updateGroupBox);
 
     MacStyleCheckBox *updateCheckBox = new MacStyleCheckBox("自动更新");
     MacStyleButton   *checkNewButton = new MacStyleButton("检查更新");
+    checkNewButton->setNormalColorBlue(true);
 
     updateLayout->addWidget(updateCheckBox, 0, 0);
-    updateLayout->addWidget(checkNewButton, 0, 1);
-    updateLayout->setColumnStretch(2, 1);   // 添加填充
+    updateLayout->addWidget(checkNewButton, 0, 2);
+    updateLayout->setColumnStretch(1, 1);   // 设置第 2 列的弹簧
 
 
     // 创建日志区域
-    NoBorderGroupBox *logGroupBox = new NoBorderGroupBox("日志");
+    CustomGroupBox *logGroupBox = new CustomGroupBox("日志");
     QGridLayout *logLayout = new QGridLayout(logGroupBox);
 
     MacStyleCheckBox *debugCheckBox   = new MacStyleCheckBox("debug日志");
     MacStyleButton   *exportLogButton = new MacStyleButton("查看日志");
+    exportLogButton->setNormalColorBlue(true);
 
     logLayout->addWidget(debugCheckBox,   0, 0);
-    logLayout->addWidget(exportLogButton, 0, 1);
-    logLayout->setColumnStretch(2, 1); // 设置第 3 列的弹簧
+    logLayout->addWidget(exportLogButton, 0, 2);
+    logLayout->setColumnStretch(1, 1); // 设置第 2 列的弹簧
 
 
     // 添加各个区域到mainLayout
@@ -244,7 +247,8 @@ void SettingsWidget::initHotkeyPage()
     scrollArea->setWidget(containerWidget);
 
     layout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setContentsMargins(20, 10, 10, 10);
+    mainLayout->setContentsMargins(10, 10, 10, 10);
+    mainLayout->setSpacing(10);
 
     // 添加热键编辑区域
     ToolManager& toolManager = ToolManager::instance();
@@ -256,7 +260,7 @@ void SettingsWidget::initHotkeyPage()
         if (hotKeyList.isEmpty())
             continue;
 
-        NoBorderGroupBox *toolGroupBox = new NoBorderGroupBox(it->Name);
+        CustomGroupBox *toolGroupBox = new CustomGroupBox(it->Name);
         QGridLayout *toolLayout = new QGridLayout(toolGroupBox);
 
         for (int index=0; index<hotKeyList.length(); index++)
@@ -363,14 +367,14 @@ void SettingsWidget::initAboutPage()
     containerWidget->setObjectName("containerWidget");
     containerWidget->setStyleSheet(
         "QWidget#containerWidget {"
-        "   background-color: #FCFCFC;"
+        "   background-color: #FAFDFF;"
         "}");
     richWidget->setObjectName("richWidget");
     richWidget->setStyleSheet(
         "QWidget#richWidget {"
-        "   border-radius: 6px;"
+        "   border-radius: 8px;"
         "   border: 1px solid #F0F0F0;"
-        "   background-color: #FCFCFC;"
+        "   background-color: #FAFDFF;"
         "}");
 
     QLabel *label = new QLabel(this);
