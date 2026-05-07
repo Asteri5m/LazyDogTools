@@ -9,7 +9,7 @@
  */
 
 #include <QObject>
-#include "Settings.h"
+#include "managers/Settings.h"
 
 class LazyDogTools : public QObject
 {

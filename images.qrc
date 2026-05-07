@@ -33,6 +33,8 @@
         <file alias="at_check.svg">images/ico/at_check.svg</file>
         <file alias="todo_check.svg">images/ico/todo_check.svg</file>
         <file alias="user-settings_check.svg">images/ico/user-settings_check.svg</file>
+        <file alias="palette.svg">images/ico/palette.svg</file>
+        <file alias="palette_check.svg">images/ico/palette_check.svg</file>
     </qresource>
     <qresource prefix="/shields"/>
 </RCC>

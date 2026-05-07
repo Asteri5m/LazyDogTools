@@ -10,9 +10,10 @@
 #include <QDateTime>
 #include <QMessageBox>
 #include "LogHandler.h"
+#include "utils/Constants.h"
 
 LogHandler::LogHandler()
-    :mLogDir("log")
+    :mLogDir(DIR_LOG)
     ,mLogLevel(Undefined)
 {
     // 初始化日志文件

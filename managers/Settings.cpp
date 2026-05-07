@@ -6,9 +6,9 @@
  */
 
 #include "Settings.h"
-#include "SettingsWidget.h"
+#include "widgets/SettingsWidget.h"
 #include "LogHandler.h"
-#include "Custom.h"
+#include "utils/Custom.h"
 #include "TrayManager.h"
 #include <QSqlQuery>
 #include <QSqlError>
@@ -23,8 +23,8 @@
 Settings::Settings(QObject *parent)
     : ToolModel{ parent }
     , mHotkeyManager{new HotkeyManager(this)}
-    , mdbDir(QDir("data"))
-    , mdbName("Settings.db")
+    , mdbDir(QDir(DIR_DB))
+    , mdbName(DB_SETTINGS)
     , mConfig(new Config)
     , mHotkeyMap(new HotkeyMap)
     , mHotkeyIdMap(new HotkeyIdMap)

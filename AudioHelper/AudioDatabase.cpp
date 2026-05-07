@@ -6,14 +6,13 @@
  */
 
 #include "AudioDatabase.h"
-#include "CustomWidget.h"
 
 AudioDatabase::AudioDatabase(QObject *parent)
     : QObject(parent)
 {
-    QDir dir("data");
+    QDir dir(DIR_DB);
     if (!dir.exists()) dir.mkpath(".");
-    QString dbName("AudioHelper.db");
+    QString dbName(DB_AUDIOHELPER);
     if (QSqlDatabase::contains(dbName))
         mdb = QSqlDatabase::database(dbName);
     else

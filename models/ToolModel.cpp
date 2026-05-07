@@ -50,10 +50,10 @@ void ToolModel::toolWindowClosed()
 
 void ToolModel::toolWindowEvent(const QString &type, const QString &context)
 {
-    qDebug() << "未处理事件, type:" << type << ", context:" << context;
+    qWarning() << "未处理事件, type:" << type << ", context:" << context;
 }
 
 void ToolModel::hotKeyEvent(const QString &event)
 {
-    qDebug() << "未处理事件:" << event;
+    qWarning() << "未处理事件:" << event;
 }

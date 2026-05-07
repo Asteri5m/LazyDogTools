@@ -5,13 +5,20 @@
  * @brief Settings的交互窗口
  */
 
-#include "LogHandler.h"
+
+#include "utils/Custom.h"
+#include "utils/Constants.h"
+#include "managers/LogHandler.h"
+#include "managers/TrayManager.h"
+#include "managers/ThemeManager.h"
+#include "widgets/SmoothScrollArea.h"
+#include "components/CustomKeySequenceEdit.h"
 #include "SettingsWidget.h"
-#include "Custom.h"
-#include "TrayManager.h"
 #include <QDesktopServices>
 #include <QMessageBox>
 #include <QTextBrowser>
+#include <QSlider>
+#include <QLabel>
 
 SettingsWidget::SettingsWidget(Settings *settings, QWidget *parent)
     : ToolWidgetModel{parent}
@@ -23,21 +30,29 @@ SettingsWidget::SettingsWidget(Settings *settings, QWidget *parent)
     setWindowIcon(QIcon(":/ico/settings2.svg"));
     setWindowTitle("首选项");
 
+    // 初始化亚克力效果设置
+    ThemeManager &themeManager = ThemeManager::instance();
+    setAcrylicEnabled(themeManager.acrylicEnabled());
+    setAcrylicOpacity(themeManager.acrylicOpacity());
+
     // 使用默认模板样式
     setDefaultStyle();
 
-    mBasePage   = new QWidget(this);
-    mAppPage    = new QWidget(this);
-    mHotkeyPage = new QWidget(this);
-    mAboutPage  = new QWidget(this);
+    mBasePage   = new TransparentWidget(this);
+    mAppPage    = new TransparentWidget(this);
+    mHotkeyPage = new TransparentWidget(this);
+    mAboutPage  = new TransparentWidget(this);
+    mThemePage  = new TransparentWidget(this);
 
     addTab(mAppPage,    ":/ico/apps", "应用");
     addTab(mBasePage,   ":/ico/settings", "基础");
+    addTab(mThemePage,  ":/ico/palette", "主题");
     addTab(mHotkeyPage, ":/ico/keyboard", "热键");
     addTab(mAboutPage,  ":/ico/at", "关于");
 
     initBasePage();
     initAppPage();
+    initThemePage();
     initHotkeyPage();
     initAboutPage();
 
@@ -58,15 +73,15 @@ void SettingsWidget::initBasePage()
     // 使用滑动区域，内容过多时可以滑动
     QVBoxLayout *layout = new QVBoxLayout(mBasePage);
     SmoothScrollArea *scrollArea = new SmoothScrollArea();
-    QWidget *containerWidget = new QWidget(scrollArea);
+    QWidget *containerWidget = new QWidget();
     QVBoxLayout *mainLayout = new QVBoxLayout(containerWidget);
     layout->addWidget(scrollArea);
     scrollArea->setWidgetResizable(true); // 使内容区域可以自动调整大小
     scrollArea->setWidget(containerWidget);
 
     layout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setContentsMargins(10, 10, 10, 10);
-    mainLayout->setSpacing(10);
+    mainLayout->setContentsMargins(0, MARGIN_TINY, 0, MARGIN_TINY);
+    mainLayout->setSpacing(MARGIN_LARGE);
 
     // 创建启动区域
     CustomGroupBox *startupGroupBox = new CustomGroupBox("启动");
@@ -104,11 +119,28 @@ void SettingsWidget::initBasePage()
     logLayout->addWidget(exportLogButton, 0, 2);
     logLayout->setColumnStretch(1, 1); // 设置第 2 列的弹簧
 
+#ifdef QT_DEBUG
+    // 创建测试区域
+    CustomGroupBox *testGroupBox = new CustomGroupBox("测试");
+    QGridLayout *testLayout = new QGridLayout(testGroupBox);
+
+    MacStyleButton *acrylicTestButton = new MacStyleButton("测试");
+    acrylicTestButton->setNormalColorBlue(true);
+
+    testLayout->addWidget(acrylicTestButton, 0, 0);
+    testLayout->setColumnStretch(1, 1); // 设置第 2 列的弹簧
+
+    connect(acrylicTestButton, SIGNAL(clicked()), this, SLOT(buttonClicked()));
+#endif
 
     // 添加各个区域到mainLayout
     mainLayout->addWidget(startupGroupBox);
     mainLayout->addWidget(updateGroupBox);
     mainLayout->addWidget(logGroupBox);
+
+#ifdef QT_DEBUG
+    mainLayout->addWidget(testGroupBox);
+#endif
 
     // 添加一个弹簧，用于撑起空白区域
     mainLayout->addStretch();
@@ -133,8 +165,21 @@ void SettingsWidget::initBasePage()
 // 初始化"应用"页面
 void SettingsWidget::initAppPage()
 {
-    QVBoxLayout *mainLayout = new QVBoxLayout(mAppPage);
-    mainLayout->setContentsMargins(0, 10, 0, 10);   // 取消左右边距
+    QVBoxLayout *layout = new QVBoxLayout(mAppPage);
+    TransparentWidget *backWidget = new TransparentWidget();
+    layout->setContentsMargins(0, MARGIN_TINY, 0, MARGIN_TINY);
+    layout->addWidget(backWidget);
+    backWidget->setCornerRadius(RADIUS_XLARGE);
+    backWidget->setBorderWidth(1);
+    backWidget->setBorderColor(QColor(COLOR_BORDER));
+    backWidget->setSolidColor(QColor(COLOR_BG_CARD));
+    backWidget->setAcrylicColor(QColor(COLOR_BG_CARD));
+    backWidget->setAcrylicAlpha(ThemeManager::instance().cardOpacity() * 255 / 100);
+    connect(&ThemeManager::instance(), &ThemeManager::cardOpacityChanged, backWidget, &TransparentWidget::onAcrylicOpacityChanged);
+    addDropShadowEffect(backWidget);
+
+    QVBoxLayout *mainLayout = new QVBoxLayout(backWidget);
+    mainLayout->setContentsMargins(5, 10, 5, 10);
     mainLayout->setSpacing(0);
 
     // 标题
@@ -144,9 +189,10 @@ void SettingsWidget::initAppPage()
     QLabel *jumpLable   = new QLabel("跳转");
 
     // 使用样式表设置字体加粗并加大一号
-    nameLable  ->setStyleSheet("QLabel { font-weight: bold; font-size: 14px; }");
-    enableLable->setStyleSheet("QLabel { font-weight: bold; font-size: 14px; }");
-    jumpLable  ->setStyleSheet("QLabel { font-weight: bold; font-size: 14px; }");
+    QString styleSheet = QString("QLabel { font-weight: %1; font-size: %2px;}").arg(QFont::Medium).arg(FONT_SIZE_XLARGE);
+    nameLable  ->setStyleSheet(styleSheet);
+    enableLable->setStyleSheet(styleSheet);
+    jumpLable  ->setStyleSheet(styleSheet);
 
     titleLazyout->addWidget(nameLable,   4, Qt::AlignCenter);
     titleLazyout->addWidget(enableLable, 1, Qt::AlignCenter);
@@ -158,8 +204,8 @@ void SettingsWidget::initAppPage()
     mainLayout->addSpacerItem(new QSpacerItem(1, 5, QSizePolicy::Minimum, QSizePolicy::Minimum));
     QFrame *line = new QFrame();
     line->setFrameShape(QFrame::HLine);
-    line->setStyleSheet("border:none; background-color: #D0D0D0; height: 1px;");
-    line->setFixedHeight(1);
+    line->setStyleSheet("border: none; background-color: " COLOR_SEPARATOR ";");
+    line->setFixedHeight(2);
     mainLayout->addWidget(line);
 
 
@@ -175,7 +221,7 @@ void SettingsWidget::initAppPage()
     appListArea->setWidget(applistWidget);
 
     // 设置字体
-    applistWidget->setStyleSheet("font-weight: bold; font-size: 14px; border: none;");
+    applistWidget->setStyleSheet(QString("font-size: %1px; border: none;").arg(FONT_SIZE_XLARGE));
 
     // 隐藏滚动条
     appListArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -225,13 +271,245 @@ void SettingsWidget::initAppPage()
         // 添加间隔线
         QFrame *line = new QFrame();
         line->setFrameShape(QFrame::HLine);
-        line->setStyleSheet("border:none; background-color: #DADADA; height: 1px;");
+        line->setStyleSheet("border:none; background-color: " COLOR_SEPARATOR_DARK "; height: 1px;");
         line->setFixedHeight(1);
         appListLayout->addWidget(line);
     }
 
     appListLayout->addStretch();
     mainLayout->addWidget(appListArea);
+}
+
+// 初始化"主题"页面
+void SettingsWidget::initThemePage()
+{
+    QVBoxLayout *layout = new QVBoxLayout(mThemePage);
+    SmoothScrollArea *scrollArea = new SmoothScrollArea();
+    QWidget *containerWidget = new QWidget(scrollArea);
+    QVBoxLayout *mainLayout = new QVBoxLayout(containerWidget);
+    layout->addWidget(scrollArea);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setWidget(containerWidget);
+
+    layout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setContentsMargins(0, MARGIN_TINY, 0, MARGIN_TINY);
+    mainLayout->setSpacing(MARGIN_LARGE);
+
+    ThemeManager &themeManager = ThemeManager::instance();
+
+    // ===== 亚克力效果设置 =====
+    CustomGroupBox *acrylicGroupBox = new CustomGroupBox("亚克力效果");
+    QVBoxLayout *acrylicLayout = new QVBoxLayout(acrylicGroupBox);
+
+    // 启用亚克力效果开关
+    QHBoxLayout *acrylicSwitchLayout = new QHBoxLayout();
+    MacStyleCheckBox *acrylicCheckBox = new MacStyleCheckBox("启用亚克力毛玻璃效果");
+    acrylicSwitchLayout->addWidget(acrylicCheckBox);
+    acrylicSwitchLayout->addStretch();
+    acrylicLayout->addLayout(acrylicSwitchLayout);
+
+    // 透明度滑块
+    QHBoxLayout *opacityLayout = new QHBoxLayout();
+    QLabel *opacityLabel = new QLabel("背景不透明度:");
+    MacStyleSlider *opacitySlider = new MacStyleSlider();
+    opacitySlider->setMinimum(0);
+    opacitySlider->setMaximum(100);
+    opacitySlider->setValue(themeManager.acrylicOpacity());
+    opacitySlider->setFixedWidth(240);
+    QLabel *opacityValueLabel = new QLabel(QString("%1%").arg(themeManager.acrylicOpacity()));
+    opacityValueLabel->setFixedWidth(40);
+
+    opacityLayout->addWidget(opacityLabel);
+    opacityLayout->addWidget(opacitySlider);
+    opacityLayout->addWidget(opacityValueLabel);
+    opacityLayout->addStretch(1);
+    acrylicLayout->addLayout(opacityLayout);
+
+    // 卡片不透明度滑块
+    QHBoxLayout *cardOpacityLayout = new QHBoxLayout();
+    QLabel *cardOpacityLabel = new QLabel("卡片不透明度:");
+    MacStyleSlider *cardOpacitySlider = new MacStyleSlider();
+    cardOpacitySlider->setMinimum(0);
+    cardOpacitySlider->setMaximum(100);
+    cardOpacitySlider->setValue(themeManager.cardOpacity());
+    cardOpacitySlider->setFixedWidth(240);
+    QLabel *cardOpacityValueLabel = new QLabel(QString("%1%").arg(themeManager.cardOpacity()));
+    cardOpacityValueLabel->setFixedWidth(40);
+
+    cardOpacityLayout->addWidget(cardOpacityLabel);
+    cardOpacityLayout->addWidget(cardOpacitySlider);
+    cardOpacityLayout->addWidget(cardOpacityValueLabel);
+    cardOpacityLayout->addStretch(1);
+    acrylicLayout->addLayout(cardOpacityLayout);
+
+    // 提示信息
+    QLabel *acrylicHint = new QLabel("亚克力效果仅在 Windows 11 及以上版本可用");
+    acrylicHint->setStyleSheet(QString("color: %1; font-size: %2px;").arg(COLOR_TEXT_SECONDARY).arg(FONT_SIZE_MEDIUM));
+    acrylicLayout->addWidget(acrylicHint);
+
+    mainLayout->addWidget(acrylicGroupBox);
+
+    // ===== 配色方案设置 =====
+    QVBoxLayout *colorSettingsLayout = new QVBoxLayout();
+    colorSettingsLayout->setSpacing(10);
+
+    CustomGroupBox *colorGroupBox = new CustomGroupBox("配色方案");
+    QVBoxLayout *colorLayout = new QVBoxLayout(colorGroupBox);
+    colorLayout->setSpacing(15);
+
+    // 预设主题选择
+    QHBoxLayout *presetLayout = new QHBoxLayout();
+    QLabel *presetLabel = new QLabel("预设主题:");
+    MacStyleComboBox *presetComboBox = new MacStyleComboBox("presetTheme");
+    for (const auto &preset : themeManager.getPresets()) {
+        presetComboBox->addItem(preset.name);
+    }
+    presetComboBox->setCurrentText(themeManager.themeName());
+    presetLayout->addWidget(presetLabel);
+    presetLayout->addWidget(presetComboBox);
+    colorSettingsLayout->addLayout(presetLayout);
+
+    // 主色调
+    QHBoxLayout *primaryLayout = new QHBoxLayout();
+    primaryLayout->setSpacing(10);
+    QLabel *primaryLabel = new QLabel("主色调:");
+    ColorPickerWidget *primaryColorPicker = new ColorPickerWidget(themeManager.primaryColor(), this);
+    primaryLayout->addWidget(primaryLabel);
+    primaryLayout->addWidget(primaryColorPicker);
+    primaryLayout->addStretch();
+    colorSettingsLayout->addLayout(primaryLayout);
+
+    // 强调色
+    QHBoxLayout *accentLayout = new QHBoxLayout();
+    accentLayout->setSpacing(10);
+    QLabel *accentLabel = new QLabel("强调色:");
+    ColorPickerWidget *accentColorPicker = new ColorPickerWidget(themeManager.accentColor(), this);
+    accentLayout->addWidget(accentLabel);
+    accentLayout->addWidget(accentColorPicker);
+    accentLayout->addStretch();
+    colorSettingsLayout->addLayout(accentLayout);
+
+    // 配色预览（垂直排列，整体靠右）
+    QVBoxLayout *previewLayout = new QVBoxLayout();
+    previewLayout->setSpacing(5);
+    QLabel *previewTitle = new QLabel("配色预览:");
+    QWidget *previewWidget = new QWidget();
+    previewWidget->setStyleSheet(generatePreviewStyleSheet());
+    previewLayout->addWidget(previewTitle);
+    previewLayout->addWidget(previewWidget);
+    previewLayout->setStretch(1, 1);
+
+    // 水平排列：左侧颜色设置 + 右侧预览
+    QHBoxLayout *colorRowLayout = new QHBoxLayout();
+    colorRowLayout->setSpacing(35);
+    colorRowLayout->addLayout(colorSettingsLayout);
+    colorRowLayout->addLayout(previewLayout);
+    colorRowLayout->setStretch(1, 1);
+
+    colorLayout->addLayout(colorRowLayout);
+
+    mainLayout->addWidget(colorGroupBox);
+
+    // ===== 重置按钮 =====
+    QHBoxLayout *resetLayout = new QHBoxLayout();
+    MacStyleButton *resetButton = new MacStyleButton("恢复默认");
+    resetButton->setNormalColorBlue(true);
+    resetLayout->addStretch(1);
+    resetLayout->addWidget(resetButton);
+    mainLayout->addStretch(1);
+    mainLayout->addLayout(resetLayout);
+
+
+    // ===== 主题切换信号连接 =====
+    // 使用 Qt::UniqueConnection 确保不会重复连接
+
+    // 初始化控件状态
+    acrylicCheckBox->setChecked(themeManager.acrylicEnabled());
+    opacitySlider->setValue(themeManager.acrylicOpacity());
+    opacityValueLabel->setText(QString("%1%").arg(themeManager.acrylicOpacity()));
+    cardOpacitySlider->setValue(themeManager.cardOpacity());
+    cardOpacityValueLabel->setText(QString("%1%").arg(themeManager.cardOpacity()));
+    primaryColorPicker->setColor(themeManager.primaryColor());
+    accentColorPicker->setColor(themeManager.accentColor());
+    previewWidget->setStyleSheet(generatePreviewStyleSheet());
+
+    // 亚克力开关
+    connect(acrylicCheckBox, &MacStyleCheckBox::clicked, &themeManager, &ThemeManager::switchAcrylicEnabled, Qt::UniqueConnection);
+
+    // 透明度滑块 - 实时预览，释放时保存
+    connect(opacitySlider, &QSlider::valueChanged, &themeManager, &ThemeManager::switchAcrylicOpacity, Qt::UniqueConnection);
+    connect(opacitySlider, &QSlider::valueChanged, this, [opacityValueLabel](int value) {
+        opacityValueLabel->setText(QString("%1%").arg(value));
+    });
+    connect(opacitySlider, &QSlider::sliderReleased, &themeManager, &ThemeManager::saveSettings, Qt::UniqueConnection);
+
+    // 卡片不透明度滑块 - 实时预览，释放时保存
+    connect(cardOpacitySlider, &QSlider::valueChanged, &themeManager, &ThemeManager::switchCardOpacity, Qt::UniqueConnection);
+    connect(cardOpacitySlider, &QSlider::valueChanged, this, [cardOpacityValueLabel](int value) {
+        cardOpacityValueLabel->setText(QString("%1%").arg(value));
+    });
+    connect(cardOpacitySlider, &QSlider::sliderReleased, &themeManager, &ThemeManager::saveSettings, Qt::UniqueConnection);
+
+    // 预设主题选择
+    connect(presetComboBox, &MacStyleComboBox::currentIndexChanged, &themeManager,
+            static_cast<void(ThemeManager::*)(int)>(&ThemeManager::switchToPreset), Qt::UniqueConnection);
+
+    // 主色调选择器
+    connect(primaryColorPicker, &ColorPickerWidget::colorChanged, &themeManager, &ThemeManager::switchPrimaryColor, Qt::UniqueConnection);
+    connect(primaryColorPicker, &ColorPickerWidget::colorChanged, this, [presetComboBox](const QColor &) {
+        presetComboBox->setCurrentText("自定义");
+    });
+
+    // 强调色选择器
+    connect(accentColorPicker, &ColorPickerWidget::colorChanged, &themeManager, &ThemeManager::switchAccentColor, Qt::UniqueConnection);
+    connect(accentColorPicker, &ColorPickerWidget::colorChanged, this, [presetComboBox](const QColor &) {
+        presetComboBox->setCurrentText("自定义");
+    });
+
+    // 重置按钮
+    connect(resetButton, &QPushButton::clicked, []() {
+        ThemeManager::instance().switchToPreset("默认");
+        ThemeManager::instance().switchAcrylicEnabled(ACRYLIC_ENABLED_DEFAULT);
+        ThemeManager::instance().switchAcrylicOpacity(OPACITY_BG_DEFAULT);
+        ThemeManager::instance().switchCardOpacity(OPACITY_CARD_DEFAULT);
+    });
+
+    // 主题整体变化时更新UI
+    connect(&themeManager, &ThemeManager::themeChanged, this, [this, acrylicCheckBox, opacitySlider, cardOpacitySlider, presetComboBox, primaryColorPicker, accentColorPicker, previewWidget, opacityValueLabel, cardOpacityValueLabel]() {
+        acrylicCheckBox->setChecked(ThemeManager::instance().acrylicEnabled());
+        opacitySlider->setValue(ThemeManager::instance().acrylicOpacity());
+        opacityValueLabel->setText(QString("%1%").arg(ThemeManager::instance().acrylicOpacity()));
+        cardOpacitySlider->setValue(ThemeManager::instance().cardOpacity());
+        cardOpacityValueLabel->setText(QString("%1%").arg(ThemeManager::instance().cardOpacity()));
+        presetComboBox->setCurrentText(ThemeManager::instance().themeName());
+        primaryColorPicker->setColor(ThemeManager::instance().primaryColor());
+        accentColorPicker->setColor(ThemeManager::instance().accentColor());
+        previewWidget->setStyleSheet(generatePreviewStyleSheet());
+    });
+
+    // 颜色变化时更新预览
+    connect(&themeManager, &ThemeManager::primaryColorChanged, this, [this, previewWidget]() {
+        previewWidget->setStyleSheet(generatePreviewStyleSheet());
+    });
+    connect(&themeManager, &ThemeManager::accentColorChanged, this, [this, previewWidget]() {
+        previewWidget->setStyleSheet(generatePreviewStyleSheet());
+    });
+}
+
+// 辅助函数：生成预览样式表
+QString SettingsWidget::generatePreviewStyleSheet() const
+{
+    return QString(
+        "QWidget {"
+        "    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,"
+        "        stop:0 %1, stop:0.5 %2, stop:1 %3);"
+        "    border-radius: %4px;"
+        "    border: 1px solid %5;"
+        "}"
+    ).arg(ThemeManager::instance().primaryColor().name())
+     .arg(ThemeManager::instance().accentColor().name())
+     .arg(ThemeManager::instance().primaryColor().lighter(120).name())
+     .arg(RADIUS_LARGE).arg(COLOR_BORDER_DARK);
 }
 
 // 初始化"快捷键"页面
@@ -247,8 +525,8 @@ void SettingsWidget::initHotkeyPage()
     scrollArea->setWidget(containerWidget);
 
     layout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setContentsMargins(10, 10, 10, 10);
-    mainLayout->setSpacing(10);
+    mainLayout->setContentsMargins(0, MARGIN_TINY, 0, MARGIN_TINY);
+    mainLayout->setSpacing(MARGIN_LARGE);
 
     // 添加热键编辑区域
     ToolManager& toolManager = ToolManager::instance();
@@ -293,22 +571,24 @@ void SettingsWidget::initHotkeyPage()
     mainLayout->addStretch();
 }
 
+// 初始化"关于"页面
 void SettingsWidget::initAboutPage()
 {
     QGridLayout *mainLayout = new QGridLayout(mAboutPage);
+    mainLayout->setContentsMargins(0, MARGIN_TINY, 0, MARGIN_TINY);
 
     // 上半部分：版本相关信息
     QWidget *headWidget = new QWidget();
     mainLayout->addWidget(headWidget, 0, 0);
 
     // 添加富文本区域
-    QWidget *richWidget = new QWidget();
+    TransparentWidget *richWidget = new TransparentWidget();
     mainLayout->addWidget(richWidget, 1, 0);
 
 
     // 上半
     QGridLayout *headLayout = new QGridLayout(headWidget);
-    headLayout->setContentsMargins(5, 5, 5, 5);
+    headLayout->setContentsMargins(MARGIN_TINY, MARGIN_SMALL, MARGIN_TINY, MARGIN_SMALL);
     // 添加图标
     QIcon icon(":/ico/LD.ico");
     QLabel *iconLabel = new QLabel;
@@ -318,7 +598,7 @@ void SettingsWidget::initAboutPage()
     // 名称
     QLabel *nameLabel = new QLabel("LazyDogTools");
     QFont font = nameLabel->font();
-    font.setPointSize(14);
+    font.setPointSize(FONT_SIZE_XLARGE);
     nameLabel->setFont(font);
 
     // 创建水平布局
@@ -326,7 +606,7 @@ void SettingsWidget::initAboutPage()
     hLayout->addWidget(iconLabel);
     hLayout->addWidget(nameLabel);
     hLayout->addStretch(1);
-    hLayout->setContentsMargins(0,0,0,0);
+    hLayout->setContentsMargins(0, 0, 0, 0);
 
     // 图标+名称 第一行，
     QWidget *container = new QWidget;
@@ -355,7 +635,7 @@ void SettingsWidget::initAboutPage()
     // 设置平滑滚动
     QVBoxLayout *richWidgetLayout = new QVBoxLayout(richWidget);
     SmoothScrollArea *scrollArea = new SmoothScrollArea();
-    QWidget *containerWidget = new QWidget(scrollArea);
+    QWidget *containerWidget = new QWidget();
     QVBoxLayout *richLayout = new QVBoxLayout(containerWidget);
     richWidgetLayout->addWidget(scrollArea);
     scrollArea->setWidgetResizable(true); // 使内容区域可以自动调整大小
@@ -363,19 +643,15 @@ void SettingsWidget::initAboutPage()
 
     // 设置样式，圆角-白底
     richLayout->setContentsMargins(0, 0, 0, 0);
-    richWidgetLayout->setContentsMargins(10, 10, 0, 10);
-    containerWidget->setObjectName("containerWidget");
-    containerWidget->setStyleSheet(
-        "QWidget#containerWidget {"
-        "   background-color: #FAFDFF;"
-        "}");
-    richWidget->setObjectName("richWidget");
-    richWidget->setStyleSheet(
-        "QWidget#richWidget {"
-        "   border-radius: 8px;"
-        "   border: 1px solid #F0F0F0;"
-        "   background-color: #FAFDFF;"
-        "}");
+    richWidgetLayout->setContentsMargins(MARGIN_LARGE, MARGIN_LARGE, 2, MARGIN_LARGE);
+    richWidget->setCornerRadius(RADIUS_XLARGE);
+    richWidget->setBorderWidth(1);
+    richWidget->setBorderColor(QColor(COLOR_BORDER));
+    richWidget->setSolidColor(QColor(COLOR_BG_CARD));
+    richWidget->setAcrylicColor(QColor(COLOR_BG_CARD));
+    richWidget->setAcrylicAlpha(ThemeManager::instance().cardOpacity() * 255 / 100);
+    connect(&ThemeManager::instance(), &ThemeManager::cardOpacityChanged, richWidget, &TransparentWidget::onAcrylicOpacityChanged);
+    addDropShadowEffect(richWidget);
 
     QLabel *label = new QLabel(this);
     richLayout->addWidget(label);
@@ -383,8 +659,6 @@ void SettingsWidget::initAboutPage()
     label->setTextFormat(Qt::RichText); // 开启富文本
     label->setTextInteractionFlags(Qt::TextBrowserInteraction); // 支持点击链接
     label->setOpenExternalLinks(true); // 点击超链接用浏览器打开
-    QFont richFont("Microsoft YaHei", 10); // 字体名 + 字号，可调整
-    label->setFont(richFont);
 
     // 加载数据
     QFile file(":/text/about.html");
@@ -460,6 +734,14 @@ void SettingsWidget::buttonClicked()
 
     if (button->text().startsWith("jump:"))
         return jumpTool(button->text().split(":")[1]);
+
+#ifdef QT_DEBUG
+    if (button->text() == "测试")
+    {
+        AcrylicWidget *w = new AcrylicWidget();
+        w->show();
+    }
+#endif
 
     if (button->text() == "查看日志")
     {

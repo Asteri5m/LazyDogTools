@@ -81,7 +81,7 @@ void TaskMonitor::getProcessList(TaskInfoList *taskInfoList)
     // 枚举进程
     DWORD processes[1024], processCount, cbNeeded;
     if (!EnumProcesses(processes, sizeof(processes), &cbNeeded)) {
-        qDebug() << "Failed to enumerate processes.";
+        qWarning() << "Failed to enumerate processes.";
         return;
     }
 
@@ -202,7 +202,7 @@ void TaskMonitor::updateProcessModel()
     // 枚举进程
     DWORD processes[1024], processCount, cbNeeded;
     if (!EnumProcesses(processes, sizeof(processes), &cbNeeded)) {
-        qDebug() << "Failed to enumerate processes.";
+        qWarning() << "Failed to enumerate processes.";
         return;
     }
 

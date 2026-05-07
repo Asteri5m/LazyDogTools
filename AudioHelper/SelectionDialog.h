@@ -9,7 +9,6 @@
  */
 
 #include <QDialog>
-#include "CustomWidget.h"
 #include "AudioCustom.h"
 #include "TaskMonitor.h"
 

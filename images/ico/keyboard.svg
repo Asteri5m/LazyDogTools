@@ -1,1 +1,34 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#666"><path d="M4 5V19H20V5H4ZM3 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3ZM6 7H8V9H6V7ZM6 11H8V13H6V11ZM6 15H18V17H6V15ZM11 11H13V13H11V11ZM11 7H13V9H11V7ZM16 7H18V9H16V7ZM16 11H18V13H16V11Z"></path></svg>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 24 24"
+     fill="none"
+     color="#666">
+
+  <!-- 外框 -->
+  <rect
+    x="3"
+    y="4"
+    width="18"
+    height="16"
+    rx="3"
+    stroke="currentColor"
+    stroke-width="2"/>
+
+  <!-- 小方块 -->
+  <rect x="6"  y="7"  width="2" height="2" rx="0.6" fill="currentColor"/>
+  <rect x="11" y="7"  width="2" height="2" rx="0.6" fill="currentColor"/>
+  <rect x="16" y="7"  width="2" height="2" rx="0.6" fill="currentColor"/>
+
+  <rect x="6"  y="11" width="2" height="2" rx="0.6" fill="currentColor"/>
+  <rect x="11" y="11" width="2" height="2" rx="0.6" fill="currentColor"/>
+  <rect x="16" y="11" width="2" height="2" rx="0.6" fill="currentColor"/>
+
+  <!-- 底部长条 -->
+  <rect
+    x="6"
+    y="15"
+    width="12"
+    height="2"
+    rx="1"
+    fill="currentColor"/>
+
+</svg>

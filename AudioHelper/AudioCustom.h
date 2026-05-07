@@ -13,6 +13,7 @@
 #include <QLabel>
 #include <QResizeEvent>
 #include <QPainter>
+#include "utils/Constants.h"
 
 #define TAG_DEFAULT_WIDTH 120
 
@@ -120,7 +121,7 @@ private:
         // 绘制圆角矩形背景
         painter.setPen(QPen(borderColor, 1)); // 1px边框
         painter.setBrush(bgColor);
-        painter.drawRoundedRect(rect, 5, 5); // 5px圆角
+        painter.drawRoundedRect(rect, RADIUS_MEDIUM, RADIUS_MEDIUM); // 5px圆角
     }
 
     void drawText(QPainter &painter, const QRect &rect)
@@ -419,7 +420,8 @@ private:
 
 
 #include "AudioManager.h"
-#include "CustomWidget.h"
+#include "components/MacStyleButton.h"
+#include "components/MacStyleComboBox.h"
 class AudioChoiceDialog : public QDialog {
     Q_OBJECT
 

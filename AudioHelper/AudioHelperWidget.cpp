@@ -6,13 +6,15 @@
  */
 
 #include "AudioHelperWidget.h"
-#include "ToolManager.h"
+#include "managers/ToolManager.h"
+#include "managers/ThemeManager.h"
+#include "utils/Constants.h"
 #include "SelectionDialog.h"
 
 AudioHelperWidget::AudioHelperWidget(RelatedList *relatedList, QMap<QString, QString> *config, AudioDatabase* database, QWidget *parent)
     : ToolWidgetModel{parent}
-    , mHomePage(new QWidget(this))
-    , mPrefsPage(new QWidget(this))
+    , mHomePage(new TransparentWidget(this))
+    , mPrefsPage(new TransparentWidget(this))
     , mTaskTab(new QTreeWidget())
     , mRelatedList(relatedList)
     , mConfig(config)
@@ -33,8 +35,10 @@ AudioHelperWidget::AudioHelperWidget(RelatedList *relatedList, QMap<QString, QSt
     initHomePage();
     initPrefsPage();
 
-    connect(mTaskTab, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(onTaskTabItemClicked(QTreeWidgetItem*, int)));
+    connect(mTaskTab, &QTreeWidget::itemClicked, this, &AudioHelperWidget::onTaskTabItemClicked);
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, &AudioHelperWidget::onThemeChanged);
 
+    onThemeChanged(); // 设置主题
     finalizeSetup();  // 检查并显示第一个页面
 }
 
@@ -55,21 +59,23 @@ void AudioHelperWidget::initHomePage()
     QHBoxLayout *footLayout = new QHBoxLayout();
 
     // 表格的父窗口，用于轻松修改边框
-    QWidget *tabWidget = new QWidget();
+    TransparentWidget *tabWidget = new TransparentWidget();
     QHBoxLayout *tabLayout = new QHBoxLayout(tabWidget);
     tabLayout->addWidget(mTaskTab);
 
     mainLayout->addWidget(tabWidget);
     mainLayout->addLayout(footLayout);
 
-    tabLayout->setContentsMargins(3, 3, 3, 3);
-    tabWidget->setObjectName("tabWidget");
-    tabWidget->setStyleSheet(
-        "QWidget#tabWidget {"
-        "   border-radius: 8px;"
-        "   border: 1px solid white;"
-        "   background-color: white;"
-        "}");
+    mainLayout->setContentsMargins(0, MARGIN_TINY, 0, MARGIN_TINY);
+    tabLayout->setContentsMargins(MARGIN_TINY, MARGIN_TINY, MARGIN_TINY, MARGIN_TINY);
+    tabWidget->setCornerRadius(RADIUS_XLARGE);
+    tabWidget->setBorderWidth(1);
+    tabWidget->setBorderColor(QColor(COLOR_BORDER));
+    tabWidget->setSolidColor(QColor(COLOR_BG_CARD));
+    tabWidget->setAcrylicColor(QColor(COLOR_BG_CARD));
+    tabWidget->setAcrylicAlpha(ThemeManager::instance().cardOpacity() * 255 / 100);
+    connect(&ThemeManager::instance(), &ThemeManager::cardOpacityChanged, tabWidget, &TransparentWidget::onAcrylicOpacityChanged);
+    addDropShadowEffect(tabWidget);
 
     // 设置样式
     mTaskTab->setSelectionMode(QAbstractItemView::SingleSelection); // 单选
@@ -79,29 +85,17 @@ void AudioHelperWidget::initHomePage()
     mTaskTab->header()->setSectionResizeMode(QHeaderView::Stretch); // 自适应列宽
     mTaskTab->header()->setSectionsMovable(false);  // 禁止拖动列
 
-    mTaskTab->setFrameShape(QFrame::NoFrame);       // 无边框
+    mTaskTab->setFrameStyle(QFrame::NoFrame);       // 无边框
     mTaskTab->setRootIsDecorated(false);            // 去掉树的展开箭头
-    mTaskTab->setAlternatingRowColors(true);        // 是否交替行颜色
+    mTaskTab->setAlternatingRowColors(false);       // 禁用交替行颜色（配合亚克力效果）
     mTaskTab->setFocusPolicy(Qt::NoFocus);          // 去除虚线框
     mTaskTab->setWordWrap(false);                   // 禁用换行
 
-    mTaskTab->setStyleSheet(
-        "QTreeWidget::item {"
-        "   height: 32px;"
-        "   color: black;"
-        "}"
-        "QTreeWidget::item:hover {"
-        "   background-color: #DEF2FB;"
-        "}"
-        "QTreeWidget::item:selected {"
-        "   background-color: #2c8bff;"
-        "   color: white;"
-        "}"
-        "QHeaderView::section {"
-        "   font-weight: bold;"
-        "   font-size: 14px;"
-        "}"
-        );
+    // 设置透明背景以适配亚克力效果
+    mTaskTab->setAttribute(Qt::WA_TranslucentBackground);
+    mTaskTab->viewport()->setAttribute(Qt::WA_TranslucentBackground);
+    mTaskTab->setAutoFillBackground(false);
+    mTaskTab->viewport()->setAutoFillBackground(false);
 
     // 设置列和表头
     mTaskTab->setColumnCount(3);
@@ -156,7 +150,7 @@ void AudioHelperWidget::initHomePage()
     connect(addButton,   SIGNAL(clicked()), this, SLOT(buttonClicked()));
     connect(delButton,   SIGNAL(clicked()), this, SLOT(buttonClicked()));
     connect(chgButton,   SIGNAL(clicked()), this, SLOT(buttonClicked()));
-    connect(mTagButton, SIGNAL(clicked()), this, SLOT(buttonClicked()));
+    connect(mTagButton,  SIGNAL(clicked()), this, SLOT(buttonClicked()));
 }
 
 void AudioHelperWidget::initPrefsPage()
@@ -171,7 +165,7 @@ void AudioHelperWidget::initPrefsPage()
     scrollArea->setWidget(containerWidget);
 
     layout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setContentsMargins(10, 10, 10, 10);
+    mainLayout->setContentsMargins(0, MARGIN_TINY, 0, MARGIN_TINY);
     mainLayout->setSpacing(10);
 
     // 模式
@@ -512,4 +506,41 @@ void AudioHelperWidget::loadConfigHandler(T *widget)
         }
     }
     qCritical() << "无法识别的类型:" << typeName;
+}
+
+void AudioHelperWidget::onThemeChanged()
+{
+    QColor hoverColor = ThemeManager::instance().primaryHoverColor();
+    QColor selectColor = ThemeManager::instance().primaryColor();
+
+    QString taskTabStyle = QString(
+        "QTreeWidget {"
+        "   background-color: transparent;"
+        "   border: none;"
+        "   outline: none;"
+        "}" "QTreeWidget::item {"
+        "   height: 32px;"
+        "   color: " COLOR_TEXT_PRIMARY ";"
+        "   background-color: transparent;"
+        "}"
+        "QTreeWidget::item:hover {"
+        "    background-color: rgba(%1, %2, %3, 200);"
+        "}"
+        "   QTreeWidget::item:selected {"
+        "   background-color: rgba(%4, %5, %6, 200);"
+        "   color: white;"
+        "}"
+        "QHeaderView {"
+        "    background-color: transparent;"
+        "    font-weight: %7;"
+        "    font-size: %8px;"
+        "}"
+        "QTreeWidget::branch {"
+        "    background: transparent;"
+        "}")
+        .arg(hoverColor.red()).arg(hoverColor.green()).arg(hoverColor.blue())
+        .arg(selectColor.red()).arg(selectColor.green()).arg(selectColor.blue())
+        .arg(QFont::Medium).arg(FONT_SIZE_XLARGE);
+
+    mTaskTab->setStyleSheet(taskTabStyle);
 }

@@ -8,7 +8,7 @@
  * @brief 工具管理器，单例
  */
 
-#include "ToolModel.h"
+#include "models/ToolModel.h"
 #include <QMap>
 #include <QObject>
 

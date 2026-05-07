@@ -10,14 +10,14 @@
 
 #include <QObject>
 #include <QKeySequence>
-#include "CustomWidget.h"
+#include "widgets/ToolWidgetModel.h"
 
 typedef std::function<void()> Function;
 
 struct TrayItem {
-    QString     Name;            // 条目名，在菜单中显示
-    QString     Icon;            // 图标路径
-    Function    Func;            // 回调函数
+    QString     Name;     // 条目名，在菜单中显示
+    QString     Icon;     // 图标路径
+    Function    Func;     // 回调函数
 };
 
 // 菜单栏条目，菜单名:关联函数

@@ -9,7 +9,7 @@
  */
 
 #include <QMessageBox>
-#include "CustomWidget.h"
+#include "components/MacStyleButton.h"
 
 enum MessageType {
     Info,
@@ -163,6 +163,18 @@ inline QString getStackTrace()
     
     free(symbol);
     return stackTrace;
+}
+
+
+#include <QGraphicsDropShadowEffect>
+// 给窗口添加阴影
+inline void addDropShadowEffect(QWidget *widget)
+{
+    auto *shadow = new QGraphicsDropShadowEffect;
+    shadow->setBlurRadius(36);
+    shadow->setOffset(0, 3);
+    shadow->setColor(QColor(15, 23, 42, 18));
+    widget->setGraphicsEffect(shadow);
 }
 
 #endif // CUSTOM_H

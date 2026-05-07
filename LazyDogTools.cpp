@@ -8,10 +8,10 @@
 #include <QSysInfo>
 #include <QApplication>
 #include "LazyDogTools.h"
-#include "Settings.h"
-#include "TrayManager.h"
-#include "LogHandler.h"
-#include "ToolManager.h"
+#include "managers/Settings.h"
+#include "managers/TrayManager.h"
+#include "managers/LogHandler.h"
+#include "managers/ToolManager.h"
 #include "AudioHelper/AudioHelper.h"
 
 LazyDogTools::LazyDogTools(QObject *parent)
@@ -71,6 +71,20 @@ void LazyDogTools::initTools()
                                                 {"切换模式", "锁定设备", "切换场景"},
                                                 true },
                                                 [this]() { return new AudioHelper(this); });
+
+#ifdef QT_DEBUG
+    for (int i = 2; i < 50; i++) {
+
+        QString name;
+        name = QString("音频助手%1").arg(i);
+
+        ToolManager::instance().registerTool<AudioHelper>(name,
+                                                          {name, ":/ico/audiohelper.svg", "一款根据场景自动切换音频设备的小助手",
+                                                           {"切换模式", "锁定设备", "切换场景"},
+                                                           true },
+                                                          [this]() { return new AudioHelper(this); });
+    }
+#endif
 }
 
 void LazyDogTools::initTray()

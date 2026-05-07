@@ -8,9 +8,17 @@
  * @brief Settings的交互窗口
  */
 
-#include "UAC.h"
-#include "CustomWidget.h"
-#include "Settings.h"
+#include "utils/UAC.h"
+#include "managers/Settings.h"
+#include "widgets/ToolWidgetModel.h"
+#include "widgets/CustomGroupBox.h"
+#include "widgets/ColorPickerWidget.h"
+#include "components/MacStyleCheckBox.h"
+#include "components/MacSwitchButton.h"
+#include "components/JumpButton.h"
+#include "components/MacStyleComboBox.h"
+#include "components/MacStyleSlider.h"
+
 
 class SettingsWidget : public ToolWidgetModel
 {
@@ -27,12 +35,14 @@ private:
     QWidget *mAppPage;
     QWidget *mHotkeyPage;
     QWidget *mAboutPage;
+    QWidget *mThemePage;
     Settings *mSettings;
 
     void initBasePage();
     void initAppPage();
     void initHotkeyPage();
     void initAboutPage();
+    void initThemePage();
 
     void jumpTool(QString toolName);
     template<typename T>
@@ -49,6 +59,9 @@ private slots:
     void checkBoxChecked(bool);
     void switchButtonChanged(bool);
     void keySequenceChanged(QKeySequence);
+
+private:
+    QString generatePreviewStyleSheet() const;
 };
 
 #endif // SETTINGSWIDGET_H

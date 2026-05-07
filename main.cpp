@@ -1,19 +1,25 @@
 #include "LazyDogTools.h"
-#include "LogHandler.h"
-#include "SingleApplication.h"
-#include "UAC.h"
-#include "Settings.h"
-#include "Custom.h"
+#include "utils/UAC.h"
+#include "utils/Custom.h"
+#include "managers/LogHandler.h"
+#include "managers/SingleApplication.h"
+#include "managers/Settings.h"
+#include "managers/ThemeManager.h"
 #include <QProcess>
 
 
 int main(int argc, char *argv[])
 {
+    QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
+    qputenv("QT_QPA_PLATFORM", "windows:fontengine=freetype");
+
     try {
         // 设置全局日志，初始为debug，直到加载到设置内容后修改
         qInstallMessageHandler(LogHandler::messageHandler);
         // 设置全局未处理异常过滤器
         SetUnhandledExceptionFilter(LogHandler::UnhandledExceptionFilter);
+
+
 
         SingleApplication a(argc, argv, "LazyDogTools-SingleApplication");
 
@@ -31,11 +37,13 @@ int main(int argc, char *argv[])
             Sleep(1000); // 等待更新进程结束
         }
 
+#ifdef QT_NO_DEBUG
         if (a.isRunning())
         {
             a.sendMessage("Only one program instance is allowed to run.");
             return 0;
         }
+#endif
 
         { // 限制作用域
             Settings s;
@@ -53,9 +61,22 @@ int main(int argc, char *argv[])
             s.deleteLater();
         }
 
+        // 设置字体
+        QFont font;
+        font.setFamilies({FONT_FAMILY_PRIMARY, FONT_FAMILY_DEFAULT});
+        a.setFont(font);
+        QPalette palette;
+        palette.setColor(QPalette::Text, QColor(COLOR_TEXT_PRIMARY));
+        palette.setColor(QPalette::WindowText, QColor(COLOR_TEXT_PRIMARY));
+        palette.setColor(QPalette::ButtonText, QColor(COLOR_TEXT_PRIMARY));
+        a.setPalette(palette);
+
         LazyDogTools w;
         QObject::connect(&a, SIGNAL(signalMessageAvailable(QString)), &w, SLOT(onMessageAvailable(QString)));
         QApplication::setQuitOnLastWindowClosed(false);
+
+        // 初始化主题管理器（信号会在首次加载设置时触发）
+        ThemeManager::instance();
         return a.exec();
     }
     catch (const std::exception& e) {

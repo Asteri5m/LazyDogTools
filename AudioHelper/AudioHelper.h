@@ -8,7 +8,7 @@
  * @brief 音频助手，主要功能为根据预设切换音频设备
  */
 
-#include "ToolModel.h"
+#include "models/ToolModel.h"
 #include "AudioHelperWidget.h"
 #include "AudioHelperServer.h"
 #include "AudioDatabase.h"

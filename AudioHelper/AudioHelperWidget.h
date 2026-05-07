@@ -8,9 +8,14 @@
  * @brief AudioHelper的交互窗口
  */
 
-#include "CustomWidget.h"
+#include "widgets/ToolWidgetModel.h"
+#include "widgets/SmoothScrollArea.h"
+#include "widgets/CustomGroupBox.h"
+#include "components/MacStyleButton.h"
+#include "components/MacStyleCheckBox.h"
+#include "components/HintLabel.h"
 #include "AudioCustom.h"
-#include "Custom.h"
+#include "utils/Custom.h"
 #include "AudioDatabase.h"
 #include <QTreeWidget>
 #include <QHeaderView>
@@ -31,6 +36,7 @@ private slots:
     void buttonClicked();
     void checkBoxChecked(bool);
     void comboBoxChanged(QString);
+    void onThemeChanged();
 
 private:
     QWidget *mHomePage;

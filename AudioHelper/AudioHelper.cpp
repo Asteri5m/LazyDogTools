@@ -8,7 +8,7 @@
 #include <QMetaEnum>
 #include "AudioHelper.h"
 #include "AudioDatabase.h"
-#include "TrayManager.h"
+#include "managers/TrayManager.h"
 
 AudioHelper::AudioHelper(QObject *parent)
     : ToolModel{ parent }
