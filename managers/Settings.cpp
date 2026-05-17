@@ -397,8 +397,8 @@ void Settings::onUpdateReplyed()
     if (checkVersion(latestVersion))
     {
         qInfo() << "发现新版本:" << latestVersion;
-        if (showMessage(mToolWidget == nullptr ? nullptr : mToolWidget, 
-            QString("发现新版本-v%1").arg(latestVersion), changelog, MessageType::Info, Qt::MarkdownText, "立即更新", "稍后更新" ) == QMessageBox::Accepted)
+        if (showMessage(mToolWidget == nullptr ? nullptr : mToolWidget,
+            QString("发现新版本-v%1").arg(latestVersion), changelog, MessageType::Info, Qt::MarkdownText, "立即更新", "稍后更新" ) == QDialog::Accepted)
             return downloadUpPack(downloadUrl);
         qInfo() << "更新已取消";
     } 
@@ -712,7 +712,7 @@ void Settings::installUpdate(const QString &zipFilePath)
 
     // 向用户确认重启
     if (showMessage(mToolWidget == nullptr ? nullptr : mToolWidget, 
-        "更新完成", "更新完成，是否立即重启？", MessageType::Info, Qt::PlainText, "立即重启", "稍后重启" ) == QMessageBox::Accepted)
+        "更新完成", "更新完成，是否立即重启？", MessageType::Info, Qt::PlainText, "立即重启", "稍后重启" ) == QDialog::Accepted)
     {
         // 运行tmp目录下的程序，使用绝对路径
         QString appPath = QDir::toNativeSeparators(tempDirObj.absoluteFilePath(APPLICATION_NAME));

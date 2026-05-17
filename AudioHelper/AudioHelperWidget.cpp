@@ -297,7 +297,7 @@ void AudioHelperWidget::addRelatedItem()
     if (!queryList.isEmpty())
     {
         qWarning() << "任务已存在: Name:" << queryList.at(0).taskInfo.name << "; TypeInfo:" << queryList.at(0).typeInfo.type;
-        if (showMessage(this, "重复添加", "该选项已经在任务列表中，无法重复添加！\n\n是否继续添加其它项?\n", MessageType::Warning, Qt::PlainText, "继续", "返回") == QMessageBox::Accepted)
+        if (showMessage(this, "重复添加", "该选项已经在任务列表中，无法重复添加！\n\n是否继续添加其它项?\n", MessageType::Warning, Qt::PlainText, "继续", "返回") == QDialog::Accepted)
             return addRelatedItem();
         return;
     }
@@ -524,19 +524,21 @@ void AudioHelperWidget::onThemeChanged()
         "   background-color: transparent;"
         "}"
         "QTreeWidget::item:hover {"
-        "    background-color: rgba(%1, %2, %3, 200);"
+        "   background-color: rgba(%1, %2, %3, 200);"
+        "   margin: 1px 0;"
         "}"
-        "   QTreeWidget::item:selected {"
+        "QTreeWidget::item:selected {"
         "   background-color: rgba(%4, %5, %6, 200);"
+        "   margin: 1px 0;"
         "   color: white;"
         "}"
         "QHeaderView {"
-        "    background-color: transparent;"
-        "    font-weight: %7;"
-        "    font-size: %8px;"
+        "   background-color: transparent;"
+        "   font-weight: %7;"
+        "   font-size: %8px;"
         "}"
         "QTreeWidget::branch {"
-        "    background: transparent;"
+        "   background: transparent;"
         "}")
         .arg(hoverColor.red()).arg(hoverColor.green()).arg(hoverColor.blue())
         .arg(selectColor.red()).arg(selectColor.green()).arg(selectColor.blue())

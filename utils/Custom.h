@@ -8,8 +8,13 @@
  * @brief 通用自定义方法
  */
 
-#include <QMessageBox>
+#include <QApplication>
+#include <QHBoxLayout>
+#include <QDialog>
+#include <QLabel>
+#include "Constants.h"
 #include "components/MacStyleButton.h"
+#include "widgets/SmoothScrollArea.h"
 
 enum MessageType {
     Info,
@@ -22,40 +27,85 @@ inline int showMessage(QWidget *parent, const QString &title, const QString &mes
                        MessageType messageType = Info, Qt::TextFormat textFormat = Qt::AutoText,
                        const QString &button1Text = "确定", const QString &button2Text = "")
 {
-    // 创建消息框
-    QMessageBox msgBox(parent);
+    QDialog dialog(parent);
 
-    // 设置消息框的图标
-    switch (messageType) {
+    dialog.setWindowTitle(title);
+    dialog.setModal(true);
+    dialog.resize(520, 320); // 最大尺寸
+    dialog.setStyleSheet("background-color:" COLOR_BG_CARD ";");
+
+    QVBoxLayout *mainLayout = new QVBoxLayout(&dialog);
+
+    // =========================
+    // 顶部区域
+    // =========================
+    QHBoxLayout *topLayout = new QHBoxLayout();
+    QLabel *iconLabel = new QLabel();
+    QStyle::StandardPixmap iconType;
+
+    switch (messageType)
+    {
     case Info:
-        msgBox.setIcon(QMessageBox::Information);
+        iconType = QStyle::SP_MessageBoxInformation;
         break;
     case Warning:
-        msgBox.setIcon(QMessageBox::Warning);
+        iconType = QStyle::SP_MessageBoxWarning;
         break;
     case Critical:
-        msgBox.setIcon(QMessageBox::Critical);
+        iconType = QStyle::SP_MessageBoxCritical;
         break;
     }
 
-    msgBox.setWindowTitle(title);      // 设置窗口标题
-    msgBox.setText(message);           // 设置提示消息内容
-    msgBox.setTextFormat(textFormat);  // 设置文本格式
+    iconLabel->setPixmap(QApplication::style()->standardIcon(iconType).pixmap(32, 32));
+    topLayout->setSpacing(16);
+    topLayout->addWidget(iconLabel, 0, Qt::AlignTop);
 
-    // 添加按钮
-    MacStyleButton *button1 = new MacStyleButton(button1Text, &msgBox);
+    // =========================
+    // 滚动文本区域
+    // =========================
+    SmoothScrollArea *scrollArea = new SmoothScrollArea();
+    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+    QWidget *contentWidget = new QWidget();
+    QVBoxLayout *contentLayout = new QVBoxLayout(contentWidget);
+    contentLayout->setContentsMargins(0, 0, 0, 0);
+
+    QLabel *textLabel = new QLabel();
+    textLabel->setWordWrap(true);
+    textLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+    textLabel->setText(message);
+    textLabel->setTextFormat(textFormat);
+    textLabel->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::LinksAccessibleByMouse);
+    textLabel->setOpenExternalLinks(true);
+    contentLayout->addWidget(textLabel);
+    scrollArea->setWidget(contentWidget);
+    topLayout->addWidget(scrollArea);
+    mainLayout->addLayout(topLayout);
+
+    // =========================
+    // 按钮区域
+    // =========================
+    QHBoxLayout *buttonLayout = new QHBoxLayout();
+    MacStyleButton *button1 = new MacStyleButton(button1Text);
     button1->setNormalColorBlue(true);
-    msgBox.addButton(button1, QMessageBox::AcceptRole);  // 第一个按钮
-    if (!button2Text.isEmpty()) {
-        MacStyleButton *button2 = new MacStyleButton(button2Text, &msgBox);
-        msgBox.addButton(button2, QMessageBox::RejectRole);  // 第二个按钮
+    buttonLayout->addStretch(1);
+    buttonLayout->addWidget(button1);
+    QObject::connect(button1, &QPushButton::clicked, &dialog, &QDialog::accept);
+
+    if (!button2Text.isEmpty())
+    {
+        MacStyleButton *button2 = new MacStyleButton(button2Text);
+        buttonLayout->addWidget(button2);
+        QObject::connect(button2, &QPushButton::clicked, &dialog, &QDialog::reject);
     }
 
-    // 显示消息框  不知道什么原因，接受返回2，拒绝返回3……
-    if (msgBox.exec() == 2)
-        return QMessageBox::Accepted;
-    return  QMessageBox::Rejected;
+    mainLayout->addLayout(buttonLayout);
+    // 调整大小
+    dialog.adjustSize();
+    dialog.setFixedSize(qMin(520, dialog.width() + 30), qMin(320, dialog.height()));
+    return dialog.exec();
 }
+
 
 template<typename K, typename V>
 class OrderedMap {
