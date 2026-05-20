@@ -8,7 +8,7 @@
  * @brief AudioHelper的交互窗口
  */
 
-#include "widgets/ToolWidgetModel.h"
+#include "models//ToolWidgetModel.h"
 #include "widgets/SmoothScrollArea.h"
 #include "widgets/CustomGroupBox.h"
 #include "components/MacStyleButton.h"

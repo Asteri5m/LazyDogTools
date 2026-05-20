@@ -10,7 +10,7 @@
 
 #include <QObject>
 #include <QKeySequence>
-#include "widgets/ToolWidgetModel.h"
+#include "ToolWidgetModel.h"
 
 typedef std::function<void()> Function;
 

@@ -24,7 +24,8 @@ SOURCES += \
     managers/TrayManager.cpp
 
 SOURCES += \
-    models/ToolModel.cpp
+    models/ToolModel.cpp \
+    models/ToolWidgetModel.cpp
 
 SOURCES += \
     widgets/AcrylicWidget.cpp \
@@ -32,7 +33,6 @@ SOURCES += \
     widgets/CustomGroupBox.cpp \
     widgets/SettingsWidget.cpp \
     widgets/SmoothScrollArea.cpp \
-    widgets/ToolWidgetModel.cpp \
     widgets/TransparentWidget.cpp
 
 SOURCES += \
@@ -73,7 +73,8 @@ HEADERS += \
     managers/TrayManager.h
 
 HEADERS += \
-    models/ToolModel.h
+    models/ToolModel.h \
+    models/ToolWidgetModel.h
 
 HEADERS += \
     widgets/AcrylicWidget.h \
@@ -81,7 +82,6 @@ HEADERS += \
     widgets/CustomGroupBox.h \
     widgets/SettingsWidget.h \
     widgets/SmoothScrollArea.h \
-    widgets/ToolWidgetModel.h \
     widgets/TransparentWidget.h
 
 HEADERS += \

@@ -10,7 +10,7 @@
 
 #include "utils/UAC.h"
 #include "managers/Settings.h"
-#include "widgets/ToolWidgetModel.h"
+#include "models/ToolWidgetModel.h"
 #include "widgets/CustomGroupBox.h"
 #include "widgets/ColorPickerWidget.h"
 #include "components/MacStyleCheckBox.h"

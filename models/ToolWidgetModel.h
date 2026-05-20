@@ -6,8 +6,8 @@
  * @brief 工具窗口模板，可以根据该模板快生成一个具有左侧菜单栏的"TabWidget"
  */
 
-#include "AcrylicWidget.h"
-#include "TransparentWidget.h"
+#include "widgets/AcrylicWidget.h"
+#include "widgets/TransparentWidget.h"
 #include "components/LeftMenuButton.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
