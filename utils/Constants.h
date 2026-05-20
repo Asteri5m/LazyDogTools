@@ -158,4 +158,13 @@
 #define DB_AUDIOHELPER   "AudioHelper.db"
 #define DB_THEMES        "Theme.db"
 
+// =====================================================
+// 更新相关
+// =====================================================
+#define BUILD_DATE          "2026.05.10"  // 构建日期
+#define CURRENT_VERSION     "0.0.4.Beta"  // 当前版本号
+#define GITHUB_API_URL      "https://api.github.com/repos/Asteri5m/LazyDogTools/releases/latest"
+#define UPDATE_DIR          "update"
+#define APPLICATION_NAME    "LazyDogTools.exe"
+
 #endif // CONSTANTS_H

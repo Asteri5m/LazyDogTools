@@ -620,7 +620,7 @@ void SettingsWidget::initAboutPage()
     headLayout->addWidget(checkNewButton, 1, 2);
 
     // 版权信息 第三行
-    QString lastYear = BUILD_DATE.split('.').first();
+    QString lastYear = QString(BUILD_DATE).split('.').first();
     MacStyleButton *licenseButton = new MacStyleButton("开源协议");
     headLayout->addWidget(new QLabel(QString("版权所有 © 2024-%1 Asteri5m").arg(lastYear)), 2, 0);
     headLayout->addWidget(licenseButton, 2, 2);
@@ -730,7 +730,7 @@ void SettingsWidget::showRichText(const QString &title, const QString &fileName)
 void SettingsWidget::buttonClicked()
 {
     QPushButton *button = qobject_cast<QPushButton *>(sender());
-    qDebug() << "点击按钮: " << button->text();
+    // qDebug() << "点击按钮: " << button->text();
 
     if (button->text().startsWith("jump:"))
         return jumpTool(button->text().split(":")[1]);
@@ -758,7 +758,6 @@ void SettingsWidget::buttonClicked()
         }
     } else if (button->text() == "检查更新")
     {
-        qInfo() << "检查更新...";
         mSettings->checkForUpdates();
     } else if (button->text() == "更新历史")
     {

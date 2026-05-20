@@ -274,18 +274,13 @@ void Settings::onToolActiveChanged()
 
 void Settings::checkForUpdates()
 {
-    QString apiUrl = mUsingGiteeAPI ? GITEE_API_URL : GITHUB_API_URL;
-    QNetworkRequest request(apiUrl);
-    
-    // 设置 User-Agent（GitHub API 需要）
+    qInfo() << "检查更新...";
+    QNetworkRequest request(QString(GITHUB_API_URL));
+
+    // 设置 User-Agent & Accept 头
     request.setHeader(QNetworkRequest::UserAgentHeader, "LazyDogTools");
-    
-    if (!mUsingGiteeAPI) {
-        // GitHub API 可能需要设置 Accept 头
-        request.setHeader(QNetworkRequest::ContentTypeHeader, 
-                         "application/vnd.github.v3+json");
-    }
-    
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/vnd.github.v3+json");
+
     QNetworkReply *reply = mNetworkManager->get(request);
     connect(reply, SIGNAL(finished()), this, SLOT(onUpdateReplyed()));
 }
@@ -294,129 +289,115 @@ void Settings::onUpdateReplyed()
 {
     QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
     if (!reply) return;
-    
+
     reply->deleteLater();
-    
-    if (reply->error() != QNetworkReply::NoError) {
+
+    if (reply->error() != QNetworkReply::NoError)
+    {
         qWarning() << "更新检查失败:" << reply->errorString();
-        
-        if (!mUsingGiteeAPI) {
-            // GitHub API 失败，切换到 Gitee API 重试
-            mUsingGiteeAPI = true;
-            qInfo() << "切换到 Gitee API 重试";
-            checkForUpdates();
-            return;
-        }
-        
-        // 两个 API 都失败了
-        mUsingGiteeAPI = false;  // 重置为默认使用 GitHub
         TrayManager::instance().showMessage("检查更新", "检查更新失败, 请检查网络然后稍后重试。");
         return;
     }
-    
+
     // 读取响应数据
     QByteArray data = reply->readAll();
     QJsonDocument doc = QJsonDocument::fromJson(data);
-    
-    if (doc.isNull()) 
+    if (doc.isNull())
     {
-        if (mUsingGiteeAPI)
-        {
-            qWarning() << "Gitee API - 更新检查失败: 无效的更新信息格式";
-            TrayManager::instance().showMessage("检查更新", "更新检查失败: 无有效的更新信息");
-            mUsingGiteeAPI = false;
-            return;
-        }
-        else
-        {
-            qWarning() << "GitHub API - 更新检查失败: 无效的更新信息格式";
-            mUsingGiteeAPI = true;
-            checkForUpdates();
-            return;
-        }
-    }
-    
-    QJsonObject obj = doc.object();
-    QString latestVersion;
-    QString downloadUrl;
-    QString changelog;
-    
-    if (!mUsingGiteeAPI)
-    {
-        // 解析 GitHub API 响应
-        latestVersion = obj["tag_name"].toString().replace("v", "");
-        // 优先获取 assets 中的 zip 文件下载链接
-        const QJsonValue assetsValue = obj.value("assets");
-        if (assetsValue.isArray()) {
-            const QJsonArray assets = assetsValue.toArray();
-            for (int i = 0; i < assets.size(); ++i) {
-                const QJsonObject asset = assets.at(i).toObject();
-                const QString name = asset.value("name").toString();
-                if (name.endsWith(".zip")) {
-                    downloadUrl = asset.value("browser_download_url").toString();
-                    break;
-                }
-            }
-        }
-        changelog = obj.value("body").toString();
-    } else {
-        // 解析 Gitee API 响应
-        latestVersion = obj.value("tag_name").toString().replace("v", "");
-        
-        // 获取 assets 数组
-        const QJsonValue assetsValue = obj.value("assets");
-        if (assetsValue.isArray()) {
-            const QJsonArray assets = assetsValue.toArray();
-            for (int i = 0; i < assets.size(); ++i) {
-                const QJsonObject asset = assets.at(i).toObject();
-                const QString name = asset.value("name").toString();
-                const QString url = asset.value("browser_download_url").toString();
-                // 检查是否是压缩包
-                if (name.endsWith(".zip")) {
-                    downloadUrl = url;
-                    // 如果找到第一个zip包就使用
-                    break;
-                }
-            }
-        }
-        
-        if (downloadUrl.isEmpty()) 
-        {
-            qWarning() << "未在 assets 中找到 zip 包";
-            return;
-        }
-        
-        changelog = obj.value("body").toString();
+        qWarning() << "更新检查失败: 无效的更新信息格式";
+        TrayManager::instance().showMessage("检查更新", "更新检查失败: 无有效的更新信息");
+        return;
     }
 
-    qDebug() << (mUsingGiteeAPI ? "Gitee" : "GitHub") << "更新信息:";
+    QJsonObject obj = doc.object();
+    QString latestVersion;
+    QString updateFileUrl;
+    QString changelog;
+
+    // 解析 GitHub API 响应
+    latestVersion = obj["tag_name"].toString().replace("v", "");
+    // 优先获取 assets 中的 zip 文件下载链接
+    const QJsonValue assetsValue = obj.value("assets");
+    if (assetsValue.isArray()) {
+        const QJsonArray assets = assetsValue.toArray();
+        for (int i = 0; i < assets.size(); ++i) {
+            const QJsonObject asset = assets.at(i).toObject();
+            const QString name = asset.value("name").toString();
+            if (name.endsWith(".zip")) {
+                updateFileUrl = asset.value("browser_download_url").toString();
+                break;
+            }
+        }
+    }
+    changelog = obj.value("body").toString();
+
+    qDebug() << "更新信息:";
     qDebug() << "版本:" << latestVersion;
-    qDebug() << "下载链接:" << downloadUrl;
-    
+    qDebug() << "下载链接:" << updateFileUrl;
+
     // 比较版本号
-    if (checkVersion(latestVersion))
-    {
-        qInfo() << "发现新版本:" << latestVersion;
-        if (showMessage(mToolWidget == nullptr ? nullptr : mToolWidget,
-            QString("发现新版本-v%1").arg(latestVersion), changelog, MessageType::Info, Qt::MarkdownText, "立即更新", "稍后更新" ) == QDialog::Accepted)
-            return downloadUpPack(downloadUrl);
-        qInfo() << "更新已取消";
-    } 
-    else 
+    if (!checkVersion(latestVersion))
     {
         qInfo() << "当前已是最新版本。";
         if (mNotify) TrayManager::instance().showMessage("检查更新", "当前已是最新版本。");
         mNotify = true;
+        return;
     }
-    
-    // 重置为默认使用 GitHub
-    mUsingGiteeAPI = false;
+
+    qInfo() << "发现新版本:" << latestVersion;
+    if (showMessage(mToolWidget == nullptr ? nullptr : mToolWidget, QString("发现新版本-v%1").arg(latestVersion),
+                    changelog, MessageType::Info, Qt::MarkdownText, "立即更新", "稍后更新" ) != QDialog::Accepted)
+    {
+        qInfo() << "更新已取消";
+        return;
+    }
+
+    downloadUpPack(updateFileUrl);
+}
+
+void Settings::downloadUpPack(const QString &downloadUrl)
+{
+    qInfo() << "开始下载更新包";
+    TrayManager::instance().showMessage("检查更新", "开始下载更新包,在更新就绪后会通知您。");
+    QNetworkRequest request(downloadUrl);
+    QNetworkReply *reply = mNetworkManager->get(request);
+    connect(reply, SIGNAL(finished()), this, SLOT(onDownloadFinished()));
+}
+
+void Settings::onDownloadFinished()
+{
+    QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
+    if (!reply) return;
+
+    reply->deleteLater();
+
+    if (reply->error() != QNetworkReply::NoError)
+    {
+        qWarning() << "下载更新包失败:" << reply->errorString();
+        TrayManager::instance().showMessage("检查更新", "下载更新包失败, 请检查网络然后稍后重试。");
+        return;
+    }
+
+    QString filePath = QCoreApplication::applicationDirPath() + "/update.zip";
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly))
+    {
+        qWarning() << "无法打开文件:" << filePath;
+        TrayManager::instance().showMessage("检查更新", "无法打开文件:" + filePath);
+        return;
+    }
+
+    file.write(reply->readAll());
+    file.close();
+
+    qInfo() << "更新包下载完成:" << filePath;
+    installUpdate(filePath);
 }
 
 bool Settings::checkVersion(const QString &remoteVersion)
 {
     qDebug() << "当前版本:" << CURRENT_VERSION << "远程版本:" << remoteVersion;
-    QStringList currentParts = CURRENT_VERSION.split('.');
+    QStringList currentParts = QString(CURRENT_VERSION).split('.');
     QStringList remoteParts = remoteVersion.split('.');
     
     // 确保至少有3个部分
@@ -518,45 +499,6 @@ void Settings::clearUpdate()
     }
     
     qInfo() << "更新完成,当前版本:" << CURRENT_VERSION;
-}
-
-void Settings::downloadUpPack(const QString &downloadUrl)
-{
-    qInfo() << "开始下载更新包";
-    TrayManager::instance().showMessage("检查更新", "开始下载更新包,在更新就绪后会通知您。");
-    QNetworkRequest request(downloadUrl);
-    QNetworkReply *reply = mNetworkManager->get(request);
-    connect(reply, SIGNAL(finished()), this, SLOT(onDownloadFinished()));
-}
-
-void Settings::onDownloadFinished()
-{
-    QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
-    if (!reply) return;
-
-    reply->deleteLater();
-
-    if (reply->error() != QNetworkReply::NoError)
-    {
-        qWarning() << "下载更新包失败:" << reply->errorString();
-        TrayManager::instance().showMessage("检查更新", "下载更新包失败, 请检查网络然后稍后重试。");
-        return;
-    }
-
-    QString filePath = QCoreApplication::applicationDirPath() + "/update.zip";
-    QFile file(filePath);
-    if (!file.open(QIODevice::WriteOnly))
-    {
-        qWarning() << "无法打开文件:" << filePath;
-        TrayManager::instance().showMessage("检查更新", "无法打开文件:" + filePath);
-        return;
-    }
-
-    file.write(reply->readAll());
-    file.close();
-
-    qInfo() << "更新包下载完成:" << filePath;   
-    installUpdate(filePath);
 }
 
 bool Settings::inflateData(const QByteArray &compressedData, QByteArray &uncompressedData)

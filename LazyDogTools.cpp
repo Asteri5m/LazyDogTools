@@ -45,6 +45,10 @@ LazyDogTools::LazyDogTools(QObject *parent)
     {   // 如果没有开启自动更新，就会导致第一次“手动检查更新”没有通知
         mSettings->setUpNotify(true);
     }
+
+#ifdef QT_DEBUG
+    mSettings->showWindow();
+#endif
 }
 
 

@@ -15,6 +15,7 @@
 #include <QNetworkAccessManager>
 #include <QtZlib/zlib.h>
 #include <QBuffer>
+#include "utils/Constants.h"
 
 struct HotkeyInfo
 {
@@ -25,13 +26,6 @@ struct HotkeyInfo
 
 typedef QMap<QString, HotkeyInfo> HotkeyMap;
 typedef QMap<int, QString> HotkeyIdMap;
-
-inline const QString BUILD_DATE = "2026.05.10";  // 构建日期
-inline const QString CURRENT_VERSION = "0.0.4.Beta";  // 当前版本号
-inline const QString GITHUB_API_URL = "https://api.github.com/repos/Asteri5m/LazyDogTools/releases/latest";
-inline const QString GITEE_API_URL = "https://gitee.com/api/v5/repos/Asteri5m/LazyDogTools/releases/latest";
-inline const QString UPDATE_DIR = "update";
-inline const QString APPLICATION_NAME = "LazyDogTools.exe";
 
 class Settings : public ToolModel
 {
@@ -64,7 +58,6 @@ private:
     Config *mConfig;
 
     QNetworkAccessManager *mNetworkManager;
-    bool mUsingGiteeAPI = false;  // 标记当前使用的是哪个API
     bool mNotify = false;       // 自动检测更新时不需要通知"已是最新"
     bool mUpdate = false;       // 是否需要更新
 
