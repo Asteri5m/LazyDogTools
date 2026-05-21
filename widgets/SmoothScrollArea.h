@@ -31,8 +31,8 @@ private:
 
     // 参数（核心）
     const double mFriction = 0.92;      // 摩擦力
-    const double mMinVelocity = 0.95;   // 停止阈值
-    const double mWheelStep = 1.2;      // 滚轮增益
+    const double mMinVelocity = 0.9;    // 停止阈值
+    const double mWheelStep = 1.15;     // 滚轮增益
 };
 
 #endif // SMOOTHSCROLLAREA_H

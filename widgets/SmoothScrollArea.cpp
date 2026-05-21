@@ -23,7 +23,7 @@ SmoothScrollArea::SmoothScrollArea(QWidget *parent)
     connect(mScrollTimer, &QTimer::timeout,
             this, &SmoothScrollArea::onSmoothScroll);
 
-    mScrollTimer->setInterval(8); // 120 FPS
+    mScrollTimer->setInterval(16); // 60 FPS
 
     QString scrollBarStyle = R"(
             /* 整个滚动条区域 */
