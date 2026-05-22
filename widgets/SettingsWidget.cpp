@@ -79,8 +79,8 @@ void SettingsWidget::initBasePage()
     scrollArea->setWidgetResizable(true); // 使内容区域可以自动调整大小
     scrollArea->setWidget(containerWidget);
 
-    layout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setContentsMargins(0, MARGIN_TINY, 0, MARGIN_TINY);
+    layout->setContentsMargins(0, MARGIN_TINY, 0, MARGIN_TINY);
+    mainLayout->setContentsMargins(MARGIN_TINY, 0, MARGIN_TINY, 0);
     mainLayout->setSpacing(MARGIN_LARGE);
 
     // 创建启动区域
@@ -167,7 +167,7 @@ void SettingsWidget::initAppPage()
 {
     QVBoxLayout *layout = new QVBoxLayout(mAppPage);
     TransparentWidget *backWidget = new TransparentWidget();
-    layout->setContentsMargins(0, MARGIN_TINY, 0, MARGIN_TINY);
+    layout->setContentsMargins(MARGIN_TINY, MARGIN_TINY, MARGIN_TINY, MARGIN_TINY);
     layout->addWidget(backWidget);
     backWidget->setCornerRadius(RADIUS_XLARGE);
     backWidget->setBorderWidth(1);
@@ -291,8 +291,8 @@ void SettingsWidget::initThemePage()
     scrollArea->setWidgetResizable(true);
     scrollArea->setWidget(containerWidget);
 
-    layout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setContentsMargins(0, MARGIN_TINY, 0, MARGIN_TINY);
+    layout->setContentsMargins(0, MARGIN_TINY, 0, MARGIN_TINY);
+    mainLayout->setContentsMargins(MARGIN_TINY, 0, MARGIN_TINY, 0);
     mainLayout->setSpacing(MARGIN_LARGE);
 
     ThemeManager &themeManager = ThemeManager::instance();
@@ -524,8 +524,8 @@ void SettingsWidget::initHotkeyPage()
     scrollArea->setWidgetResizable(true); // 使内容区域可以自动调整大小
     scrollArea->setWidget(containerWidget);
 
-    layout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setContentsMargins(0, MARGIN_TINY, 0, MARGIN_TINY);
+    layout->setContentsMargins(0, MARGIN_TINY, 0, MARGIN_TINY);
+    mainLayout->setContentsMargins(MARGIN_TINY, 0, MARGIN_TINY, 0);
     mainLayout->setSpacing(MARGIN_LARGE);
 
     // 添加热键编辑区域
@@ -575,7 +575,7 @@ void SettingsWidget::initHotkeyPage()
 void SettingsWidget::initAboutPage()
 {
     QGridLayout *mainLayout = new QGridLayout(mAboutPage);
-    mainLayout->setContentsMargins(0, MARGIN_TINY, 0, MARGIN_TINY);
+    mainLayout->setContentsMargins(MARGIN_TINY, MARGIN_TINY, MARGIN_TINY, MARGIN_TINY);
 
     // 上半部分：版本相关信息
     QWidget *headWidget = new QWidget();

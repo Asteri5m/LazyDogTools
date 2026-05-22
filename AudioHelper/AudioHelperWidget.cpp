@@ -66,7 +66,7 @@ void AudioHelperWidget::initHomePage()
     mainLayout->addWidget(tabWidget);
     mainLayout->addLayout(footLayout);
 
-    mainLayout->setContentsMargins(0, MARGIN_TINY, 0, MARGIN_TINY);
+    mainLayout->setContentsMargins(MARGIN_TINY, MARGIN_TINY, MARGIN_TINY, MARGIN_TINY);
     tabLayout->setContentsMargins(MARGIN_TINY, MARGIN_TINY, MARGIN_TINY, MARGIN_TINY);
     tabWidget->setCornerRadius(RADIUS_XLARGE);
     tabWidget->setBorderWidth(1);
@@ -163,9 +163,9 @@ void AudioHelperWidget::initPrefsPage()
     layout->addWidget(scrollArea);
     scrollArea->setWidgetResizable(true); // 使内容区域可以自动调整大小
     scrollArea->setWidget(containerWidget);
-
-    layout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setContentsMargins(0, MARGIN_TINY, 0, MARGIN_TINY);
+    
+    layout->setContentsMargins(0, MARGIN_TINY, 0, MARGIN_TINY);
+    mainLayout->setContentsMargins(MARGIN_TINY, 0, MARGIN_TINY, 0);
     mainLayout->setSpacing(10);
 
     // 模式

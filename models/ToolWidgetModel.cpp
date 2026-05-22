@@ -41,7 +41,7 @@ void ToolWidgetModel::setDefaultStyle(bool menuRight)
 
     mOverLayout = new QHBoxLayout(backWidget);
     mMainLayout = new QGridLayout();
-    mOverLayout->setSpacing(PADDING_LARGE);
+    mOverLayout->setSpacing(PADDING_MEDIUM);
     mOverLayout->setContentsMargins(MARGIN_MEDIUM, MARGIN_TINY, MARGIN_MEDIUM , MARGIN_MEDIUM);
     mMainLayout->setContentsMargins(0, 0, 0, 0);
 
