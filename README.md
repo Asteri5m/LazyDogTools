@@ -3,7 +3,7 @@
 <div align="center">
     <img src="https://img.shields.io/badge/Qt-6.9.1-green" alt="Qt 6.9.1" />
     <img src="https://img.shields.io/badge/MSVC-2022%20x86__x64-blue" alt="MSVC 2022 x86_x64" />
-    <img src="https://img.shields.io/badge/Version-v0.0.4-red" alt="Version v0.0.4" />
+    <img src="https://img.shields.io/badge/Version-v0.0.5-red" alt="Version v0.0.5" />
     <img src="https://img.shields.io/badge/License-MIT-Green" alt="License MIT" />
 </div>
 
